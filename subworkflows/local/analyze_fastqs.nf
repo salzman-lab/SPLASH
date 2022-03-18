@@ -45,12 +45,13 @@ workflow ANALYZE_FASTQS {
     /*
     // Process to get list of candidate anchors via onthefly
     */
-    println(params.target_threshold)
+
     GET_ANCHORS(
         ch_split_fastqs,
+        params.n_iterations,
         params.chunk_size,
         file(samplesheet),
-        5,
+        params.target_threshold,
         params.anchor_counts_threshold,
         params.anchor_freeze_threshold,
         params.anchor_mode,

@@ -108,7 +108,7 @@ def recordNextKmers(consensus_length, adj_dist, adj_len, myseqs, anchorlength, D
                     else:
                         anchor_dict[anchor_tuple] += 1
         j += 1
-        if j % 10000 == 1:
+        if j % 100000 == 1:
             print(j)
 
     return DNAdict, anchor_dict
@@ -181,7 +181,7 @@ def get_args():
         help='max number of fastq reads for input'
     )
     parser.add_argument(
-        "--signif_anchors_file",
+        "--anchors_file",
         type=str,
         help='input list of all significant anchors'
     )
@@ -292,7 +292,7 @@ def main():
     # create dict from signif anchors
     signif_anchors_df = (
         pd.read_csv(
-            args.signif_anchors_file,
+            args.anchors_file,
             sep='\t'
         )
     )

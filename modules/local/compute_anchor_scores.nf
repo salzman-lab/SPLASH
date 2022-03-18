@@ -1,8 +1,6 @@
 
 process COMPUTE_ANCHOR_SCORES {
 
-    publishDir "${outdir}", mode: 'copy'
-
     input:
     path ch_targets_samplesheet
 

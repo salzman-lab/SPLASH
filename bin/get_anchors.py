@@ -62,7 +62,7 @@ def get_args():
     parser.add_argument(
         "--outfile",
         help='up or down',
-        type=int
+        type=str
     )
 
     args = parser.parse_args()

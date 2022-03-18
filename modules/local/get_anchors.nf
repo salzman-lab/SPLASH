@@ -3,6 +3,7 @@ process GET_ANCHORS {
 
     input:
     path ch_split_fastqs
+    val n_iterations
     val chunk_size
     path samplesheet
     val target_threshold
@@ -19,15 +20,15 @@ process GET_ANCHORS {
     outfile = "anchors.tsv"
     """
     get_anchors.py \\
-        --n_iterations 100 \\
+        --n_iterations ${n_iterations} \\
         --max_reads ${chunk_size} \\
         --samplesheet ${samplesheet} \\
-        --target_threshold ${} \\
-        --anchor_counts_threshold ${} \\
-        --anchor_freeze_threshold ${} \\
-        --anchor_mode ${} \\
-        --window_slide ${} \\
-        --read_len ${} \\
+        --target_threshold ${target_threshold} \\
+        --anchor_counts_threshold ${anchor_counts_threshold} \\
+        --anchor_freeze_threshold ${anchor_freeze_threshold} \\
+        --anchor_mode ${anchor_mode} \\
+        --window_slide ${window_slide} \\
+        --read_len ${read_len} \\
         --outfile ${outfile}
     """
 }

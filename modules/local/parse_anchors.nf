@@ -33,6 +33,6 @@ process PARSE_ANCHORS {
         --consensus_length ${consensus_length} \\
         --kmer_size ${kmer_size} \\
         --direction ${direction} \\
-        --adj_distance ${adj_distance}
+        --read_len ${read_len}
     """
 }
