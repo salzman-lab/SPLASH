@@ -15,6 +15,7 @@ process GET_ANCHORS {
 
     output:
     path "anchors.tsv", emit: anchors
+    path ".*log"
 
     script:
     outfile = "anchors.tsv"
