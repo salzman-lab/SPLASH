@@ -1,6 +1,8 @@
 
 process GET_ANCHORS {
 
+    label 'process_medium'
+
     input:
     path ch_split_fastqs
     val n_iterations

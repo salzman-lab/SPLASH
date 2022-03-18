@@ -1,5 +1,7 @@
 process SPLIT_FASTQS {
 
+    label 'process_medium'
+
     input:
     tuple val(fastq_id), path(fastq)
     val num_lines
