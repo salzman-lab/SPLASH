@@ -3,9 +3,8 @@
 ========================================================================================
     nf-core/stringstats
 ========================================================================================
-    Github : https://github.com/nf-core/stringstats
-    Website: https://nf-co.re/stringstats
-    Slack  : https://nfcore.slack.com/channels/stringstats
+    Github : https://github.com/kaitlinchaung/stringstats
+
 ----------------------------------------------------------------------------------------
 */
 
@@ -17,7 +16,6 @@ nextflow.enable.dsl = 2
 ========================================================================================
 */
 
-params.fasta = WorkflowMain.getGenomeAttribute(params, 'fasta')
 
 /*
 ========================================================================================
@@ -36,9 +34,9 @@ WorkflowMain.initialise(workflow, params, log)
 include { STRINGSTATS } from './workflows/stringstats'
 
 //
-// WORKFLOW: Run main nf-core/stringstats analysis pipeline
+// WORKFLOW: Run main kaitlinchaung/stringstats analysis pipeline
 //
-workflow NFCORE_STRINGSTATS {
+workflow RUN_STRINGSTATS {
     STRINGSTATS ()
 }
 
@@ -53,7 +51,7 @@ workflow NFCORE_STRINGSTATS {
 // See: https://github.com/nf-core/rnaseq/issues/619
 //
 workflow {
-    NFCORE_STRINGSTATS ()
+    RUN_STRINGSTATS ()
 }
 
 /*
