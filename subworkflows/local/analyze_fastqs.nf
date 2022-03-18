@@ -50,7 +50,7 @@ workflow ANALYZE_FASTQS {
         ch_split_fastqs,
         params.chunk_size,
         file(samplesheet),
-        params.target_threshold,
+        5,
         params.anchor_counts_threshold,
         params.anchor_freeze_threshold,
         params.anchor_mode,
