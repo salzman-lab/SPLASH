@@ -1,8 +1,6 @@
 
 process COMPUTE_ANCHOR_SCORES {
 
-    label 'process_low'
-
     input:
     path ch_targets_samplesheet
 
@@ -13,7 +11,7 @@ process COMPUTE_ANCHOR_SCORES {
 
     script:
     outfile_counts_distances = "anchor_targets_counts.tsv"
-    outfile_anchor_scores = "anchor_scores_only.tsv"
+    outfile_anchor_scores = "anchor_scores.tsv"
     outfile_anchor_fasta = "anchors.fasta"
     """
     compute_anchor_scores.py \\

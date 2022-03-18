@@ -1,8 +1,6 @@
 
 process GET_ANCHORS {
 
-    label 'process_medium'
-
     input:
     path ch_split_fastqs
     val n_iterations
@@ -17,7 +15,6 @@ process GET_ANCHORS {
 
     output:
     path "anchors.tsv", emit: anchors
-    path ".*log"
 
     script:
     outfile = "anchors.tsv"
