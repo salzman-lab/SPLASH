@@ -231,8 +231,10 @@ def get_iteration_summary_scores(
 
                             # if mean(S_i) < 3 and we have not entered read_counter_freeze, ignorelist this anchor
                             if scores.mean() < 3:
-                                status_checker.update_ignorelist(anchor)
-                                ignore_diversity += 1
+
+                                if not read_counter_freeze:
+                                    status_checker.update_ignorelist(anchor)
+                                    ignore_diversity += 1
 
                             # if mean(S_i) >= 3, proceed with updates and transition to phase_2
                             else:

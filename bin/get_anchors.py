@@ -132,7 +132,7 @@ def main():
         num_reads = iteration * args.max_reads
         if num_reads >= 300000:
             read_counter_freeze = True
-            # status_checker.ignorelist.clear()
+            status_checker.ignorelist.clear()
         else:
             read_counter_freeze = False
 
@@ -185,7 +185,9 @@ def main():
             keeplist_anchors = summary_scores_anchors[:100] + summary_scores_anchors[-100:]
             for anchor in keeplist_anchors:
                 status_checker.update_keeplist(anchor)
-                status_checker.update_ignorelist(anchor)
+
+                if not read_counter_freeze:
+                    status_checker.update_ignorelist(anchor)
 
             keeplist_status = True
         else:
@@ -201,8 +203,9 @@ def main():
                 .to_list()
             )
             for anchor in ignorelist_anchors_percentile:
-                status_checker.update_ignorelist(anchor)
-                ignore_summary_scores += 1
+                if not read_counter_freeze:
+                    status_checker.update_ignorelist(anchor)
+                    ignore_summary_scores += 1
 
             ignore_summary_scores_status = True
         else:
@@ -215,8 +218,10 @@ def main():
         anchor_min_count = k * c
         ignorelist_anchors_abundance = anchor_counts.get_ignorelist_anchors(anchor_min_count)
         for anchor in ignorelist_anchors_abundance:
-            status_checker.update_ignorelist(anchor)
-            ignore_abundance += 1
+
+            if not read_counter_freeze:
+                status_checker.update_ignorelist(anchor)
+                ignore_abundance += 1
 
         # logging
         logging.info(f'\tKeeplisting/ignorelisting')
@@ -228,11 +233,6 @@ def main():
         logging.info(f'\t\t\t\tignore_summary_scores = {ignore_summary_scores}')
         logging.info(f'\t\t\t\tignore_abundance = {ignore_abundance}')
         logging.info(f'\t\t\t\t\tanchor_min_count = {anchor_min_count}')
-
-
-        # get keeplist and ignorelist
-        keeplist = status_checker.keeplist
-        ignorelist = status_checker.ignorelist
 
         summary_scores.index.name = 'anchor'
         summary_scores.reset_index().to_csv(f'summary_scores_iteration_{iteration}.tsv', index=False, sep='\t')
