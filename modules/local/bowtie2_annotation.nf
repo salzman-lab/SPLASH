@@ -1,6 +1,7 @@
 
 process BOWTIE2_ANNOTATION {
 
+    tag "${index_name}"
     label 'process_low'
 
     input:
