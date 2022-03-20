@@ -1,6 +1,9 @@
 
 process PARSE_ANCHORS {
 
+    tag "${fastq_id}"
+    label 'process_medium'
+
     input:
     tuple val(fastq_id), path(fastq)
     path anchors

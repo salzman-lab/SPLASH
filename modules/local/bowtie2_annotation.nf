@@ -1,5 +1,8 @@
 
 process BOWTIE2_ANNOTATION {
+
+    label 'process_low'
+
     input:
     path anchor_fasta
     val index

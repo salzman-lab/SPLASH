@@ -1,6 +1,8 @@
 
 process COMPUTE_ANCHOR_SCORES {
 
+    label 'process_low'
+
     input:
     path ch_targets_samplesheet
 

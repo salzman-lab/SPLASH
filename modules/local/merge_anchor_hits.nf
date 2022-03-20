@@ -1,6 +1,8 @@
 
 process MERGE_ANCHOR_HITS {
 
+    label 'process_medium'
+
     input:
     path anchor_hits_samplesheet
     path anchor_scores
