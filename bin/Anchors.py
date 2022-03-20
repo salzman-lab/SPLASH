@@ -20,11 +20,11 @@ class AnchorStatus(dict):
     """
     def __init__(self):
         self.anchors = []
-        
+
     def assign_phase_2(self, anchor):
         self.anchors.append(anchor)
         return self
-    
+
     def is_phase_2(self, anchor):
         if anchor in self.anchors:
             return True
@@ -41,7 +41,7 @@ class AnchorTargetDistances(dict):
 
     def update_target_distance(self, anchor, target, distance):
         """
-        Update {anchor : {target : distance}} 
+        Update {anchor : {target : distance}}
         """
         if anchor not in self:
             self[anchor] = {target : distance}
@@ -49,7 +49,7 @@ class AnchorTargetDistances(dict):
             if target not in self[anchor]:
                 self[anchor].update({target : distance})
         return self
-    
+
     def update_topTargets_distances(self, anchor, topTargets_distances):
         """
         Update {anchor : {target : distance}} with the distances of the topTargets
@@ -59,7 +59,7 @@ class AnchorTargetDistances(dict):
         else:
             self[anchor] = dict(topTargets_distances)
         return self
-        
+
     def has_distance(self, anchor, target):
         """
         Return true if (anchor, target) has a pre-computed distance
@@ -68,7 +68,7 @@ class AnchorTargetDistances(dict):
             return True
         else:
             return False
-        
+
     def get_distance(self, anchor, target):
         """
         Return distance for anchor:target pair
@@ -79,7 +79,7 @@ class AnchorTargetDistances(dict):
 class AnchorTargetsSamples(dict):
     def __init__(self):
         self = {}
-        
+
     def update(self, anchor, target, sample):
         """
         Update {anchor : {sample : {target : count}}
@@ -96,7 +96,7 @@ class AnchorTargetsSamples(dict):
             self[anchor] = {sample : {target : 1}}
 
         return self
-    
+
     def get_counts_df(self, final_anchors_list):
         """
         Return a table of anchors and their target counts
@@ -123,8 +123,8 @@ class AnchorTargetsSamples(dict):
         )
         df = df[df['anchor'].isin(final_anchors_list)]
         return df
-        
-        
+
+
     def get_anchor_counts_df(self, anchor):
         """
         Return a table of anchors x samples counts for a specific anchor, sorted by abundance
@@ -152,12 +152,12 @@ class AnchorTargetsSamples(dict):
             )
         )
         df.columns.name = None
-    
+
         anchor_df = df.reset_index().drop('anchor', axis=1).set_index('target')
         anchor_df['count'] = anchor_df.sum(axis=1)
         anchor_df = anchor_df.sort_values('count', ascending=False).drop('count', axis=1).reset_index()
         return anchor_df
-    
+
     def reached_phase_2_threshold(self, anchor, target, sample):
         """
         Returns true if (anchor:target:sample) has at least 10 phase_2 scores
@@ -176,7 +176,7 @@ class AnchorCounts(dict):
         self.counter = {}
         self.num_samples = num_samples
         self.num_unique_anchors = 0
-    
+
     def contains(self, anchor):
         """
         Returns true if anchor is in dict
@@ -190,7 +190,7 @@ class AnchorCounts(dict):
         """
         Update {anchor : count}
         """
-        
+
         if anchor not in self.counter:
             # if this is a new anchor, increment relative to sample number and iteration
             L = math.floor(iteration / 100000)
@@ -199,25 +199,23 @@ class AnchorCounts(dict):
 
             # update number of unique anchors count
             self.num_unique_anchors += 1
-        
+
         else:
             # if not new anchor, increment relative to sample number and iteration
-            increment = self.num_samples 
+            increment = self.num_samples
             self.counter[anchor] += increment
 
-    
+
     def get_count(self, anchor):
         """
         Get count for an anchor
         """
         return self.counter[anchor]
-    
+
     def get_ignorelist_anchors(self, anchor_min_count):
         """
         Return anchors that do not have at least anchor_min_count number of counts
         """
-        # print({anchor:count for anchor,count in self.counter.items() if count > anchor_min_count})
-        # print({anchor:count for anchor,count in self.counter.items() if count < anchor_min_count})
         return [anchor for anchor, count in self.counter.items() if count < anchor_min_count]
 
 
@@ -234,19 +232,19 @@ class AnchorScoresTopTargets(dict):
         """
         self[anchor] = [scores, top_targets]
         return self
-    
+
     def get_score(self, anchor):
         """
         Return score for a given anchor
         """
         return self[anchor][0]
-    
+
     def get_topTargets(self, anchor):
         """
         Return topTargets for a given anchor
         """
         return self[anchor][1]
-    
+
     def compute_target_distance(self, anchor, target):
         """
         Return the min distance of a target to any of it's anchor's topTargets
@@ -254,7 +252,7 @@ class AnchorScoresTopTargets(dict):
         topTargets = self.get_topTargets(anchor)
         distance = min([utils.get_distance(target, t) for t in topTargets])
         return distance
-    
+
     def get_target_scores(self, final_anchors_list):
         """
         Return a df of anchors, targets, and their current scores
@@ -265,7 +263,6 @@ class AnchorScoresTopTargets(dict):
         scores_df.index.name = 'anchor'
         scores_df = scores_df.reset_index()
         scores_df = scores_df[scores_df['anchor'].isin(final_anchors_list)]
-        return scores_df
         return scores_df
 
     def get_phase_scores_df(self):
@@ -285,17 +282,15 @@ class AnchorScoresTopTargets(dict):
         for anchor, (scores, _) in self.items():
             scores_df = scores_df.append(pd.Series(scores, name=anchor))
 
-        before_df_len = len(scores_df)
         scores_df = scores_df.dropna(thresh=3)
-        after_df_len = len(scores_df)
 
         if len(set(group_ids_dict.values())) == 1:
             df = (
                 pd.DataFrame(
-                    scores_df.std(axis=1), 
+                    scores_df.std(axis=1),
                     columns=['score']
                 )
-            ) 
+            )
         else:
             first_sum = (
                 scores_df
@@ -308,36 +303,36 @@ class AnchorScoresTopTargets(dict):
             second_sum = (
                 scores_df
                 .apply(
-                    lambda row: 
+                    lambda row:
                     (
                         (
                             sum(
                                 ([group_ids_dict[col] for col in scores_df.columns if not np.isnan(row[col])])
-                            ) 
+                            )
                             *
                             sum(
                                 [row[col] for col in scores_df.columns if not np.isnan(row[col])]
-                            ) 
+                            )
                         )
                         /
                         len(scores_df.columns)
-                    ), 
+                    ),
                     axis=1
                 )
             )
 
             df = (
                 pd.DataFrame(
-                    first_sum - second_sum, 
+                    first_sum - second_sum,
                     columns=['score']
                 )
                 .sort_values(
-                    'score', 
+                    'score',
                     ascending=False
                 )
             )
-            
-        return df, before_df_len, after_df_len
+
+        return df
 
 
 class AnchorTargets(dict):
@@ -346,7 +341,7 @@ class AnchorTargets(dict):
     """
     def __init__(self):
         self = {}
-    
+
     def update_target(self, anchor, target):
         """
         Add unique target to {anchor : target}
@@ -358,7 +353,7 @@ class AnchorTargets(dict):
         else:
             self[anchor] = [target]
         return self
-    
+
     def get_targets(self, anchor):
         """
         Return the unique targets of an anchor
@@ -379,28 +374,28 @@ class StatusChecker():
         self.anchor_scores_topTargets = anchor_scores_topTargets
         self.anchor_target_distances = anchor_target_distances
         self.anchor_status = anchor_status
-        
+
     def update_ignorelist(self, anchor):
         """
         Updates ignorelist and removes anchor from all of our dictionaries
         """
         if anchor not in self.ignorelist:
             self.ignorelist[anchor] = True
-        
+
         self.anchor_counts.pop(anchor, None)
         self.anchor_targets_samples.pop(anchor, None)
         self.anchor_targets.pop(anchor, None)
         self.anchor_scores_topTargets.pop(anchor, None)
         self.anchor_target_distances.pop(anchor, None)
         self.anchor_status.pop(anchor, None)
-        
+
     def update_keeplist(self, anchor):
         """
         Updates keeplist
         """
         if anchor not in self.keeplist:
             self.keeplist[anchor] = True
- 
+
 
     def is_ignorelisted(self, anchor):
         """

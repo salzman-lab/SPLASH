@@ -31,11 +31,15 @@ def get_args():
         type=int
     )
     parser.add_argument(
+        "--kmer_size",
+        type=int
+    )
+    parser.add_argument(
         "--samplesheet",
         type=str
     )
     parser.add_argument(
-        "--target_threshold",
+        "--target_counts_threshold",
         type=int
     )
     parser.add_argument(
@@ -82,7 +86,7 @@ def main():
     )
 
     logging.info('Keeplist if in top or bottom 100 scores')
-    logging.info(f'Number of targets required to calculate phase_1 score = {args.target_threshold}')
+    logging.info(f'Number of targets required to calculate phase_1 score = {args.target_counts_threshold}')
     logging.info(f'Number of total anchor counts required to calculate phase_1 score = {args.anchor_counts_threshold}')
     logging.info('min(Mean scores) to ignorelist = 3')
     logging.info(f'Percentile of scores to ignorelist = 40-60')
@@ -144,9 +148,10 @@ def main():
 
         # get summary scores
         start_time = time.time()
-        summary_scores, phase_1, phase_2, ignore_diversity, spacers_enc, before_df_len, after_df_len = utils.get_iteration_summary_scores(
+        summary_scores, phase_1, phase_2, ignore_diversity = utils.get_iteration_summary_scores(
             iteration,
             read_chunk,
+            args.kmer_size,
             args.max_reads,
             group_ids_dict,
             anchor_counts,
@@ -157,7 +162,7 @@ def main():
             anchor_status,
             status_checker,
             read_counter_freeze,
-            args.target_threshold,
+            args.target_counts_threshold,
             args.anchor_counts_threshold,
             args.anchor_freeze_threshold,
             args.anchor_mode,

@@ -136,6 +136,7 @@ def get_read_chunk(iteration, samples):
 def get_iteration_summary_scores(
     iteration,
     read_chunk,
+    kmer_size,
     num_reads,
     group_ids,
     anchor_counts,
@@ -146,7 +147,7 @@ def get_iteration_summary_scores(
     anchor_status,
     status_checker,
     read_counter_freeze,
-    target_threshold,
+    target_counts_threshold,
     anchor_counts_threshold,
     anchor_freeze_threshold,
     anchor_mode,
@@ -170,13 +171,13 @@ def get_iteration_summary_scores(
 
         # get list of all anchors from each read
         # ([anchor1, anchor2, anchor3], fastq_id)
-        anchor_list = read.get_anchors(27, anchor_mode, window_slide)
+        anchor_list = read.get_anchors(kmer_size, anchor_mode, window_slide)
 
         # loop over each anchor in the list of all anchors from each read
         for anchor in anchor_list:
 
             # set anchor_counter_freeze if we have reached the anchor_freeze_threshold
-            if anchor_counts.num_unique_anchors >= anchor_freeze_threshold:
+            if len(anchor_counts.counter) >= anchor_freeze_threshold:
                 anchor_counter_freeze = True
             else:
                 anchor_counter_freeze = False
@@ -213,7 +214,7 @@ def get_iteration_summary_scores(
                     num_targets = len(anchor_targets.get_targets(anchor))
 
                     # if this anchor only has 5 unique targets, continue and don't do anything else
-                    if num_targets < target_threshold:
+                    if num_targets < target_counts_threshold:
                         continue
 
                     # compute phase_1/transition score only if anchor is not in phase_2 AND if either of these are true:
@@ -263,31 +264,27 @@ def get_iteration_summary_scores(
                             # updates
                             anchor_target_distances.update_target_distance(anchor, target, distance) # update dict with this new (target:distance) pair
 
-                        # only do this step if this anchor:target:sample has less than 20 phase_2 score coputations
-                        if not anchor_targets_samples.reached_phase_2_threshold(anchor, target, sample):
+                        # # only do this step if this anchor:target:sample has less than 20 phase_2 score coputations
+                        # if not anchor_targets_samples.reached_phase_2_threshold(anchor, target, sample):
 
-                            # compute fast score
-                            new_score = compute_phase_2_score(
-                                anchor_scores_topTargets.get_score(anchor),
-                                anchor_targets_samples.get_anchor_counts_df(anchor),
-                                distance
-                            )
+                        # compute fast score
+                        new_score = compute_phase_2_score(
+                            anchor_scores_topTargets.get_score(anchor),
+                            anchor_targets_samples.get_anchor_counts_df(anchor),
+                            distance
+                        )
 
-                            # updates
-                            anchor_scores_topTargets.update(anchor, new_score, anchor_scores_topTargets.get_topTargets(anchor)) # update the score for this anchor
+                        # updates
+                        anchor_scores_topTargets.update(anchor, new_score, anchor_scores_topTargets.get_topTargets(anchor)) # update the score for this anchor
 
-                            phase_2 += 1
+                        phase_2 += 1
 
     # output summary scores
     if anchor_scores_topTargets:
-        summary_scores, before_df_len, after_df_len = anchor_scores_topTargets.get_summary_scores(group_ids)
+        summary_scores = anchor_scores_topTargets.get_summary_scores(group_ids)
 
-        # temp_df = anchor_scores_topTargets.get_phase_scores_df()
-        # temp_df.to_csv(f'temp_df_{iteration}.tsv', sep='\t', index=False)
     else:
         summary_scores = pd.DataFrame(columns=['score'])
-        before_df_len = 0
-        after_df_len = 0
 
-    return summary_scores, phase_1, phase_2, ignore_diversity, spacers_enc, before_df_len, after_df_len
+    return summary_scores, phase_1, phase_2, ignore_diversity
 

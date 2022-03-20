@@ -7,8 +7,9 @@ process GET_ANCHORS {
     path ch_split_fastqs
     val n_iterations
     val chunk_size
+    val kmer_size
     path samplesheet
-    val target_threshold
+    val target_counts_threshold
     val anchor_counts_threshold
     val anchor_freeze_threshold
     val anchor_mode
@@ -25,8 +26,9 @@ process GET_ANCHORS {
     get_anchors.py \\
         --n_iterations ${n_iterations} \\
         --max_reads ${chunk_size} \\
+        --kmer_size ${kmer_size} \\
         --samplesheet ${samplesheet} \\
-        --target_threshold ${target_threshold} \\
+        --target_counts_threshold ${target_counts_threshold} \\
         --anchor_counts_threshold ${anchor_counts_threshold} \\
         --anchor_freeze_threshold ${anchor_freeze_threshold} \\
         --anchor_mode ${anchor_mode} \\
