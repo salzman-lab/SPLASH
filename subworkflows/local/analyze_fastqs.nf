@@ -38,8 +38,8 @@ workflow ANALYZE_FASTQS {
         GET_READ_LENGTH(
             ch_fastqs.first()
         )
-
-        looklength = Math.round((GET_READ_LENGTH.out.read_length - 2 * params.kmer_size) / 2)
+        read_length = GET_READ_LENGTH.out.read_length.toInteger()
+        looklength = ((read_length - 2 * params.kmer_size) / 2).toInteger()
 
     } else {
         looklength = params.looklength
