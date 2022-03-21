@@ -11,7 +11,7 @@ process PARSE_ANCHORS {
     val consensus_length
     val kmer_size
     val direction
-    val read_len
+    val looklength
 
     output:
     path "*_target_counts.tsv"  , emit: targets
@@ -36,6 +36,6 @@ process PARSE_ANCHORS {
         --consensus_length ${consensus_length} \\
         --kmer_size ${kmer_size} \\
         --direction ${direction} \\
-        --read_len ${read_len}
+        --looklength ${looklength}
     """
 }

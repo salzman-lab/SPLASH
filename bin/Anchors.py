@@ -247,7 +247,7 @@ class AnchorScoresTopTargets(dict):
 
     def compute_target_distance(self, anchor, target):
         """
-        Return the min distance of a target to any of it's anchor's topTargets
+        Return the min distance of a target to any of its anchor's topTargets
         """
         topTargets = self.get_topTargets(anchor)
         distance = min([utils.get_distance(target, t) for t in topTargets])
@@ -273,6 +273,17 @@ class AnchorScoresTopTargets(dict):
         scores_df.index.name = 'anchor'
 
         return scores_df.reset_index()
+
+    def get_num_scores(self):
+        """
+        Return the number of anchors with scores
+        """
+        scores_df = pd.DataFrame()
+        for anchor, (scores, _) in self.items():
+            scores_df = scores_df.append(pd.Series(scores, name=anchor))
+
+        scores_df = scores_df.dropna(thresh=3)
+        return len(scores_df)
 
     def get_summary_scores(self, group_ids_dict):
         """
@@ -331,7 +342,6 @@ class AnchorScoresTopTargets(dict):
                     ascending=False
                 )
             )
-
         return df
 
 

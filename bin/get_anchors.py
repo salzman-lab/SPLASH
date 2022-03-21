@@ -35,6 +35,10 @@ def get_args():
         type=int
     )
     parser.add_argument(
+        "--looklength",
+        type=int
+    )
+    parser.add_argument(
         "--samplesheet",
         type=str
     )
@@ -62,6 +66,15 @@ def get_args():
         "--read_len",
         help='up or down',
         type=int
+    )
+    parser.add_argument(
+        "--anchor_score_threshold",
+        help='up or down',
+        type=int
+    )
+    parser.add_argument(
+        "--c_type",
+        type=str
     )
     parser.add_argument(
         "--outfile",
@@ -148,10 +161,11 @@ def main():
 
         # get summary scores
         start_time = time.time()
-        summary_scores, phase_1, phase_2, ignore_diversity = utils.get_iteration_summary_scores(
+        phase_1, phase_2, ignore_diversity = utils.get_iteration_summary_scores(
             iteration,
             read_chunk,
             args.kmer_size,
+            args.looklength,
             args.max_reads,
             group_ids_dict,
             anchor_counts,
@@ -169,100 +183,61 @@ def main():
             args.window_slide
         )
         run_time = time.time() - start_time
-        logging.info(f'\tSummary score calculation = {round(run_time, 2 )} seconds')
-        logging.info(f'\t\ttotal anchors = {len(anchor_counts.counter)}')
-        logging.info(f'\t\tanchors with summary scores = {len(summary_scores)}')
-        logging.info(f'\t\tnumber of phase_1 calculations = {phase_1}')
-        logging.info(f'\t\tnumber of phase_2 calculations = {phase_2}')
-
-        # get keeplist and ignorelist
-        keeplist = status_checker.keeplist
-        ignorelist = status_checker.ignorelist
-
-        # keeplist condition: if we have more than 1k anchors with scores, keeplist the top and bottom 100 anhors
-        if len(summary_scores) > 1000:
-            summary_scores_anchors = summary_scores.index.to_list()
-            keeplist_anchors = summary_scores_anchors[:100] + summary_scores_anchors[-100:]
-            for anchor in keeplist_anchors:
-                status_checker.update_keeplist(anchor)
-
-                if not read_counter_freeze:
-                    status_checker.update_ignorelist(anchor)
-
-            keeplist_status = True
-        else:
-            keeplist_status = False
-
-        if len(summary_scores) > 10000:
-            # ignorelist condition: ignorelist the anchors with scores in [40% quantile, 60% quantile]
-            lower_bound = summary_scores['score'].quantile([0.4, 0.6]).loc[0.4]
-            upper_bound = summary_scores['score'].quantile([0.4, 0.6]).loc[0.6]
-            ignorelist_anchors_percentile = (
-                summary_scores[(summary_scores['score'] > lower_bound) & (summary_scores['score'] < upper_bound)]
-                .index
-                .to_list()
-            )
-            for anchor in ignorelist_anchors_percentile:
-                if not read_counter_freeze:
-                    status_checker.update_ignorelist(anchor)
-                    ignore_summary_scores += 1
-
-            ignore_summary_scores_status = True
-        else:
-            ignore_summary_scores_status = False
 
         # ignorelist condition: ignorelist anchors that don't meet an abundance requirement
         k = math.floor(num_reads / 100000)
-        # c = len(samples)
-        c = 1
+        if args.c_type == "num_samples":
+            c = len(samples)
+        elif args.c_type == "constant":
+            c = 1
         anchor_min_count = k * c
         ignorelist_anchors_abundance = anchor_counts.get_ignorelist_anchors(anchor_min_count)
         for anchor in ignorelist_anchors_abundance:
+            status_checker.update_ignorelist(anchor)
+            ignore_abundance += 1
 
-            if not read_counter_freeze:
-                status_checker.update_ignorelist(anchor)
-                ignore_abundance += 1
+        logging.info(f'\tIteration run time = {round(run_time, 2 )} seconds')
+        logging.info(f'\t\tnumber of anchors with candidate scores = {anchor_scores_topTargets.get_num_scores()}')
+        logging.info(f'\t\tnumber of phase_1 calculations = {phase_1}')
+        logging.info(f'\t\tnumber of phase_2 calculations = {phase_2}')
+        logging.info(f'\t\tignorelist size = {len(status_checker.ignorelist)}')
+        logging.info(f'\t\t\tignore_diversity = {ignore_diversity}')
+        logging.info(f'\t\t\tignore_abundance = {ignore_abundance}')
+        logging.info(f'\t\t\t\tanchor_min_count = {anchor_min_count}')
 
-        # logging
-        logging.info(f'\tKeeplisting/ignorelisting')
-        logging.info(f'\t\tkeeplist activated = {keeplist_status}')
-        logging.info(f'\t\t\tkeeplist size = {len(status_checker.keeplist)}')
-        logging.info(f'\t\tignore_summary_scores activated = {ignore_summary_scores_status}')
-        logging.info(f'\t\t\tignorelist size = {len(status_checker.ignorelist)}')
-        logging.info(f'\t\t\t\tignore_diversity = {ignore_diversity}')
-        logging.info(f'\t\t\t\tignore_summary_scores = {ignore_summary_scores}')
-        logging.info(f'\t\t\t\tignore_abundance = {ignore_abundance}')
-        logging.info(f'\t\t\t\t\tanchor_min_count = {anchor_min_count}')
-
-        summary_scores.index.name = 'anchor'
-        summary_scores.reset_index().to_csv(f'summary_scores_iteration_{iteration}.tsv', index=False, sep='\t')
-        logging.info('\tDone with iteration')
     ## done with all iterations ##
 
-    # if keeplist is not empty, use its anchors as outputs
-    if keeplist:
-        final_anchors_list = keeplist
-        with open(args.outfile, "w") as outfile:
-            outfile.write("\n".join(keeplist))
+    if anchor_scores_topTargets.get_num_scores() >= args.anchor_score_threshold:
 
-    else:
-        # if keep_list is empty, then grab the anchors with the top 1000 abs_value(scores)
-        final_summary_scores = summary_scores
-        final_summary_scores['score'] = abs(final_summary_scores['score'])
+        # get summary scores
+        summary_scores = anchor_scores_topTargets.get_summary_scores(group_ids_dict)
+        # ignorelist condition: ignorelist the anchors with scores in [40% quantile, 60% quantile]
+        lower = 0.4
+        upper = 0.6
+        lower_bound = summary_scores['score'].quantile([lower, upper]).loc[lower]
+        upper_bound = summary_scores['score'].quantile([lower, upper]).loc[upper]
+        ignorelist_anchors_percentile = (
+            summary_scores[(summary_scores['score'] > lower_bound) & (summary_scores['score'] < upper_bound)]
+            .index
+            .to_list()
+        )
+        summary_scores = summary_scores[~summary_scores['score'].isin(ignorelist_anchors_percentile)]
+
+
+        # output anchors with the highest scores
+        summary_scores = summary_scores.sort_values('score')
+        summary_scores_anchors = summary_scores.index.to_list()
+        keep_anchors = summary_scores_anchors[:1000] + summary_scores_anchors[-1000:]
         final_anchors = (
-            final_summary_scores
-            .reset_index()
-            .sort_values(
-                'score',
-                ascending=False
+            pd.DataFrame(
+                keep_anchors,
+                columns = ['anchor']
             )
-            .head(2000)
-            [['anchor']]
+            .drop_duplicates()
         )
 
         ## return final anchors list
         final_anchors.to_csv(args.outfile, index=False, sep='\t')
-        final_anchors_list = final_anchors['anchor'].to_list()
 
 
 main()

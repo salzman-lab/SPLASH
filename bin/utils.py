@@ -128,7 +128,7 @@ def get_read_chunk(iteration, samples):
                     read = Reads.Read(str(seqreacord.seq))
                     read_chunk.append((read, sample))
         except:
-            pass
+            print(f'{sample}, {iteration}')
 
     return read_chunk
 
@@ -137,6 +137,7 @@ def get_iteration_summary_scores(
     iteration,
     read_chunk,
     kmer_size,
+    adjacence_distance,
     num_reads,
     group_ids,
     anchor_counts,
@@ -200,7 +201,7 @@ def get_iteration_summary_scores(
 
             else:
                 # get the target for this anchor
-                target = read.get_target(anchor, target_dist=0, target_len=27)
+                target = read.get_target(anchor, adjacence_distance, kmer_size)
 
                 # if this target exists, proceed
                 if target:
@@ -232,9 +233,8 @@ def get_iteration_summary_scores(
                             # if mean(S_i) < 3 and we have not entered read_counter_freeze, ignorelist this anchor
                             if scores.mean() < 3:
 
-                                if not read_counter_freeze:
-                                    status_checker.update_ignorelist(anchor)
-                                    ignore_diversity += 1
+                                status_checker.update_ignorelist(anchor)
+                                ignore_diversity += 1
 
                             # if mean(S_i) >= 3, proceed with updates and transition to phase_2
                             else:
@@ -281,12 +281,5 @@ def get_iteration_summary_scores(
 
                         phase_2 += 1
 
-    # output summary scores
-    if anchor_scores_topTargets:
-        summary_scores = anchor_scores_topTargets.get_summary_scores(group_ids)
-
-    else:
-        summary_scores = pd.DataFrame(columns=['score'])
-
-    return summary_scores, phase_1, phase_2, ignore_diversity
+    return phase_1, phase_2, ignore_diversity
 

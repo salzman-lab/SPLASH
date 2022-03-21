@@ -48,7 +48,7 @@ def buildConcensus(kmers, consensus_length, direction):
     return baseComp, baseCount, baseFrac
 
 
-def recordNextKmers(consensus_length, adj_dist, adj_len, myseqs, anchorlength, DNAdict, signif_anchors, anchor_dict, fastq_id, direction):
+def recordNextKmers(consensus_length, looklength, kmer_size, myseqs, DNAdict, signif_anchors, anchor_dict, fastq_id, direction):
     """
     anchorlist is a list -- we will loopthrough the sequence myseq and check if any of the anchorlist kmers are defined
     anchorlength is length of kmers in file
@@ -90,17 +90,17 @@ def recordNextKmers(consensus_length, adj_dist, adj_len, myseqs, anchorlength, D
                 anchor_end = anchor_start + len(anchor)
                 # get adjacent anchor position
                 if direction == 'down':
-                    adj_kmer_start = anchor_end + adj_dist
-                    adj_kmer_end = adj_kmer_start + adj_len
+                    adj_kmer_start = anchor_end + looklength
+                    adj_kmer_end = adj_kmer_start + kmer_size
 
                 if direction == 'up':
                     adj_kmer_end = anchor_start
-                    adj_kmer_start = max(0, anchor_end - (adj_len + adj_dist))
+                    adj_kmer_start = max(0, anchor_end - (kmer_size + looklength))
 
                 adj_kmer = myseq[adj_kmer_start:adj_kmer_end]
 
                 # if adj anchor exists, add adj anchor to anchor_dict
-                if len(adj_kmer) == adj_len:
+                if len(adj_kmer) == kmer_size:
                     anchor_tuple = (anchor, adj_kmer)
 
                     if anchor_tuple not in anchor_dict.keys():
@@ -229,7 +229,7 @@ def get_args():
         help='up or down'
     )
     parser.add_argument(
-        "--read_len",
+        "--looklength",
         help='up or down',
         type=int
     )
@@ -275,11 +275,6 @@ def write_out(nextseqs, consensus_length, direction, out_consensus_fasta_file, o
 def main():
     args = get_args()
 
-    # Define adjacence distance and adjacence length
-    adj_dist = int((args.read_len - 2 * args.kmer_size) / 2)
-
-    adj_len = args.kmer_size
-
     # get reads from fastq
     myseqs = returnSeqs(
         args.fastq_file,
@@ -310,10 +305,9 @@ def main():
     # get all of the next kmers for the anchors in PREPARATION FOR BUILDING CONCENSUS
     nextseqs, anchor_dict = recordNextKmers(
         args.consensus_length,
-        adj_dist,
-        adj_len,
-        myseqs,
+        args.looklength,
         args.kmer_size,
+        myseqs,
         DNAdict,
         signif_anchors,
         anchor_dict,

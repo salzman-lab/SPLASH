@@ -42,6 +42,13 @@ workflow ANALYZE_FASTQS {
 
     ch_split_fastqs = SPLIT_FASTQS.out.fastq.collect()
 
+    // define adjacence distance
+    if (params.use_read_len) {
+        looklength = Math.round((params.read_len - 2 * params.kmer_size) / 2)
+    } else {
+        looklength = params.looklength
+    }
+
     /*
     // Process to get list of candidate anchors via onthefly
     */
@@ -55,9 +62,11 @@ workflow ANALYZE_FASTQS {
         params.target_counts_threshold,
         params.anchor_counts_threshold,
         params.anchor_freeze_threshold,
+        params.anchor_score_threshold,
         params.anchor_mode,
+        params.c_type,
         params.window_slide,
-        params.read_len
+        looklength
     )
 
     ch_anchors = GET_ANCHORS.out.anchors
@@ -72,7 +81,7 @@ workflow ANALYZE_FASTQS {
         params.consensus_length,
         params.kmer_size,
         params.direction,
-        params.adj_distance
+        looklength
     )
 
     // Create samplesheet of target counts files
