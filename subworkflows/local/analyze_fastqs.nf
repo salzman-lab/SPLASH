@@ -13,6 +13,16 @@ workflow ANALYZE_FASTQS {
 
     main:
 
+    // definitions
+    num_lines = params.chunk_size * params.n_iterations * 4
+    num_chunk_lines = params.chunk_size * 4
+
+    if (params.use_read_len) {
+        looklength = Math.round((params.read_len - 2 * params.kmer_size) / 2)
+    } else {
+        looklength = params.looklength
+    }
+
     // Process samplesheet
     Channel
         .fromPath(samplesheet)
@@ -27,49 +37,45 @@ workflow ANALYZE_FASTQS {
         }
         .set{ ch_fastqs }
 
-    // define number of lines to grab from fastq
-    num_lines = params.chunk_size * params.n_iterations * 4
-    num_chunk_lines = params.chunk_size * 4
+    if (params.anchors_file) {
+        // use input anchors file
+        ch_anchors = params.anchors_file
 
-    /*
-    // Process to split each fastq into size read_chunk and gzip compress
-    */
-    SPLIT_FASTQS(
-        ch_fastqs,
-        num_lines,
-        num_chunk_lines
-    )
-
-    ch_split_fastqs = SPLIT_FASTQS.out.fastq.collect()
-
-    // define adjacence distance
-    if (params.use_read_len) {
-        looklength = Math.round((params.read_len - 2 * params.kmer_size) / 2)
     } else {
-        looklength = params.looklength
+        /*
+        // Process to split each fastq into size read_chunk and gzip compress
+        */
+        SPLIT_FASTQS(
+            ch_fastqs,
+            num_lines,
+            num_chunk_lines
+        )
+
+        ch_split_fastqs = SPLIT_FASTQS.out.fastq.collect()
+
+        /*
+        // Process to get list of candidate anchors via onthefly
+        */
+
+        GET_ANCHORS(
+            ch_split_fastqs,
+            params.n_iterations,
+            params.chunk_size,
+            params.kmer_size,
+            file(samplesheet),
+            params.target_counts_threshold,
+            params.anchor_counts_threshold,
+            params.anchor_freeze_threshold,
+            params.anchor_score_threshold,
+            params.anchor_mode,
+            params.c_type,
+            params.window_slide,
+            looklength,
+            params.num_keep_anchors
+        )
+
+        ch_anchors = GET_ANCHORS.out.anchors
     }
-
-    /*
-    // Process to get list of candidate anchors via onthefly
-    */
-
-    GET_ANCHORS(
-        ch_split_fastqs,
-        params.n_iterations,
-        params.chunk_size,
-        params.kmer_size,
-        file(samplesheet),
-        params.target_counts_threshold,
-        params.anchor_counts_threshold,
-        params.anchor_freeze_threshold,
-        params.anchor_score_threshold,
-        params.anchor_mode,
-        params.c_type,
-        params.window_slide,
-        looklength
-    )
-
-    ch_anchors = GET_ANCHORS.out.anchors
 
     /*
     // Process to get consensus sequences and target counts for annchors

@@ -1,7 +1,7 @@
 
 process GET_ANCHORS {
 
-    label 'process_medium'
+    label 'process_high'
 
     input:
     path ch_split_fastqs
@@ -17,6 +17,7 @@ process GET_ANCHORS {
     val c_type
     val window_slide
     val looklength
+    val num_keep_anchors
 
     output:
     path "anchors.tsv", emit: anchors
@@ -38,6 +39,7 @@ process GET_ANCHORS {
         --window_slide ${window_slide} \\
         --c_type ${c_type} \\
         --looklength ${looklength} \\
+        --num_keep_anchors ${num_keep_anchors} \\
         --outfile ${outfile}
     """
 }

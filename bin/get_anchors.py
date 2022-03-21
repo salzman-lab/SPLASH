@@ -63,7 +63,7 @@ def get_args():
         type=int
     )
     parser.add_argument(
-        "--read_len",
+        "--num_keep_anchors",
         help='up or down',
         type=int
     )
@@ -138,6 +138,12 @@ def main():
 
 
     for iteration in range(1, args.n_iterations+1):
+
+        # only continue if we have less than 10k anchors with candidate scores
+        if anchor_scores_topTargets.get_num_scores() >= 10000:
+            break
+
+        # init counters
         ignore_summary_scores = 0
         ignore_abundance = 0
 
@@ -149,13 +155,13 @@ def main():
         else:
             read_counter_freeze = False
 
-        logging.info("")
-        logging.info(f'i = {iteration}, {num_reads} reads')
-
         # get reads from fastq files
         start_time = time.time()
         read_chunk = utils.get_read_chunk(iteration, samples)
         run_time = time.time() - start_time
+
+        logging.info("")
+        logging.info(f'i = {iteration}, {num_reads} reads')
         logging.info(f'\tFetching read chunk = {round(run_time, 2)} seconds')
         logging.info(f'\t\tchunk size = {len(read_chunk)}')
 
@@ -211,23 +217,32 @@ def main():
 
         # get summary scores
         summary_scores = anchor_scores_topTargets.get_summary_scores(group_ids_dict)
-        # ignorelist condition: ignorelist the anchors with scores in [40% quantile, 60% quantile]
-        lower = 0.4
-        upper = 0.6
-        lower_bound = summary_scores['score'].quantile([lower, upper]).loc[lower]
-        upper_bound = summary_scores['score'].quantile([lower, upper]).loc[upper]
-        ignorelist_anchors_percentile = (
-            summary_scores[(summary_scores['score'] > lower_bound) & (summary_scores['score'] < upper_bound)]
+
+        if len(summary_scores) > 100000:
+            # ignorelist condition: ignorelist the anchors with scores in [40% quantile, 60% quantile]
+            lower = 0.4
+            upper = 0.6
+            lower_bound = summary_scores['score'].quantile([lower, upper]).loc[lower]
+            upper_bound = summary_scores['score'].quantile([lower, upper]).loc[upper]
+            ignorelist_anchors_percentile = (
+                summary_scores[(summary_scores['score'] > lower_bound) & (summary_scores['score'] < upper_bound)]
+                .index
+                .to_list()
+            )
+            summary_scores = summary_scores[~summary_scores['score'].isin(ignorelist_anchors_percentile)]
+
+        # output anchors with the highest scores
+        summary_scores['abs_score'] = summary_scores['score'].abs()
+        summary_scores = summary_scores.sort_values(
+            'abs_score',
+            ascending=False
+        )
+        keep_anchors = (
+            summary_scores
+            .head(args.num_keep_anchors)
             .index
             .to_list()
         )
-        summary_scores = summary_scores[~summary_scores['score'].isin(ignorelist_anchors_percentile)]
-
-
-        # output anchors with the highest scores
-        summary_scores = summary_scores.sort_values('score')
-        summary_scores_anchors = summary_scores.index.to_list()
-        keep_anchors = summary_scores_anchors[:1000] + summary_scores_anchors[-1000:]
         final_anchors = (
             pd.DataFrame(
                 keep_anchors,
