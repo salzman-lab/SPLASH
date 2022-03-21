@@ -21,6 +21,7 @@ process GET_ANCHORS {
 
     output:
     path "anchors.tsv", emit: anchors
+    path "ignorelist*", emit: ignorelist
     path "*log"
 
     script:
