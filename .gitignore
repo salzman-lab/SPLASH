@@ -8,3 +8,4 @@ testing*
 *.pyc
 samplesheet*
 job_output/
+*sbatch
