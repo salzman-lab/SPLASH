@@ -109,7 +109,10 @@ def main():
 
 
     # read in samples
-    sample_list = pd.read_csv(args.samplesheet)
+    sample_list = pd.read_csv(
+        args.samplesheet,
+        header=None
+    )
 
     # get list of samples and group_ids
     samples = sample_list.iloc[:,0].tolist()
