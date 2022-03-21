@@ -202,6 +202,11 @@ def main():
             status_checker.update_ignorelist(anchor)
             ignore_abundance += 1
 
+        # write out ignorelist
+        with open(f'ignorelist_iteration_{iteration}.tsv', 'w') as outfile:
+            outfile.write("\n".join(status_checker.ignorelist))
+
+        # logging
         logging.info(f'\tIteration run time = {round(run_time, 2 )} seconds')
         logging.info(f'\t\tnumber of anchors with candidate scores = {anchor_scores_topTargets.get_num_scores()}')
         logging.info(f'\t\tnumber of phase_1 calculations = {phase_1}')
@@ -213,46 +218,46 @@ def main():
 
     ## done with all iterations ##
 
+    # get summary scores
+    summary_scores = anchor_scores_topTargets.get_summary_scores(group_ids_dict)
+
+    # only ignorelist if we have more than anchor_score_threshold anchors with scores
     if anchor_scores_topTargets.get_num_scores() >= args.anchor_score_threshold:
 
-        # get summary scores
-        summary_scores = anchor_scores_topTargets.get_summary_scores(group_ids_dict)
-
-        if len(summary_scores) > 100000:
-            # ignorelist condition: ignorelist the anchors with scores in [40% quantile, 60% quantile]
-            lower = 0.4
-            upper = 0.6
-            lower_bound = summary_scores['score'].quantile([lower, upper]).loc[lower]
-            upper_bound = summary_scores['score'].quantile([lower, upper]).loc[upper]
-            ignorelist_anchors_percentile = (
-                summary_scores[(summary_scores['score'] > lower_bound) & (summary_scores['score'] < upper_bound)]
-                .index
-                .to_list()
-            )
-            summary_scores = summary_scores[~summary_scores['score'].isin(ignorelist_anchors_percentile)]
-
-        # output anchors with the highest scores
-        summary_scores['abs_score'] = summary_scores['score'].abs()
-        summary_scores = summary_scores.sort_values(
-            'abs_score',
-            ascending=False
-        )
-        keep_anchors = (
-            summary_scores
-            .head(args.num_keep_anchors)
+        # ignorelist condition: ignorelist the anchors with scores in [40% quantile, 60% quantile]
+        lower = 0.4
+        upper = 0.6
+        lower_bound = summary_scores['score'].quantile([lower, upper]).loc[lower]
+        upper_bound = summary_scores['score'].quantile([lower, upper]).loc[upper]
+        ignorelist_anchors_percentile = (
+            summary_scores[(summary_scores['score'] > lower_bound) & (summary_scores['score'] < upper_bound)]
             .index
             .to_list()
         )
-        final_anchors = (
-            pd.DataFrame(
-                keep_anchors,
-                columns = ['anchor']
-            )
-            .drop_duplicates()
-        )
+        summary_scores = summary_scores[~summary_scores['score'].isin(ignorelist_anchors_percentile)]
 
-        ## return final anchors list
-        final_anchors.to_csv(args.outfile, index=False, sep='\t')
+    # output anchors with the highest scores
+    summary_scores['abs_score'] = summary_scores['score'].abs()
+    summary_scores = summary_scores.sort_values(
+        'abs_score',
+        ascending=False
+    )
+    keep_anchors = (
+        summary_scores
+        .head(args.num_keep_anchors)
+        .index
+        .to_list()
+    )
+    final_anchors = (
+        pd.DataFrame(
+            keep_anchors,
+            columns = ['anchor']
+        )
+        .drop_duplicates()
+    )
+
+    ## return final anchors list
+    final_anchors.to_csv(args.outfile, index=False, sep='\t')
 
 
 main()

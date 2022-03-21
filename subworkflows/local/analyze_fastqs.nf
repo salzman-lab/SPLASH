@@ -1,5 +1,5 @@
 
-
+include { GET_READ_LENGTH           } from '../../modules/local/get_read_length'
 include { SPLIT_FASTQS              } from '../../modules/local/split_fastqs'
 include { GET_ANCHORS               } from '../../modules/local/get_anchors'
 include { PARSE_ANCHORS             } from '../../modules/local/parse_anchors'
@@ -13,17 +13,7 @@ workflow ANALYZE_FASTQS {
 
     main:
 
-    // definitions
-    num_lines = params.chunk_size * params.n_iterations * 4
-    num_chunk_lines = params.chunk_size * 4
-
-    if (params.use_read_len) {
-        looklength = Math.round((params.read_len - 2 * params.kmer_size) / 2)
-    } else {
-        looklength = params.looklength
-    }
-
-    // Process samplesheet
+    // parse samplesheet
     Channel
         .fromPath(samplesheet)
         .splitCsv(
@@ -36,6 +26,24 @@ workflow ANALYZE_FASTQS {
             )
         }
         .set{ ch_fastqs }
+
+    // definitions
+    num_lines = params.chunk_size * params.n_iterations * 4
+    num_chunk_lines = params.chunk_size * 4
+
+    if (params.use_read_len) {
+        /*
+        // Get read length of dataset
+        */
+        GET_READ_LENGTH(
+            ch_fastqs.first()
+        )
+
+        looklength = Math.round((GET_READ_LENGTH.out.read_length - 2 * params.kmer_size) / 2)
+
+    } else {
+        looklength = params.looklength
+    }
 
     if (params.anchors_file) {
         // use input anchors file
