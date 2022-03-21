@@ -129,7 +129,7 @@ def returnSeqs(fastq_file, maxlines):
                 continue
             # strip of new line character
             read_seq = read_seq.strip('\n')
-            if len(myseqs)< maxlines:
+            if len(myseqs)< 5000000:
                 myseqs.append(read_seq)
 
     return myseqs
