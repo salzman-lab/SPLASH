@@ -13,7 +13,6 @@ import math
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 from datetime import datetime
-import logging
 import Reads
 
 
@@ -158,11 +157,10 @@ def get_iteration_summary_scores(
     """
     phase_1 = 0
     phase_2 = 0
-    ignore_diversity = 0
-    spacers_enc = 0
-
-
-    logging.info(f'\t\tread_counter_freeze = {read_counter_freeze}')
+    phase_1_ignore_score = 0
+    phase_1_compute_score = 0
+    phase_2_fetch_distance = 0
+    phase_2_compute_distance = 0
 
     # get reads for this iteration
     for read_tuple in read_chunk:
@@ -224,6 +222,8 @@ def get_iteration_summary_scores(
                     elif not anchor_status.is_phase_2(anchor):
                         if (num_targets == 5) or (anchor_counts.get_count(anchor) > anchor_counts_threshold):
 
+                            phase_1 += 1
+
                             # compute phase_1/transition score
                             scores, top_targets, topTargets_distances = compute_phase_1_score(
                                 anchor,
@@ -233,8 +233,9 @@ def get_iteration_summary_scores(
                             # if mean(S_i) < 3 and we have not entered read_counter_freeze, ignorelist this anchor
                             if scores.mean() < 3:
 
-                                status_checker.update_ignorelist(anchor)
-                                ignore_diversity += 1
+                                status_checker.update_ignorelist(anchor, read_counter_freeze, anchor_counter_freeze)
+
+                                phase_1_ignore_score += 1
 
                             # if mean(S_i) >= 3, proceed with updates and transition to phase_2
                             else:
@@ -246,16 +247,19 @@ def get_iteration_summary_scores(
                                 # after phase_1/transition score computation, assign this anchor to phase_2 and only compute phase_2 score for this anchor
                                 anchor_status.assign_phase_2(anchor)
 
-                                phase_1 += 1
+                                phase_1_compute_score += 1
 
                     # compute phase_2 score
                     else:
+
+                        phase_2 += 1
 
                         # if this is a target that we have seen before
                         if anchor_target_distances.has_distance(anchor, target):
 
                             # get its previously-recorded distance
                             distance = anchor_target_distances.get_distance(anchor, target)
+                            phase_2_fetch_distance += 1
 
                         # if we have never seen this target before
                         else:
@@ -265,9 +269,7 @@ def get_iteration_summary_scores(
 
                             # updates
                             anchor_target_distances.update_target_distance(anchor, target, distance) # update dict with this new (target:distance) pair
-
-                        # # only do this step if this anchor:target:sample has less than 20 phase_2 score coputations
-                        # if not anchor_targets_samples.reached_phase_2_threshold(anchor, target, sample):
+                            phase_2_compute_distance += 1
 
                         # compute fast score
                         new_score = compute_phase_2_score(
@@ -279,7 +281,6 @@ def get_iteration_summary_scores(
                         # updates
                         anchor_scores_topTargets.update(anchor, new_score, anchor_scores_topTargets.get_topTargets(anchor)) # update the score for this anchor
 
-                        phase_2 += 1
 
-    return phase_1, phase_2, ignore_diversity
+    return phase_1, phase_2, phase_1_compute_score, phase_1_ignore_score, phase_2_fetch_distance, phase_2_compute_distance
 

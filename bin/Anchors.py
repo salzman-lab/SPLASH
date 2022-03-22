@@ -385,12 +385,13 @@ class StatusChecker():
         self.anchor_target_distances = anchor_target_distances
         self.anchor_status = anchor_status
 
-    def update_ignorelist(self, anchor):
+    def update_ignorelist(self, anchor, read_counter_freeze, anchor_counter_freeze):
         """
         Updates ignorelist and removes anchor from all of our dictionaries
         """
-        if anchor not in self.ignorelist:
-            self.ignorelist[anchor] = True
+        if not any([read_counter_freeze, anchor_counter_freeze]):
+            if anchor not in self.ignorelist:
+                self.ignorelist[anchor] = True
 
         self.anchor_counts.pop(anchor, None)
         self.anchor_targets_samples.pop(anchor, None)

@@ -98,7 +98,7 @@ def main():
         datefmt='%Y-%m-%d %H:%M:%S'
     )
 
-    logging.info('Keeplist if in top or bottom 100 scores')
+    logging.info('Keeplist if in top or bottom 1000 scores')
     logging.info(f'Number of targets required to calculate phase_1 score = {args.target_counts_threshold}')
     logging.info(f'Number of total anchor counts required to calculate phase_1 score = {args.anchor_counts_threshold}')
     logging.info('min(Mean scores) to ignorelist = 3')
@@ -106,7 +106,6 @@ def main():
     logging.info(f'Read freeze threshold = 300k reads')
     logging.info(f'Anchor freeze threshold = {args.anchor_freeze_threshold} anchors')
     logging.info('')
-
 
     # read in samples
     sample_list = pd.read_csv(
@@ -159,18 +158,11 @@ def main():
             read_counter_freeze = False
 
         # get reads from fastq files
-        start_time = time.time()
         read_chunk = utils.get_read_chunk(iteration, samples)
-        run_time = time.time() - start_time
-
-        logging.info("")
-        logging.info(f'i = {iteration}, {num_reads} reads')
-        logging.info(f'\tFetching read chunk = {round(run_time, 2)} seconds')
-        logging.info(f'\t\tchunk size = {len(read_chunk)}')
 
         # get summary scores
         start_time = time.time()
-        phase_1, phase_2, ignore_diversity = utils.get_iteration_summary_scores(
+        phase_1, phase_2, phase_1_compute_score, phase_1_ignore_score, phase_2_fetch_distance, phase_2_compute_distance = utils.get_iteration_summary_scores(
             iteration,
             read_chunk,
             args.kmer_size,
@@ -202,22 +194,33 @@ def main():
         anchor_min_count = k * c
         ignorelist_anchors_abundance = anchor_counts.get_ignorelist_anchors(anchor_min_count)
         for anchor in ignorelist_anchors_abundance:
-            status_checker.update_ignorelist(anchor)
+            status_checker.update_ignorelist(anchor, read_counter_freeze, True)
             ignore_abundance += 1
 
         # write out ignorelist
         with open(f'ignorelist_iteration_{iteration}.tsv', 'w') as outfile:
             outfile.write("\n".join(status_checker.ignorelist))
 
-        # logging
+        """logging"""
+        logging.info("")
+        logging.info(f'i = {iteration}, {num_reads} reads')
+        logging.info(f'\tread_counter_freeze = {read_counter_freeze}')
         logging.info(f'\tIteration run time = {round(run_time, 2 )} seconds')
         logging.info(f'\t\tnumber of anchors with candidate scores = {anchor_scores_topTargets.get_num_scores()}')
         logging.info(f'\t\tnumber of phase_1 calculations = {phase_1}')
+        logging.info(f'\t\t\tcalculate, passed diversity = {phase_1_compute_score}')
+        logging.info(f'\t\t\tignored, failed diversity = {phase_1_ignore_score}')
         logging.info(f'\t\tnumber of phase_2 calculations = {phase_2}')
+        logging.info(f'\t\t\ttarget distances fetched = {phase_2_fetch_distance}')
+        logging.info(f'\t\t\ttarget distances computed = {phase_2_compute_distance}')
+        logging.info(f'\t\tanchor_counts = {len(anchor_counts.counter)}')
+        logging.info(f'\t\tanchor_targets_samples = {len(anchor_targets_samples)}')
+        logging.info(f'\t\tanchor_scores_topTargets = {len(anchor_scores_topTargets)}')
+        logging.info(f'\t\tanchor_target_distances = {len(anchor_target_distances)}')
         logging.info(f'\t\tignorelist size = {len(status_checker.ignorelist)}')
-        logging.info(f'\t\t\tignore_diversity = {ignore_diversity}')
-        logging.info(f'\t\t\tignore_abundance = {ignore_abundance}')
-        logging.info(f'\t\t\t\tanchor_min_count = {anchor_min_count}')
+        logging.info(f'\t\t\tignored, failed abundace = {ignore_abundance}')
+        logging.info(f'\t\t\t\tmin total anchors required = {anchor_min_count}')
+        """logging"""
 
     ## done with all iterations ##
 
