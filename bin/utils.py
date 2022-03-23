@@ -151,7 +151,8 @@ def get_iteration_summary_scores(
     anchor_counts_threshold,
     anchor_freeze_threshold,
     anchor_mode,
-    window_slide):
+    window_slide,
+    compute_target_distance):
     """
     Return the summary scores for the reads of one iteration
     """
@@ -265,7 +266,10 @@ def get_iteration_summary_scores(
                         else:
 
                             # compute target distance from topTargets
-                            distance = anchor_scores_topTargets.compute_target_distance(anchor, target)
+                            if compute_target_distance:
+                                distance = anchor_scores_topTargets.compute_target_distance(anchor, target)
+                            else:
+                                distance = 1
 
                             # updates
                             anchor_target_distances.update_target_distance(anchor, target, distance) # update dict with this new (target:distance) pair

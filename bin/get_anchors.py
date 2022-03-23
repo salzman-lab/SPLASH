@@ -81,6 +81,14 @@ def get_args():
         help='up or down',
         type=str
     )
+    parser.add_argument(
+        "--use_std",
+        type=str
+    )
+    parser.add_argument(
+        "--compute_target_distance",
+        type=str
+    )
 
     args = parser.parse_args()
     return args
@@ -181,7 +189,8 @@ def main():
             args.anchor_counts_threshold,
             args.anchor_freeze_threshold,
             args.anchor_mode,
-            args.window_slide
+            args.window_slide,
+            args.compute_target_distance
         )
         run_time = time.time() - start_time
 
@@ -225,7 +234,7 @@ def main():
     ## done with all iterations ##
 
     # get summary scores
-    summary_scores = anchor_scores_topTargets.get_summary_scores(group_ids_dict)
+    summary_scores = anchor_scores_topTargets.get_summary_scores(group_ids_dict, args.use_std)
 
     # only ignorelist if we have more than anchor_score_threshold anchors with scores
     if anchor_scores_topTargets.get_num_scores() >= args.anchor_score_threshold:
@@ -261,6 +270,8 @@ def main():
         )
         .drop_duplicates()
     )
+
+    anchor_scores_topTargets.get_phase_scores_df().to_csv("scores_df.tsv", index=False, sep='\t')
 
     ## return final anchors list
     final_anchors.to_csv(args.outfile, index=False, sep='\t')

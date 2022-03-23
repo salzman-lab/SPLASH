@@ -18,6 +18,8 @@ process GET_ANCHORS {
     val window_slide
     val looklength
     val num_keep_anchors
+    val use_std
+    val compute_target_distance
 
     output:
     path "anchors.tsv", emit: anchors
@@ -41,6 +43,8 @@ process GET_ANCHORS {
         --c_type ${c_type} \\
         --looklength ${looklength} \\
         --num_keep_anchors ${num_keep_anchors} \\
+        --use_std ${use_std} \\
+        --compute_target_distance ${compute_target_distance} \\
         --outfile ${outfile}
     """
 }

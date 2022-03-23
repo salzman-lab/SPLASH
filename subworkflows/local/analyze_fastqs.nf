@@ -79,7 +79,9 @@ workflow ANALYZE_FASTQS {
             params.c_type,
             params.window_slide,
             looklength,
-            params.num_keep_anchors
+            params.num_keep_anchors,
+            params.use_std,
+            params.compute_target_distance
         )
 
         ch_anchors = GET_ANCHORS.out.anchors

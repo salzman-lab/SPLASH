@@ -285,7 +285,7 @@ class AnchorScoresTopTargets(dict):
         scores_df = scores_df.dropna(thresh=3)
         return len(scores_df)
 
-    def get_summary_scores(self, group_ids_dict):
+    def get_summary_scores(self, group_ids_dict, use_std):
         """
         Return scores, scaled and sorted by abundance
         """
@@ -295,7 +295,7 @@ class AnchorScoresTopTargets(dict):
 
         scores_df = scores_df.dropna(thresh=3)
 
-        if len(set(group_ids_dict.values())) == 1:
+        if (use_std or len(set(group_ids_dict.values())) == 1):
             df = (
                 pd.DataFrame(
                     scores_df.std(axis=1),
