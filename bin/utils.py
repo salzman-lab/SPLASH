@@ -172,7 +172,7 @@ def get_iteration_summary_scores(
         # get list of all anchors from each read
         # ([anchor1, anchor2, anchor3], fastq_id)
         anchor_list = read.get_anchors(kmer_size, anchor_mode, window_slide)
-
+        # read1 -> [anchor1, anchor2,...]
         # loop over each anchor in the list of all anchors from each read
         for anchor in anchor_list:
 
@@ -221,7 +221,7 @@ def get_iteration_summary_scores(
                         # if this anchor has exactly 5 unique targets and has NOT entered phase_2
                         # if this anchor has at least 10 total counts
                     elif not anchor_status.is_phase_2(anchor):
-                        if (num_targets == 5) or (anchor_counts.get_count(anchor) > anchor_counts_threshold):
+                        if (num_targets == target_counts_threshold) or (anchor_counts.get_count(anchor) > anchor_counts_threshold):
 
                             phase_1 += 1
 
