@@ -203,7 +203,7 @@ def main():
         anchor_min_count = k * c
         ignorelist_anchors_abundance = anchor_counts.get_ignorelist_anchors(anchor_min_count)
         for anchor in ignorelist_anchors_abundance:
-            status_checker.update_ignorelist(anchor, read_counter_freeze, True)
+            status_checker.update_ignorelist(anchor, read_counter_freeze)
             ignore_abundance += 1
 
         # write out ignorelist
