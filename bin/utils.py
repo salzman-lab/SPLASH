@@ -136,7 +136,7 @@ def get_iteration_summary_scores(
     iteration,
     read_chunk,
     kmer_size,
-    adjacence_distance,
+    looklength,
     num_reads,
     group_ids,
     anchor_counts,
@@ -170,9 +170,8 @@ def get_iteration_summary_scores(
         read, sample = read_tuple
 
         # get list of all anchors from each read
-        # ([anchor1, anchor2, anchor3], fastq_id)
-        anchor_list = read.get_anchors(kmer_size, anchor_mode, window_slide)
-        # read1 -> [anchor1, anchor2,...]
+        anchor_list = read.get_anchors(kmer_size, anchor_mode, window_slide, looklength, kmer_size)
+
         # loop over each anchor in the list of all anchors from each read
         for anchor in anchor_list:
 
@@ -200,7 +199,7 @@ def get_iteration_summary_scores(
 
             else:
                 # get the target for this anchor
-                target = read.get_target(anchor, adjacence_distance, kmer_size)
+                target = read.get_target(anchor, looklength, kmer_size)
 
                 # if this target exists, proceed
                 if target:

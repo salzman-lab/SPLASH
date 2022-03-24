@@ -7,7 +7,7 @@ process PARSE_ANCHORS {
     input:
     tuple val(fastq_id), path(fastq)
     path anchors
-    val num_lines
+    val num_parse_anchors_reads
     val consensus_length
     val kmer_size
     val direction
@@ -25,7 +25,7 @@ process PARSE_ANCHORS {
     out_adj_kmer_file           = "${fastq_id}_target_counts.tsv"
     """
     parse_anchors.py \\
-        --num_input_lines ${num_lines} \\
+        --num_parse_anchors_reads ${num_parse_anchors_reads} \\
         --anchors_file ${anchors} \\
         --fastq_id ${fastq_id} \\
         --fastq_file ${fastq} \\

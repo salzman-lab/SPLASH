@@ -146,7 +146,6 @@ def main():
     for i in range(0, len(samples)):
         group_ids_dict[samples[i]] = group_ids[i]
 
-
     for iteration in range(1, args.n_iterations+1):
 
         # only continue if we have less than 10k anchors with candidate scores
@@ -212,23 +211,25 @@ def main():
 
         """logging"""
         logging.info("")
-        logging.info(f'i = {iteration}, {num_reads} reads')
-        logging.info(f'\tread_counter_freeze = {read_counter_freeze}')
+        logging.info(f'i = {iteration}')
+        logging.info(f'\tReads procesed per file = {num_reads}')
+        logging.info(f'\tReads processed total = {num_reads * len(samples)}')
+        logging.info(f'\tRead_counter_freeze, not allowing any new anchors or updating ignorelist = {read_counter_freeze}')
         logging.info(f'\tIteration run time = {round(run_time, 2 )} seconds')
         logging.info(f'\t\tnumber of anchors with candidate scores = {anchor_scores_topTargets.get_num_scores()}')
         logging.info(f'\t\tnumber of phase_1 calculations = {phase_1}')
-        logging.info(f'\t\t\tcalculate, passed diversity = {phase_1_compute_score}')
-        logging.info(f'\t\t\tignored, failed diversity = {phase_1_ignore_score}')
+        logging.info(f'\t\t\tscore passed diversity condition, score is kept = {phase_1_compute_score}')
+        logging.info(f'\t\t\tscore failed ailed diversity condition, score is ignored = {phase_1_ignore_score}')
         logging.info(f'\t\tnumber of phase_2 calculations = {phase_2}')
-        logging.info(f'\t\t\ttarget distances fetched = {phase_2_fetch_distance}')
-        logging.info(f'\t\t\ttarget distances computed = {phase_2_compute_distance}')
-        logging.info(f'\t\tanchor_counts = {len(anchor_counts.counter)}')
-        logging.info(f'\t\tanchor_targets_samples = {len(anchor_targets_samples)}')
-        logging.info(f'\t\tanchor_scores_topTargets = {len(anchor_scores_topTargets)}')
-        logging.info(f'\t\tanchor_target_distances = {len(anchor_target_distances)}')
+        logging.info(f'\t\t\ttarget is an abundant target, target distance score is fetched = {phase_2_fetch_distance}')
+        logging.info(f'\t\t\ttarget is a new target, target distance score is computed = {phase_2_compute_distance}')
+        logging.info(f'\t\tsize of anchor_counts dict = {len(anchor_counts.counter)}')
+        logging.info(f'\t\tsize of anchor_targets_samples dict = {len(anchor_targets_samples)}')
+        logging.info(f'\t\tsize of anchor_scores_topTargets dict = {len(anchor_scores_topTargets)}')
+        logging.info(f'\t\tsize of anchor_target_distances dict = {len(anchor_target_distances)}')
         logging.info(f'\t\tignorelist size = {len(status_checker.ignorelist)}')
-        logging.info(f'\t\t\tignored, failed abundace = {ignore_abundance}')
-        logging.info(f'\t\t\t\tmin total anchors required = {anchor_min_count}')
+        logging.info(f'\t\t\tanchors that have failed the abundance requirement = {ignore_abundance}')
+        logging.info(f'\t\t\t\tabundance requirement = {anchor_min_count} minimum total anchors')
         """logging"""
 
     ## done with all iterations ##
