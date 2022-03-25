@@ -268,7 +268,7 @@ def main():
                 'Phase 2 Other Targets': phase_2_compute_distance,
                 'anchor_counts': len(anchor_counts.total_counts),
                 'anchor_targets_samples': len(anchor_targets_samples),
-                'anchor_scores_topTargets': {len(anchor_scores_topTargets),
+                'anchor_scores_topTargets': len(anchor_scores_topTargets),
                 'anchor_target_distances': len(anchor_target_distances),
                 'ignorelist total': len(status_checker.ignorelist),
                 'ignorelist abundance': ignore_abundance
@@ -321,7 +321,7 @@ def main():
     ## return final anchors list
     final_anchors.to_csv(args.outfile, index=False, sep='\t')
 
-    stats.to_csv('stats.csv', index=False)
+    stats.to_csv('run_stats.tsv', index=False, sep='\t')
 
 
 main()
