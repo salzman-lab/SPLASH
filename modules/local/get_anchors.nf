@@ -22,9 +22,11 @@ process GET_ANCHORS {
     val compute_target_distance
 
     output:
-    path "anchors.tsv", emit: anchors
-    path "ignorelist*", emit: ignorelist
-    path "*log"
+    path "anchors.tsv"      , emit: anchors
+    path "scores_df.tsv"        , emit: scores_df
+    path "ignorelist*"      , emit: ignorelist
+    path "run_stats.tsv"    , emit: run_stats
+    path "*log"             , emit: log
 
     script:
     outfile = "anchors.tsv"

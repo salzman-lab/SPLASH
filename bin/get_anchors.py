@@ -112,6 +112,7 @@ def main():
         datefmt='%Y-%m-%d %H:%M:%S'
     )
 
+    logging.info(args.samplesheet)
     logging.info('Keeplist if in top or bottom 1000 scores')
     logging.info(f'Number of targets required to calculate phase_1 score = {args.target_counts_threshold}')
     logging.info(f'Number of total anchor counts required to calculate phase_1 score = {args.anchor_counts_threshold}')
@@ -158,6 +159,16 @@ def main():
         anchor_scores_topTargets,
         anchor_target_distances,
         anchor_status
+    )
+
+    stats = pd.DataFrame(
+        columns = [
+            'Run Time', 'Total Reads', 'Anchors with Scores',
+            'Phase 1 Total', 'Phase 1 Kept', 'Phase 1 Ignored',
+            'Phase 2 Total', 'Phase 2 topTargets', 'Phase 2 Other Targets',
+            'anchor_counts', 'anchor_targets_samples', 'anchor_scores_topTargets', 'anchor_target_distances',
+            'ignorelist total', 'ignorelist abundance'
+        ]
     )
 
     for iteration in range(1, args.n_iterations+1):
@@ -245,6 +256,27 @@ def main():
         logging.info(f'\t\t\t\tabundance requirement = {anchor_min_count} minimum total anchors')
         """logging"""
 
+        stats = stats.append(
+            {
+                'Run Time' : run_time,
+                'Total Reads' : num_reads * len(samples),
+                'Anchors with Scores': anchor_scores_topTargets.get_num_scores(),
+                'Phase 1 Total': phase_1,
+                'Phase 1 Kept': phase_1_compute_score,
+                'Phase 1 Ignored': phase_1_ignore_score,
+                'Phase 2 Total': phase_2,
+                'Phase 2 topTargets': phase_2_fetch_distance,
+                'Phase 2 Other Targets': phase_2_compute_distance,
+                'anchor_counts': len(anchor_counts.total_counts),
+                'anchor_targets_samples': len(anchor_targets_samples),
+                'anchor_scores_topTargets': len(anchor_scores_topTargets),
+                'anchor_target_distances': len(anchor_target_distances),
+                'ignorelist total': len(status_checker.ignorelist),
+                'ignorelist abundance': ignore_abundance
+            },
+            ignore_index=True
+        )
+
     ## done with all iterations ##
 
     # get summary scores
@@ -289,6 +321,8 @@ def main():
 
     ## return final anchors list
     final_anchors.to_csv(args.outfile, index=False, sep='\t')
+
+    stats.to_csv('run_stats.tsv', index=False, sep='\t')
 
 
 main()
