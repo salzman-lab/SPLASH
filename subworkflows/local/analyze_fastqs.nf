@@ -5,7 +5,7 @@ include { GET_ANCHORS               } from '../../modules/local/get_anchors'
 include { PARSE_ANCHORS             } from '../../modules/local/parse_anchors'
 include { COMPUTE_ANCHOR_SCORES     } from '../../modules/local/compute_anchor_scores'
 include { BOWTIE2_ANNOTATION        } from '../../modules/local/bowtie2_annotation'
-include { MERGE_ANCHOR_HITS         } from '../../modules/local/merge_anchor_hits'
+include { ADD_ANNOTATIONS           } from '../../modules/local/add_annotations'
 
 workflow ANALYZE_FASTQS {
     take:
@@ -93,7 +93,7 @@ workflow ANALYZE_FASTQS {
     PARSE_ANCHORS(
         ch_fastqs,
         ch_anchors,
-        num_lines,
+        params.num_parse_anchors_reads,
         params.consensus_length,
         params.kmer_size,
         params.direction,
@@ -123,26 +123,39 @@ workflow ANALYZE_FASTQS {
             row[0]
         }
 
+    // define
+    anchor_fasta = COMPUTE_ANCHOR_SCORES.out.anchor_fasta.first()
+    target_fasta = COMPUTE_ANCHOR_SCORES.out.target_fasta.first()
+
     /*
     // Process to align anchors to each bowtie2 index
     */
     BOWTIE2_ANNOTATION(
-        COMPUTE_ANCHOR_SCORES.out.fasta.first(),
+        anchor_fasta,
+        target_fasta,
         ch_indices
     )
 
     // create samplesheet of the anchor hits files
     BOWTIE2_ANNOTATION.out.anchor_hits
-        .collectFile() { file ->
+        .collectFile(name: "anchor_samplesheet.txt") { file ->
             def X=file; X.toString() + '\n'
         }
         .set{ anchor_hits_samplesheet }
 
+    // create samplesheet of the target hits files
+    BOWTIE2_ANNOTATION.out.target_hits
+        .collectFile(name: "target_samplesheet.txt") { file ->
+            def X=file; X.toString() + '\n'
+        }
+        .set{ target_hits_samplesheet }
+
     /*
     // Process to merge anchor scores with anchor hits
     */
-    MERGE_ANCHOR_HITS(
+    ADD_ANNOTATIONS(
         anchor_hits_samplesheet,
+        target_hits_samplesheet,
         COMPUTE_ANCHOR_SCORES.out.anchor_scores
     )
 

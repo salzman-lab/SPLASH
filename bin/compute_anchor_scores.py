@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import gzip
 import argparse
@@ -23,6 +23,10 @@ def get_args():
     )
     parser.add_argument(
         "--outfile_anchor_fasta",
+        type=str
+    )
+    parser.add_argument(
+        "--outfile_target_fasta",
         type=str
     )
     args = parser.parse_args()
@@ -196,16 +200,23 @@ def main():
         anchor_scores_df = anchor_scores_df.append(anchor_scores)
         counts_distances_df = counts_distances_df.append(counts_distances)
 
+    # output anchor scores file
     anchor_scores_df['anchor_score'] = anchor_scores_df.std(axis=1)
     anchor_scores_df.index.name = 'anchor'
     anchor_scores_df.reset_index().to_csv(args.outfile_anchor_scores, sep='\t', index=False)
+
+    # output anchor targets counts file
+    counts_distances_df.to_csv(args.outfile_counts_distances, sep='\t', index=False)
 
     # create anchors fasta file for bowtie2 annotation step
     anchors = anchor_scores_df.index.to_list()
     with open(args.outfile_anchor_fasta, 'w') as outfile:
         outfile.write('\n'.join([">"+a+"\n"+a for a in anchors]))
 
-    counts_distances_df.to_csv(args.outfile_counts_distances, sep='\t', index=False)
+    # create targets fasta file for bowtie2 annotation step
+    targets = counts_distances_df['target'].drop_duplicates().to_list()
+    with open(args.outfile_target_fasta, 'w') as outfile:
+        outfile.write('\n'.join([">"+t+"\n"+t for t in targets]))
 
 
 main()

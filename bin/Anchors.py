@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import pandas as pd
 import gzip
@@ -405,7 +405,7 @@ class StatusChecker():
         """
         Updates ignorelist and removes anchor from all of our dictionaries
         """
-        if not read_total_counts_freeze:
+        if (not read_counter_freeze) and (len(self.ignorelist) < 4000000):
             if anchor not in self.ignorelist:
                 self.ignorelist[anchor] = True
 

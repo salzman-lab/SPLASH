@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import pandas as pd
 import gzip
@@ -136,7 +136,7 @@ def get_iteration_summary_scores(
     iteration,
     read_chunk,
     kmer_size,
-    adjacence_distance,
+    looklength,
     num_reads,
     anchor_counts,
     anchor_targets_samples,
@@ -169,7 +169,7 @@ def get_iteration_summary_scores(
         read, sample = read_tuple
 
         # get list of all anchors from each read
-        anchor_list = read.get_anchors(kmer_size, anchor_mode, window_slide)
+        anchor_list = read.get_anchors(kmer_size, anchor_mode, window_slide, looklength, kmer_size)
 
         # loop over each anchor in the list of all anchors from each read
         for anchor in anchor_list:
@@ -201,7 +201,7 @@ def get_iteration_summary_scores(
 
             else:
                 # get the target for this anchor
-                target = read.get_target(anchor, adjacence_distance, kmer_size)
+                target = read.get_target(anchor, looklength, kmer_size)
 
                 # if this target exists, proceed
                 if target:

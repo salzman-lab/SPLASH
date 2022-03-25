@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from Bio import SeqIO
 
@@ -10,7 +10,7 @@ class Read():
     def __init__(self, read):
         self.read = read
     
-    def get_anchors(self, anchor_len, anchor_mode, window_slide):
+    def get_anchors(self, anchor_len, anchor_mode, window_slide, looklength, kmer_size):
         """
         Get list of chunked anchors from read
         """
@@ -18,10 +18,12 @@ class Read():
             step_size = anchor_len 
         elif anchor_mode == 'tile':
             step_size = window_slide
+
+        last_base = looklength + kmer_size
         anchor_list = [
             self.read[0+i:anchor_len+i] 
             for i 
-            in range(0, len(self.read), step_size) 
+            in range(0, last_base, step_size) 
             if len(self.read[0+i:anchor_len+i])==anchor_len
         ]
         return anchor_list

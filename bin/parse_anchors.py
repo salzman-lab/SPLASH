@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import pandas as pd
 import gzip
@@ -114,13 +114,14 @@ def recordNextKmers(consensus_length, looklength, kmer_size, myseqs, DNAdict, si
     return DNAdict, anchor_dict
 
 
-def returnSeqs(fastq_file, maxlines):
+def returnSeqs(fastq_file, num_parse_anchors_reads):
     """
     GETTING REAL SEQS
     """
 
     myseqs = []
     tot_lines = 0
+
     with gzip.open(fastq_file, 'rt') as handle:
         for read_seq in handle:
             # check we're in sequence line (remainder of 2)
@@ -129,7 +130,8 @@ def returnSeqs(fastq_file, maxlines):
                 continue
             # strip of new line character
             read_seq = read_seq.strip('\n')
-            if len(myseqs) < 1000000:
+
+            if len(myseqs) < num_parse_anchors_reads:
                 myseqs.append(read_seq)
 
     return myseqs
@@ -175,9 +177,8 @@ def returnAnchors(infile, direction):
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--num_input_lines",
+        "--num_parse_anchors_reads",
         type=int,
-        nargs='?',
         help='max number of fastq reads for input'
     )
     parser.add_argument(
@@ -278,7 +279,7 @@ def main():
     # get reads from fastq
     myseqs = returnSeqs(
         args.fastq_file,
-        maxlines=args.num_input_lines
+        args.num_parse_anchors_reads
     )
 
     # dict for significant anchors and their downstream kmers
