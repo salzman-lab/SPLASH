@@ -19,14 +19,14 @@ class AnchorStatus(dict):
     List object that contains anchors if they are in phase 2
     """
     def __init__(self):
-        self.anchors = []
+        self = {}
 
     def assign_phase_2(self, anchor):
-        self.anchors.append(anchor)
+        self[anchor] = True
         return self
 
     def is_phase_2(self, anchor):
-        if anchor in self.anchors:
+        if anchor in self:
             return True
         else:
             return False
@@ -158,22 +158,14 @@ class AnchorTargetsSamples(dict):
         anchor_df = anchor_df.sort_values('count', ascending=False).drop('count', axis=1).reset_index()
         return anchor_df
 
-    def reached_phase_2_threshold(self, anchor, target, sample):
-        """
-        Returns true if (anchor:target:sample) has at least 10 phase_2 scores
-        """
-        if self[anchor][sample][target] >= 20:
-            return True
-        else:
-            return False
-
 
 class AnchorCounts(dict):
     """
     Dictionary object of anchors and their total counts
     """
     def __init__(self, num_samples):
-        self.counter = {}
+        self.total_counts = {}
+        self.sample_counts = {}
         self.num_samples = num_samples
         self.num_unique_anchors = 0
 
@@ -181,21 +173,20 @@ class AnchorCounts(dict):
         """
         Returns true if anchor is in dict
         """
-        if anchor in self.counter:
+        if anchor in self.total_counts:
             return True
         else:
             return False
 
-    def update(self, anchor, iteration):
+    def update_total_counts(self, anchor, iteration):
         """
         Update {anchor : count}
         """
-
-        if anchor not in self.counter:
+        if anchor not in self.total_counts:
             # if this is a new anchor, increment relative to sample number and iteration
             L = math.floor(iteration / 100000)
             increment = self.num_samples * L
-            self.counter[anchor] = 1 + increment
+            self.total_counts[anchor] = 1 + increment
 
             # update number of unique anchors count
             self.num_unique_anchors += 1
@@ -203,20 +194,39 @@ class AnchorCounts(dict):
         else:
             # if not new anchor, increment relative to sample number and iteration
             increment = self.num_samples
-            self.counter[anchor] += increment
+            self.total_counts[anchor] += increment
 
+    def update_sample_counts(self, anchor, sample, iteration):
+        """
+        Update {anchor : {sample : count}}
+        """
+        L = math.floor(iteration / 100000)
 
-    def get_count(self, anchor):
+        init_count = self.num_samples
+        increment_count = 1 + (self.num_samples * L)
+
+        # if the anchor is already in the dict;
+        if anchor in self.sample_counts:
+            if sample in self.sample_counts[anchor]:
+                # if this is not new, increment relative to sample number and iteration
+                self.sample_counts[anchor][sample] += increment_count
+            else:
+                self.sample_counts[anchor][sample] = init_count
+        # if this is a new anchor
+        else:
+            self.sample_counts[anchor] = {sample : increment_count}
+
+    def get_total_counts(self, anchor):
         """
         Get count for an anchor
         """
-        return self.counter[anchor]
+        return self.total_counts[anchor]
 
     def get_ignorelist_anchors(self, anchor_min_count):
         """
         Return anchors that do not have at least anchor_min_count number of counts
         """
-        return [anchor for anchor, count in self.counter.items() if count < anchor_min_count]
+        return [anchor for anchor, count in self.total_counts.items() if count < anchor_min_count]
 
 
 class AnchorScoresTopTargets(dict):
@@ -364,6 +374,12 @@ class AnchorTargets(dict):
             self[anchor] = [target]
         return self
 
+    def num_targets(self, anchor):
+        """
+        Return the number of unique targets entotal_countsed for that anchor
+        """
+        return len(self[anchor])
+
     def get_targets(self, anchor):
         """
         Return the unique targets of an anchor
@@ -385,11 +401,11 @@ class StatusChecker():
         self.anchor_target_distances = anchor_target_distances
         self.anchor_status = anchor_status
 
-    def update_ignorelist(self, anchor, read_counter_freeze):
+    def update_ignorelist(self, anchor, read_total_counts_freeze):
         """
         Updates ignorelist and removes anchor from all of our dictionaries
         """
-        if not read_counter_freeze:
+        if not read_total_counts_freeze:
             if anchor not in self.ignorelist:
                 self.ignorelist[anchor] = True
 
