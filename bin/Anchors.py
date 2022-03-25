@@ -401,7 +401,7 @@ class StatusChecker():
         self.anchor_target_distances = anchor_target_distances
         self.anchor_status = anchor_status
 
-    def update_ignorelist(self, anchor, read_total_counts_freeze):
+    def update_ignorelist(self, anchor, read_counter_freeze):
         """
         Updates ignorelist and removes anchor from all of our dictionaries
         """
