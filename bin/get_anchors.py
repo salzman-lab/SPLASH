@@ -112,6 +112,7 @@ def main():
         datefmt='%Y-%m-%d %H:%M:%S'
     )
 
+    logging.info(args.samplesheet)
     logging.info('Keeplist if in top or bottom 1000 scores')
     logging.info(f'Number of targets required to calculate phase_1 score = {args.target_counts_threshold}')
     logging.info(f'Number of total anchor counts required to calculate phase_1 score = {args.anchor_counts_threshold}')
