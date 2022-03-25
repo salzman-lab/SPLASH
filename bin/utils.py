@@ -41,7 +41,7 @@ def compute_phase_1_score(anchor, df):
     """
     Computes the transition score for an anchor
     """
-    top_targets = list(df['target'].head(5))
+    top_targets = list(df['target'])
 
     min_dists = []
     for index, row in df.iterrows():
@@ -138,7 +138,6 @@ def get_iteration_summary_scores(
     kmer_size,
     looklength,
     num_reads,
-    group_ids,
     anchor_counts,
     anchor_targets_samples,
     anchor_targets,
@@ -176,24 +175,27 @@ def get_iteration_summary_scores(
         for anchor in anchor_list:
 
             # set anchor_counter_freeze if we have reached the anchor_freeze_threshold
-            if len(anchor_counts.counter) >= anchor_freeze_threshold:
+            if len(anchor_counts.total_counts) >= anchor_freeze_threshold:
                 anchor_counter_freeze = True
             else:
                 anchor_counter_freeze = False
 
+            # break condition if not at read_threshold
             lt_read_threshold_breaks = [
-                status_checker.is_ignorelisted(anchor), # if anchor is ignorelisted
-                not anchor_counts.contains(anchor) and read_counter_freeze, # if we are no longer accumulating new anchors and this is a new anchor
-                not anchor_counts.contains(anchor) and anchor_counter_freeze # if we are no longer accumulating new anchors and this is a new anchor
+                status_checker.is_ignorelisted(anchor),                         # if anchor is ignorelisted
+                not anchor_counts.contains(anchor) and read_counter_freeze,     # if we are no longer accumulating new anchors and this is a new anchor
+                not anchor_counts.contains(anchor) and anchor_counter_freeze    # if we are no longer accumulating new anchors and this is a new anchor
             ]
 
+            # break condition if at read threshold
             gt_read_threshold_breaks = [
-                not anchor_counts.contains(anchor) # if this is a new anchor
+                not anchor_counts.contains(anchor)                              # if this is a new anchor
             ]
 
+            # assign correct break condition
             break_conditions = gt_read_threshold_breaks if read_counter_freeze else lt_read_threshold_breaks
 
-            # if not any(break_conditions), continue with calculations
+            # only proceed with calculations if we haven't met any break conditions
             if any(break_conditions):
                 break
 
@@ -205,26 +207,31 @@ def get_iteration_summary_scores(
                 if target:
 
                     # updates
-                    anchor_counts.update(anchor, iteration)               # increment counts for this anchor
-                    anchor_targets_samples.update(anchor, target, sample) # increment counts for this anchor:sample:target
-                    anchor_targets.update_target(anchor, target)          # update targets for this anchor
+                    anchor_counts.update_total_counts(anchor, iteration)            # update anchor total counts
+                    anchor_counts.update_sample_counts(anchor, sample, iteration)   # update anchor-sample counts
 
-                    # for this anchor, get the number of unique targets for thresholding
-                    num_targets = len(anchor_targets.get_targets(anchor))
+                    # if we are not at threshold, accumulate this target as a topTarget and accumulate anchor_samples count
+                    if (anchor not in anchor_targets) or (anchor_targets.num_targets(anchor) < target_counts_threshold):
 
-                    # if this anchor only has 5 unique targets, continue and don't do anything else
-                    if num_targets < target_counts_threshold:
-                        continue
+                        # accumulate targets
+                        anchor_targets.update_target(anchor, target)                    # update anchor-targets
+                        anchor_targets_samples.update(anchor, target, sample)           # update anchor-sample-target counts
 
-                    # compute phase_1/transition score only if anchor is not in phase_2 AND if either of these are true:
-                        # if this anchor has exactly 5 unique targets and has NOT entered phase_2
-                        # if this anchor has at least 10 total counts
-                    elif not anchor_status.is_phase_2(anchor):
-                        if (num_targets == target_counts_threshold) or (anchor_counts.get_count(anchor) > anchor_counts_threshold):
+                    # if we are at threshold, only accumulate anchor_samples count and anchor total counts
+                    else:
+
+                        # define conditions to enter phase_1
+                        phase_1_conditions = [
+                            anchor_targets.num_targets(anchor) == target_counts_threshold,
+                            anchor_counts.get_total_counts(anchor) > anchor_counts_threshold
+                        ]
+
+                        # compute phase_1 score if not already in phase_2 and meets any phase_1_condition
+                        if not anchor_status.is_phase_2(anchor) and any(phase_1_conditions):
 
                             phase_1 += 1
 
-                            # compute phase_1/transition score
+                            # compute phase_1 score
                             scores, top_targets, topTargets_distances = compute_phase_1_score(
                                 anchor,
                                 anchor_targets_samples.get_anchor_counts_df(anchor)
@@ -249,40 +256,38 @@ def get_iteration_summary_scores(
 
                                 phase_1_compute_score += 1
 
-                    # compute phase_2 score
-                    else:
-
-                        phase_2 += 1
-
-                        # if this is a target that we have seen before
-                        if anchor_target_distances.has_distance(anchor, target):
-
-                            # get its previously-recorded distance
-                            distance = anchor_target_distances.get_distance(anchor, target)
-                            phase_2_fetch_distance += 1
-
-                        # if we have never seen this target before
+                        # compute phase_2 score
                         else:
 
-                            # compute target distance from topTargets
-                            if compute_target_distance:
-                                distance = anchor_scores_topTargets.compute_target_distance(anchor, target)
+                            phase_2 += 1
+
+                            # if this is a target that we have seen before
+                            if anchor_target_distances.has_distance(anchor, target):
+
+                                # get its previously-recorded distance
+                                distance = anchor_target_distances.get_distance(anchor, target)
+                                phase_2_fetch_distance += 1
+
+                            # if we have never seen this target before
                             else:
-                                distance = 1
+
+                                # compute target distance from topTargets
+                                if compute_target_distance:
+                                    distance = anchor_scores_topTargets.compute_target_distance(anchor, target)
+                                else:
+                                    distance = 1
+
+                                phase_2_compute_distance += 1
+
+                            # compute phase_2 score
+                            new_score = compute_phase_2_score(
+                                anchor_scores_topTargets.get_score(anchor),
+                                anchor_targets_samples.get_anchor_counts_df(anchor),
+                                distance
+                            )
 
                             # updates
-                            anchor_target_distances.update_target_distance(anchor, target, distance) # update dict with this new (target:distance) pair
-                            phase_2_compute_distance += 1
-
-                        # compute fast score
-                        new_score = compute_phase_2_score(
-                            anchor_scores_topTargets.get_score(anchor),
-                            anchor_targets_samples.get_anchor_counts_df(anchor),
-                            distance
-                        )
-
-                        # updates
-                        anchor_scores_topTargets.update(anchor, new_score, anchor_scores_topTargets.get_topTargets(anchor)) # update the score for this anchor
+                            anchor_scores_topTargets.update(anchor, new_score, anchor_scores_topTargets.get_topTargets(anchor)) # update the score for this anchor
 
 
     return phase_1, phase_2, phase_1_compute_score, phase_1_ignore_score, phase_2_fetch_distance, phase_2_compute_distance

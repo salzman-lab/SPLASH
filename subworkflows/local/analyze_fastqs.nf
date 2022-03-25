@@ -21,8 +21,8 @@ workflow ANALYZE_FASTQS {
         )
         .map { row ->
             tuple(
-                row[0],
-                file(row[1])
+                file(row[0]).simpleName,
+                file(row[0])
             )
         }
         .set{ ch_fastqs }
