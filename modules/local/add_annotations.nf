@@ -2,6 +2,7 @@
 process ADD_ANNOTATIONS {
 
     label 'process_medium'
+    conda (params.enable_conda ? "conda-forge::python=3.9.5" : null)
 
     input:
     path anchor_hits_samplesheet
