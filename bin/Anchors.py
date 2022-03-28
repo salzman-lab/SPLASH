@@ -16,16 +16,22 @@ import utils
 
 class AnchorStatus(dict):
     """
-    List object that contains anchors if they are in phase 2
+    Dictionary object that contains anchors if they are in phase 2
     """
     def __init__(self):
         self = {}
 
     def assign_phase_2(self, anchor):
+        """
+        Add {anchor: True} if an anchor is assigned to phase_2
+        """
         self[anchor] = True
         return self
 
     def is_phase_2(self, anchor):
+        """
+        Returns True if an anchor is in phase_2
+        """
         if anchor in self:
             return True
         else:
@@ -101,7 +107,7 @@ class AnchorTargetsSamples(dict):
         """
         Return a table of anchors and their target counts
         """
-        # nested dict to table
+        # nested dict to dataframe
         df_rows = []
         for anchor, anchor_dict in self.items():
             for sample, target_dict in anchor_dict.items():
@@ -153,9 +159,28 @@ class AnchorTargetsSamples(dict):
         )
         df.columns.name = None
 
-        anchor_df = df.reset_index().drop('anchor', axis=1).set_index('target')
+        # remove anchor column and set targets as index
+        anchor_df = (
+            df
+            .reset_index()
+            .drop('anchor', axis=1)
+            .set_index('target')
+        )
+
+        # sort targets by abundance
         anchor_df['count'] = anchor_df.sum(axis=1)
-        anchor_df = anchor_df.sort_values('count', ascending=False).drop('count', axis=1).reset_index()
+        anchor_df = (
+            anchor_df
+            .sort_values(
+                'count',
+                ascending=False)
+            .drop(
+                'count',
+                axis=1
+            )
+            .reset_index()
+        )
+
         return anchor_df
 
 
@@ -198,23 +223,26 @@ class AnchorCounts(dict):
 
     def update_sample_counts(self, anchor, sample, iteration):
         """
-        Update {anchor : {sample : count}}
+        Update {anchor : {sample : count}} relative to the iteration and num_samples
         """
         L = math.floor(iteration / 100000)
 
         init_count = self.num_samples
         increment_count = 1 + (self.num_samples * L)
 
-        # if the anchor is already in the dict;
+        # if the anchor is already in the dict
         if anchor in self.sample_counts:
             if sample in self.sample_counts[anchor]:
                 # if this is not new, increment relative to sample number and iteration
                 self.sample_counts[anchor][sample] += increment_count
+
             else:
+                # if this is new, intialize with init_count
                 self.sample_counts[anchor][sample] = init_count
-        # if this is a new anchor
+
+        # if this is a new anchor, initialize with int_count
         else:
-            self.sample_counts[anchor] = {sample : increment_count}
+            self.sample_counts[anchor] = {sample : init_count}
 
     def get_total_counts(self, anchor):
         """
@@ -299,12 +327,15 @@ class AnchorScoresTopTargets(dict):
         """
         Return scores, scaled and sorted by abundance
         """
+        # Convert dict to dataframe
         scores_df = pd.DataFrame()
         for anchor, (scores, _) in self.items():
             scores_df = scores_df.append(pd.Series(scores, name=anchor))
 
+        # drop any anchors that do not have scores for at least 3 samples
         scores_df = scores_df.dropna(thresh=3)
 
+        # if we are using standard deviation score or there is no metadata component, get the std of scores
         if (use_std or len(set(group_ids_dict.values())) == 1):
             df = (
                 pd.DataFrame(
@@ -312,7 +343,11 @@ class AnchorScoresTopTargets(dict):
                     columns=['score']
                 )
             )
+
+        # else, compute the anchor significane score as sum(C_i*S_i) - sum(S_i(sum(C_i) / n_c))
         else:
+
+            # sum(C_i*S_i)
             first_sum = (
                 scores_df
                 .assign(**group_ids_dict)
@@ -321,6 +356,7 @@ class AnchorScoresTopTargets(dict):
                 .sum(axis=1)
             )
 
+            # sum(S_i(sum(C_i) / n_c))
             second_sum = (
                 scores_df
                 .apply(
@@ -405,10 +441,12 @@ class StatusChecker():
         """
         Updates ignorelist and removes anchor from all of our dictionaries
         """
+        # only add anchor to ignorlist if not in read_counter_freeze or if ignorelist is not larger than 4M
         if (not read_counter_freeze) and (len(self.ignorelist) < 4000000):
             if anchor not in self.ignorelist:
                 self.ignorelist[anchor] = True
 
+        # pop anchor from all dicts
         self.anchor_counts.pop(anchor, None)
         self.anchor_targets_samples.pop(anchor, None)
         self.anchor_targets.pop(anchor, None)

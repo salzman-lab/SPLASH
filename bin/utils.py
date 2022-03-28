@@ -27,23 +27,28 @@ def get_distance(seq1, seq2):
     return distance
 
 
-    def is_ignorelisted(self, anchor):
-        """
-        Returns true if an anchor has previously ignorelisted
-        """
-        if anchor in self.ignorelist:
-            return True
-        else:
-            return False
+def is_ignorelisted(self, anchor):
+    """
+    Returns true if an anchor has previously ignorelisted
+    """
+    if anchor in self.ignorelist:
+        return True
+    else:
+        return False
 
 
 def compute_phase_1_score(anchor, df):
     """
     Computes the transition score for an anchor
     """
+    # get list of targets for this anchor
     top_targets = list(df['target'])
 
     min_dists = []
+
+    # iterate over targets sorted by decreasing abundance
+    # get min hamming distance of each target to its preceeding targets, such that
+    #   for target in n_1...n_5, get d_n_i = min_(1=j)(distance(n_i, n_j))
     for index, row in df.iterrows():
         sequence = row['target']
         candidates = (
@@ -52,13 +57,17 @@ def compute_phase_1_score(anchor, df):
             .to_numpy()
         )
 
+        # if it's the first aka most abundant target, initialise the distance to be 0
         if index == 0:
             min_dist = 0
+
+        # else, get the min distance to all preceeding targets
         else:
             min_dist = min([get_distance(sequence, x) for x in candidates])
 
         min_dists.append((sequence, min_dist))
 
+    # dataframe of [target, target_distance]
     distance_df = (
         pd.DataFrame(
             min_dists,
@@ -68,6 +77,9 @@ def compute_phase_1_score(anchor, df):
     )
     distance_df.index.name = None
 
+    # get phase_1 score of sum(n_i * d_i) / sum(n_i)
+
+    # sum(n_i * d_i)
     # scale by distances, and get sum of (counts * min_dist) across samples
     numerator = (
         df
@@ -79,6 +91,7 @@ def compute_phase_1_score(anchor, df):
         .sum(axis=0)
     )
 
+    # sum(n_i)
     # get sum of counts across samples
     denominator = (
         df
@@ -100,13 +113,14 @@ def compute_phase_1_score(anchor, df):
 
 def compute_phase_2_score(previous_scores, counts_df, distance):
     """
-    Returns phase_2 scores, given a distnace of a new target
+    Returns phase_2 scores, given a distance of a new target
     """
     n = (
         counts_df
         .set_index('target')
         .sum(axis=0)
     )
+
     new_scores = previous_scores * (n/(n+1)) + (distance/(n+1))
 
     return new_scores
@@ -289,6 +303,6 @@ def get_iteration_summary_scores(
                             # updates
                             anchor_scores_topTargets.update(anchor, new_score, anchor_scores_topTargets.get_topTargets(anchor)) # update the score for this anchor
 
-
+    # return values for logging
     return phase_1, phase_2, phase_1_compute_score, phase_1_ignore_score, phase_2_fetch_distance, phase_2_compute_distance
 

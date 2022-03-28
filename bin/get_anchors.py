@@ -129,7 +129,7 @@ def main():
         header=None
     )
 
-    # get list of samples from fastq_files 
+    # get list of samples from fastq_files
     # if fastq_file = "file1.fastq.gz", sample = "file1"
     samples = (
         sample_list
@@ -141,7 +141,7 @@ def main():
         .tolist()
     )
 
-    # if not using standard deviation score, make dict of {sample : group_id} 
+    # if not using standard deviation score, make dict of {sample : group_id}
     group_ids_dict = {}
     if not use_std:
         group_ids = sample_list.iloc[:,1].tolist()
@@ -164,7 +164,7 @@ def main():
         anchor_status
     )
 
-    # initialise dataframe of logging values 
+    # initialise dataframe of logging values
     stats = pd.DataFrame(
         columns = [
             'Run Time', 'Total Reads', 'Anchors with Scores',
@@ -233,7 +233,7 @@ def main():
         anchor_min_count = k * c
         # get the anchors that do not meet the abundance requirement of anchor_min_co
         ignorelist_anchors_abundancunte = anchor_counts.get_ignorelist_anchors(anchor_min_count)
-        # add those anchors to the ignorelist 
+        # add those anchors to the ignorelist
         for anchor in ignorelist_anchors_abundance:
             status_checker.update_ignorelist(anchor, read_counter_freeze)
             ignore_abundance += 1
@@ -292,7 +292,7 @@ def main():
     # after all iterations are done accumulating, calculate the summary score
     summary_scores = anchor_scores_topTargets.get_summary_scores(group_ids_dict, use_std)
 
-    # only ignorelist if we have more than anchor_score_threshold anchors with scores
+    # only ignorelist if we have less than anchor_score_threshold anchors with scores
     if anchor_scores_topTargets.get_num_scores() >= args.anchor_score_threshold:
 
         # ignorelist condition: ignorelist the anchors with scores in [40% quantile, 60% quantile]
@@ -300,25 +300,30 @@ def main():
         upper = 0.6
         lower_bound = summary_scores['score'].quantile([lower, upper]).loc[lower]
         upper_bound = summary_scores['score'].quantile([lower, upper]).loc[upper]
+        # get anchors with scores in [40% quantile, 60% quantile]
         ignorelist_anchors_percentile = (
             summary_scores[(summary_scores['score'] > lower_bound) & (summary_scores['score'] < upper_bound)]
             .index
             .to_list()
         )
+        # remove those anchors
         summary_scores = summary_scores[~summary_scores['score'].isin(ignorelist_anchors_percentile)]
 
     # output anchors with the highest scores
+    # get absolute value of scores
     summary_scores['abs_score'] = summary_scores['score'].abs()
     summary_scores = summary_scores.sort_values(
         'abs_score',
         ascending=False
     )
+    # get anchors with the top num_keep_anchors of scores
     keep_anchors = (
         summary_scores
         .head(args.num_keep_anchors)
         .index
         .to_list()
     )
+    # filter for these anchors and drop any duplicates
     final_anchors = (
         pd.DataFrame(
             keep_anchors,
@@ -327,11 +332,13 @@ def main():
         .drop_duplicates()
     )
 
+    # output for debugging
     anchor_scores_topTargets.get_phase_scores_df().to_csv("scores_df.tsv", index=False, sep='\t')
 
-    ## return final anchors list
+    ## output this final anchors list
     final_anchors.to_csv(args.outfile, index=False, sep='\t')
 
+    # output run stats
     stats.to_csv('run_stats.tsv', index=False, sep='\t')
 
 
