@@ -2,6 +2,8 @@
 process COMPUTE_ANCHOR_SCORES {
 
     label 'process_low'
+    conda (params.enable_conda ? "conda-forge::python=3.9.5 pandas=1.4.1" : null)
+
 
     input:
     path ch_targets_samplesheet

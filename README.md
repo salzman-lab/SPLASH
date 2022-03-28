@@ -72,14 +72,24 @@ GGGGGGGGGG
 An example run command with this optional input:
 ```
 nextflow run kaitlinchaung/stringstats \
-    --anchors_file anchors.txt
-    -profile test \
+    --anchors_file anchors.txt \
     -r main \
     -latest
 ```
 
 
 ## Parameters
+
+Please note that input parameters should be passed with the a double-hypen, while Nextflow-specific parameters should be passed with a single hyphen. For example: 
+```
+nextflow run kaitlinchaung/stringstats \
+    --input input.txt \
+    -r main \
+    -latest \
+    --n_itrations 200 \
+    --chunk_size 50000
+```
+
 | Argument              | Description       | Default  |
 | --------------------- | ----------------- |--------- |
 | --kmer_size | Length of sequences for anchors and targets | 27 |
@@ -108,6 +118,41 @@ nextflow run kaitlinchaung/stringstats \
 | --use_read_length | Boolean value if the looklength should be calculated as a function of read length, options: `true`, `false` | `true` |
 | --looklength | If `--use_read_length false`, this is the distance to look for candidate consensus sequences and targets | 0 |
 | --num_keep_anchors | Maxiumum number of fastq reads to parse | 4000000 |
+
+
+# Outputs
+
+`get_anchors`
+1. `anchors.tsv`
+    * List of significant anchor sequences
+
+
+`parse_anchors`
+1. `consensus_anchors/`
+    1. `*.fasta`
+        * Fasta file of the consensus sequences of each significant anchor sequence
+    2. `*_counts.tab`
+        * For each consensus sequence, the frequency count of the consensus base at each position
+    3. `*_fractions.tab`
+        * For each consensus sequence, the fraction of occurrence of the consensus base at each position
+2. `target_counts/`
+    * For each fastq file, a counts file for each significant anchor and all of their valid targets
+
+
+`compute_anchor_scores`
+1. `anchor_target_counts.tsv`
+    * A table of anchor-target counts per fastq file, with targets sorted by decreasing abundance per anchor 
+    * For each anchor-target, the minimum Hamming distnace of each target with its previus targets is reported
+
+
+`bowtie2_annotations`
+1. `anchor_scores.tsv`
+    * Anchor sample scores for each fastq file
+    * Anchor summary scores, consisting of the standard deviation of all anchor sample scores
+    * For each anchor, it's alignment to each reference in `--bowtie2_samplesheet`
+2. `target_annotations.tsv`
+    * For each target, it's alignment to each reference in `--bowtie2_samplesheet`
+
 
 
 ## Citations

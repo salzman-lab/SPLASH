@@ -6,7 +6,6 @@ import os
 import re
 import sys
 import argparse
-import logging
 import numpy as np
 from Bio import SeqIO
 import math
@@ -112,6 +111,7 @@ def main():
         datefmt='%Y-%m-%d %H:%M:%S'
     )
 
+    # logging
     logging.info(args.samplesheet)
     logging.info('Keeplist if in top or bottom 1000 scores')
     logging.info(f'Number of targets required to calculate phase_1 score = {args.target_counts_threshold}')
@@ -122,13 +122,15 @@ def main():
     logging.info(f'Anchor freeze threshold = {args.anchor_freeze_threshold} anchors')
     logging.info('')
 
-    # read in samples
+    # read in samples from samplesheet
+    # [fastq_file, optional group_id]
     sample_list = pd.read_csv(
         args.samplesheet,
         header=None
     )
 
-    # get list of samples and group_ids
+    # get list of samples from fastq_files 
+    # if fastq_file = "file1.fastq.gz", sample = "file1"
     samples = (
         sample_list
         .iloc[:,0]
@@ -138,7 +140,8 @@ def main():
         )
         .tolist()
     )
-    # make dict of {sample : group_id} if not use_std
+
+    # if not using standard deviation score, make dict of {sample : group_id} 
     group_ids_dict = {}
     if not use_std:
         group_ids = sample_list.iloc[:,1].tolist()
@@ -161,6 +164,7 @@ def main():
         anchor_status
     )
 
+    # initialise dataframe of logging values 
     stats = pd.DataFrame(
         columns = [
             'Run Time', 'Total Reads', 'Anchors with Scores',
@@ -171,17 +175,19 @@ def main():
         ]
     )
 
+    # begin iterations
     for iteration in range(1, args.n_iterations+1):
 
-        # only continue if we have less than 10k anchors with candidate scores
+        # only continue accumulations if we have less than 10k anchors with candidate scores
         if anchor_scores_topTargets.get_num_scores() >= 10000:
             break
 
-        # init counters
+        # initialise loggging counters
         ignore_summary_scores = 0
         ignore_abundance = 0
 
-        # if we are at more than 300k reads, don't add any more anchors
+        # if we are at more than 300k reads, set the read_counter freeze so that we don't add any more anchors
+        # if we are at more than 300k reads, clear the ignorelist
         num_reads = iteration * args.max_reads
         if num_reads >= 300000:
             read_counter_freeze = True
@@ -189,11 +195,11 @@ def main():
         else:
             read_counter_freeze = False
 
-        # get reads from fastq files
+        # get reads from this iteration's fastq files
         read_chunk = utils.get_read_chunk(iteration, samples)
 
-        # get summary scores
-        start_time = time.time()
+        # accumulate for this iteration
+        start_time = time.time() # get step start time
         phase_1, phase_2, phase_1_compute_score, phase_1_ignore_score, phase_2_fetch_distance, phase_2_compute_distance = utils.get_iteration_summary_scores(
             iteration,
             read_chunk,
@@ -215,7 +221,7 @@ def main():
             args.window_slide,
             args.compute_target_distance
         )
-        run_time = time.time() - start_time
+        run_time = time.time() - start_time # get step total run time
 
         # ignorelist condition: ignorelist anchors that don't meet an abundance requirement
         k = math.floor(num_reads / 100000)
@@ -223,8 +229,11 @@ def main():
             c = len(samples)
         elif args.c_type == "constant":
             c = 1
+        # define min number of counts required per anchor to prevent ignorelisting
         anchor_min_count = k * c
-        ignorelist_anchors_abundance = anchor_counts.get_ignorelist_anchors(anchor_min_count)
+        # get the anchors that do not meet the abundance requirement of anchor_min_co
+        ignorelist_anchors_abundancunte = anchor_counts.get_ignorelist_anchors(anchor_min_count)
+        # add those anchors to the ignorelist 
         for anchor in ignorelist_anchors_abundance:
             status_checker.update_ignorelist(anchor, read_counter_freeze)
             ignore_abundance += 1
@@ -256,6 +265,7 @@ def main():
         logging.info(f'\t\t\t\tabundance requirement = {anchor_min_count} minimum total anchors')
         """logging"""
 
+        # add row to stats df
         stats = stats.append(
             {
                 'Run Time' : run_time,
@@ -279,7 +289,7 @@ def main():
 
     ## done with all iterations ##
 
-    # get summary scores
+    # after all iterations are done accumulating, calculate the summary score
     summary_scores = anchor_scores_topTargets.get_summary_scores(group_ids_dict, use_std)
 
     # only ignorelist if we have more than anchor_score_threshold anchors with scores
