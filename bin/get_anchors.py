@@ -232,7 +232,7 @@ def main():
         # define min number of counts required per anchor to prevent ignorelisting
         anchor_min_count = k * c
         # get the anchors that do not meet the abundance requirement of anchor_min_co
-        ignorelist_anchors_abundancunte = anchor_counts.get_ignorelist_anchors(anchor_min_count)
+        ignorelist_anchors_abundance = anchor_counts.get_ignorelist_anchors(anchor_min_count)
         # add those anchors to the ignorelist
         for anchor in ignorelist_anchors_abundance:
             status_checker.update_ignorelist(anchor, read_counter_freeze)
