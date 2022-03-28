@@ -121,7 +121,7 @@ def compute_phase_2_score(previous_scores, counts_df, distance):
         .sum(axis=0)
     )
     # n -> sample-anchor specific
-    new_scores = previous_scores * (n - 1 )/n) + (distance/n)
+    new_scores = previous_scores * (n - 1)/n + (distance/n)
 
     return new_scores
 

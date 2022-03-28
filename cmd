@@ -1,1 +1,0 @@
-nextflow run main.nf -profile sherlock --input samplesheet_e_coli.csv --target_threshold 5 --consensus_length 200 --kmer_size 27 --direction down --adj_distance 0 --target_threshold 5 --anchor_counts_threshold 10 --anchor_freeze_threshold 1000000 --anchor_mode tile --window_slide 5 --read_len 250 -resume
