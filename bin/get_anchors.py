@@ -179,7 +179,7 @@ def main():
     for iteration in range(1, args.n_iterations+1):
 
         # only continue accumulations if we have less than 10k anchors with candidate scores
-        if anchor_scores_topTargets.get_num_scores() >= 10000:
+        if len(anchor_scores_topTargets) >= 10000:
             break
 
         # initialise loggging counters
@@ -249,7 +249,7 @@ def main():
         logging.info(f'\tReads processed total = {num_reads * len(samples)}')
         logging.info(f'\tRead_counter_freeze = {read_counter_freeze}')
         logging.info(f'\tIteration run time = {round(run_time, 2 )} seconds')
-        logging.info(f'\t\tnumber of anchors with candidate scores = {anchor_scores_topTargets.get_num_scores()}')
+        logging.info(f'\t\tnumber of anchors with candidate scores = {len(anchor_scores_topTargets)}')
         logging.info(f'\t\tnumber of phase_1 calculations = {phase_1}')
         logging.info(f'\t\t\tscore passed diversity condition, score is kept = {phase_1_compute_score}')
         logging.info(f'\t\t\tscore failed ailed diversity condition, score is ignored = {phase_1_ignore_score}')
@@ -270,7 +270,7 @@ def main():
             {
                 'Run Time' : run_time,
                 'Total Reads' : num_reads * len(samples),
-                'Anchors with Scores': anchor_scores_topTargets.get_num_scores(),
+                'Anchors with Scores': len(anchor_scores_topTargets),
                 'Phase 1 Total': phase_1,
                 'Phase 1 Kept': phase_1_compute_score,
                 'Phase 1 Ignored': phase_1_ignore_score,
@@ -293,7 +293,7 @@ def main():
     summary_scores = anchor_scores_topTargets.get_summary_scores(group_ids_dict, use_std)
 
     # only ignorelist if we have less than anchor_score_threshold anchors with scores
-    if anchor_scores_topTargets.get_num_scores() >= args.anchor_score_threshold:
+    if len(anchor_scores_topTargets) >= args.anchor_score_threshold:
 
         # ignorelist condition: ignorelist the anchors with scores in [40% quantile, 60% quantile]
         lower = 0.4

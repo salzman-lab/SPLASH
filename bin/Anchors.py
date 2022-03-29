@@ -222,29 +222,6 @@ class AnchorCounts(dict):
             increment = self.num_samples
             self.total_counts[anchor] += increment
 
-    def update_top_target_counts(self, anchor, sample, iteration):
-        """
-        Update {anchor : {sample : count}} relative to the iteration and num_samples
-        """
-        L = math.floor(iteration / 100000)
-
-        init_count = self.num_samples
-        increment_count = 1 + (self.num_samples * L)
-
-        # if the anchor is already in the dict
-        if anchor in self.top_target_counts:
-            if sample in self.top_target_counts[anchor]:
-                # if this is not new, increment relative to sample number and iteration
-                self.top_target_counts[anchor][sample] += increment_count
-
-            else:
-                # if this is new, intialize with init_count
-                self.top_target_counts[anchor][sample] = init_count
-
-        # if this is a new anchor, initialize with int_count
-        else:
-            self.top_target_counts[anchor] = {sample : init_count}
-
     def update_all_target_counts(self, anchor, sample, iteration):
         """
         Update {anchor : {sample : count}} relative to the iteration and num_samples
@@ -274,11 +251,105 @@ class AnchorCounts(dict):
         """
         return self.total_counts[anchor]
 
+    def get_all_target_counts(self, anchor, sample):
+        """
+        Get count for an anchor
+        """
+        return self.all_target_counts[anchor][sample]
+
     def get_ignorelist_anchors(self, anchor_min_count):
         """
         Return anchors that do not have at least anchor_min_count number of counts
         """
         return [anchor for anchor, count in self.total_counts.items() if count < anchor_min_count]
+
+
+class AnchorTargets(dict):
+    """
+    Dictionary object to keep track of anchors and their targets
+    """
+    def __init__(self):
+        self = {}
+
+    def update_target(self, anchor, target):
+        """
+        Add unique target to {anchor : target}
+        """
+        if anchor in self:
+            # if this is a new target, add target to anchor
+            if target not in self[anchor]:
+                self[anchor].append(target)
+        else:
+            self[anchor] = [target]
+        return self
+
+    def num_targets(self, anchor):
+        """
+        Return the number of unique targets encountered for that anchor
+        """
+        return len(self[anchor])
+
+    def is_topTarget(self, anchor, target):
+        """
+        Return the unique targets of an anchor
+        """
+        if anchor in self:
+            if target in self[anchor]:
+                return True
+            else:
+                return False
+        else:
+            return False
+
+
+class StatusChecker():
+    """
+    Object to keep track of keeplists and ignorelists
+    """
+    def __init__(self, anchor_counts, anchor_targets_samples, anchor_targets, anchor_scores_topTargets, anchor_target_distances, anchor_status):
+        self.ignorelist = {}
+        self.keeplist = {}
+        self.anchor_counts = anchor_counts
+        self.anchor_targets_samples = anchor_targets_samples
+        self.anchor_targets = anchor_targets
+        self.anchor_scores_topTargets = anchor_scores_topTargets
+        self.anchor_target_distances = anchor_target_distances
+        self.anchor_status = anchor_status
+
+    def update_ignorelist(self, anchor, read_counter_freeze):
+        """
+        Updates ignorelist and removes anchor from all of our dictionaries
+        """
+        # only add anchor to ignorlist if not in read_counter_freeze or if ignorelist is not larger than 4M
+        if (not read_counter_freeze) and (len(self.ignorelist) < 4000000):
+            if anchor not in self.ignorelist:
+                self.ignorelist[anchor] = True
+
+        # pop anchor from all dicts
+        self.anchor_counts.pop(anchor, None)
+        self.anchor_targets_samples.pop(anchor, None)
+        self.anchor_targets.pop(anchor, None)
+        self.anchor_scores_topTargets.pop(anchor, None)
+        self.anchor_target_distances.pop(anchor, None)
+        self.anchor_status.pop(anchor, None)
+
+    def update_keeplist(self, anchor):
+        """
+        Updates keeplist
+        """
+        if anchor not in self.keeplist:
+            self.keeplist[anchor] = True
+
+
+    def is_ignorelisted(self, anchor):
+        """
+        Returns true if an anchor has previously ignorelisted
+        """
+        if anchor in self.ignorelist:
+            return True
+        else:
+            return False
+
 
 
 class AnchorScoresTopTargets(dict):
@@ -288,64 +359,36 @@ class AnchorScoresTopTargets(dict):
     def __init__(self):
         self = {}
 
-    def update(self, anchor, scores, top_targets):
+    def initialise(self, anchor, scores):
         """
-        Update {anchor : [scores, top_targets]}
+        Add {anchor : sample_scores}
         """
-        self[anchor] = [scores, top_targets]
+        self[anchor] = scores
         return self
 
-    def get_score(self, anchor):
+    def update(self, anchor, sample, score):
+        """
+        Update {anchor : sample_scores}
+        """
+        self[anchor][sample] = score
+        return self
+
+    def get_score(self, anchor, sample):
         """
         Return score for a given anchor
         """
-        return self[anchor][0]
-
-    def get_topTargets(self, anchor):
-        """
-        Return topTargets for a given anchor
-        """
-        return self[anchor][1]
+        if sample in self[anchor]:
+            return self[anchor][sample]
+        else:
+            return 0
 
     def compute_target_distance(self, anchor, target):
         """
         Return the min distance of a target to any of its anchor's topTargets
         """
-        topTargets = self.get_topTargets(anchor)
+        topTargets = self[anchor].index.tolist()
         distance = min([utils.get_distance(target, t) for t in topTargets])
         return distance
-
-    def get_target_scores(self, final_anchors_list):
-        """
-        Return a df of anchors, targets, and their current scores
-        """
-        scores_df = pd.DataFrame()
-        for anchor, (scores, _) in self.items():
-            scores_df = scores_df.append(pd.Series(scores, name=anchor))
-        scores_df.index.name = 'anchor'
-        scores_df = scores_df.reset_index()
-        scores_df = scores_df[scores_df['anchor'].isin(final_anchors_list)]
-        return scores_df
-
-    def get_phase_scores_df(self):
-        """Temp helper func"""
-        scores_df = pd.DataFrame()
-        for anchor, (scores, _) in self.items():
-            scores_df = scores_df.append(pd.Series(scores, name=anchor))
-        scores_df.index.name = 'anchor'
-
-        return scores_df.reset_index()
-
-    def get_num_scores(self):
-        """
-        Return the number of anchors with scores
-        """
-        scores_df = pd.DataFrame()
-        for anchor, (scores, _) in self.items():
-            scores_df = scores_df.append(pd.Series(scores, name=anchor))
-
-        scores_df = scores_df.dropna(thresh=3)
-        return len(scores_df)
 
     def get_summary_scores(self, group_ids_dict, use_std):
         """
@@ -414,84 +457,3 @@ class AnchorScoresTopTargets(dict):
             )
         return df
 
-
-class AnchorTargets(dict):
-    """
-    Dictionary object to keep track of anchors and their targets
-    """
-    def __init__(self):
-        self = {}
-
-    def update_target(self, anchor, target):
-        """
-        Add unique target to {anchor : target}
-        """
-        if anchor in self:
-            # if this is a new target, add target to anchor
-            if target not in self[anchor]:
-                self[anchor].append(target)
-        else:
-            self[anchor] = [target]
-        return self
-
-    def num_targets(self, anchor):
-        """
-        Return the number of unique targets entotal_countsed for that anchor
-        """
-        return len(self[anchor])
-
-    def get_targets(self, anchor):
-        """
-        Return the unique targets of an anchor
-        """
-        return self[anchor]
-
-
-
-class StatusChecker():
-    """
-    Object to keep track of keeplists and ignorelists
-    """
-    def __init__(self, anchor_counts, anchor_targets_samples, anchor_targets, anchor_scores_topTargets, anchor_target_distances, anchor_status):
-        self.ignorelist = {}
-        self.keeplist = {}
-        self.anchor_counts = anchor_counts
-        self.anchor_targets_samples = anchor_targets_samples
-        self.anchor_targets = anchor_targets
-        self.anchor_scores_topTargets = anchor_scores_topTargets
-        self.anchor_target_distances = anchor_target_distances
-        self.anchor_status = anchor_status
-
-    def update_ignorelist(self, anchor, read_counter_freeze):
-        """
-        Updates ignorelist and removes anchor from all of our dictionaries
-        """
-        # only add anchor to ignorlist if not in read_counter_freeze or if ignorelist is not larger than 4M
-        if (not read_counter_freeze) and (len(self.ignorelist) < 4000000):
-            if anchor not in self.ignorelist:
-                self.ignorelist[anchor] = True
-
-        # pop anchor from all dicts
-        self.anchor_counts.pop(anchor, None)
-        self.anchor_targets_samples.pop(anchor, None)
-        self.anchor_targets.pop(anchor, None)
-        self.anchor_scores_topTargets.pop(anchor, None)
-        self.anchor_target_distances.pop(anchor, None)
-        self.anchor_status.pop(anchor, None)
-
-    def update_keeplist(self, anchor):
-        """
-        Updates keeplist
-        """
-        if anchor not in self.keeplist:
-            self.keeplist[anchor] = True
-
-
-    def is_ignorelisted(self, anchor):
-        """
-        Returns true if an anchor has previously ignorelisted
-        """
-        if anchor in self.ignorelist:
-            return True
-        else:
-            return False

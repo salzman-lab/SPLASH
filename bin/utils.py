@@ -108,22 +108,17 @@ def compute_phase_1_score(anchor, df):
         )
     )
 
-    return scores, top_targets, min_dists
+    return scores, min_dists
 
 
-def compute_phase_2_score(previous_scores, counts_df, distance):
+def compute_phase_2_score(previous_score, n, distance):
     """
     Returns phase_2 scores, given a distance of a new target
     """
-    n = (
-        counts_df
-        .set_index('target')
-        .sum(axis=0)
-    )
     # n -> sample-anchor specific
-    new_scores = previous_scores * (n - 1)/n + (distance/n)
+    new_score = previous_score * (n/(n+1)) + (distance/n+1)
 
-    return new_scores
+    return new_score
 
 
 def get_read_chunk(iteration, samples):
@@ -251,33 +246,28 @@ def get_iteration_summary_scores(
 
                 # get target
                 target = read.get_target(anchor, looklength, kmer_size)
-                print(read.read)
-                print(anchor)
-                print(target)
-                print(looklength)
-                print(kmer_size)
 
-                # updates
+                # updates, always
                 anchor_counts.update_total_counts(anchor, iteration)                # update anchor total counts
                 anchor_counts.update_all_target_counts(anchor, sample, iteration)   # update anchor-sample counts for all targets
-                anchor_counts.update_top_target_counts(anchor, sample, iteration)   # update anchor-sample counts for top targets
 
-                # if we are not at threshold, accumulate this target as a topTarget and accumulate anchor_samples count
-                if is_phase_0(anchor, target_counts_threshold, anchor_targets):
+                # if we have not yet logged this target as a top target and we are not at target_counts_threshold
+                if not anchor_targets.is_topTarget(anchor, target):
+                    if is_phase_0(anchor, target_counts_threshold, anchor_targets):
+                        anchor_targets.update_target(anchor, target)             # accumulate as a top target
+                        anchor_targets_samples.update(anchor, target, sample)    # acummulate counts of top target
 
-                    # accumulate targets
-                    anchor_targets.update_target(anchor, target)                    # update anchor-targets
-                    anchor_targets_samples.update(anchor, target, sample)           # update anchor-sample-target counts
+                # else, this is a top target that we have seen before, accumulate counts
+                else:
+                    anchor_targets_samples.update(anchor, target, sample)        # acummulate counts of top target
 
                 # if we are at threshold, only accumulate anchor_samples count and anchor total counts
-                elif is_phase_1(anchor, anchor_status, anchor_targets, target_counts_threshold, anchor_counts, anchor_counts_threshold):
+                if is_phase_1(anchor, anchor_status, anchor_targets, target_counts_threshold, anchor_counts, anchor_counts_threshold):
 
                     phase_1 += 1
 
                     # compute phase_1 score
-                    print(anchor)
-                    print(anchor_targets_samples.get_anchor_counts_df(anchor))
-                    scores, top_targets, topTargets_distances = compute_phase_1_score(
+                    scores, topTargets_distances = compute_phase_1_score(
                         anchor,
                         anchor_targets_samples.get_anchor_counts_df(anchor)
                     )
@@ -293,7 +283,7 @@ def get_iteration_summary_scores(
                     else:
 
                         # updates
-                        anchor_scores_topTargets.update(anchor, scores, top_targets)                      # update the topTargets for anchor
+                        anchor_scores_topTargets.initialise(anchor, scores)                               # update the topTargets for anchor
                         anchor_target_distances.update_topTargets_distances(anchor, topTargets_distances) # update distances for topTargets for anchor
 
                         # after phase_1/transition score computation, assign this anchor to phase_2 and only compute phase_2 score for this anchor
@@ -326,14 +316,17 @@ def get_iteration_summary_scores(
 
                     # compute phase_2 score
                     new_score = compute_phase_2_score(
-                        anchor_scores_topTargets.get_score(anchor),
-                        anchor_targets_samples.get_anchor_counts_df(anchor),
+                        anchor_scores_topTargets.get_score(anchor, sample),
+                        anchor_counts.get_all_target_counts(anchor, sample),
                         distance
                     )
+                    anchor_scores_topTargets.get_score(anchor, sample)
 
-                    # updates
-                    anchor_scores_topTargets.update(anchor, new_score, anchor_scores_topTargets.get_topTargets(anchor)) # update the score for this anchor
+                    # update the score for this anchor
+                    anchor_scores_topTargets.update(anchor, sample, new_score)
 
     # return values for logging
     return phase_1, phase_2, phase_1_compute_score, phase_1_ignore_score, phase_2_fetch_distance, phase_2_compute_distance
+
+
 
