@@ -222,12 +222,17 @@ def get_iteration_summary_scores(
     """
     Return the summary scores for the reads of one iteration
     """
+    phase_0 = 0
     phase_1 = 0
     phase_2 = 0
     phase_1_ignore_score = 0
     phase_1_compute_score = 0
     phase_2_fetch_distance = 0
     phase_2_compute_distance = 0
+    valid_anchor = 0
+    invalid_anchor = 0
+    ignorelisted_anchor = 0
+    new_anchor = 0
 
     # get reads for this iteration
     for read_tuple in read_chunk:
@@ -241,8 +246,16 @@ def get_iteration_summary_scores(
         # loop over each anchor in the list of all anchors from each read
         for anchor in anchor_list:
 
+            if status_checker.is_ignorelisted(anchor):
+                ignorelisted_anchor += 1
+            if not anchor_counts.contains(anchor) and len(anchor_counts.total_counts) >= anchor_freeze_threshold:
+                new_anchor += 1
+
             # if this anchor-target pair is eligible for computation, proceed
             if is_valid_anchor_target(anchor, read_counter_freeze, anchor_counts, anchor_freeze_threshold, status_checker):
+
+                if is_phase_0(anchor, target_counts_threshold, anchor_targets):
+                    phase_0 += 1
 
                 # get target
                 target = read.get_target(anchor, looklength, kmer_size)
@@ -325,8 +338,12 @@ def get_iteration_summary_scores(
                     # update the score for this anchor
                     anchor_scores_topTargets.update(anchor, sample, new_score)
 
+                valid_anchor += 1
+            else:
+                invalid_anchor += 1
+
     # return values for logging
-    return phase_1, phase_2, phase_1_compute_score, phase_1_ignore_score, phase_2_fetch_distance, phase_2_compute_distance
+    return phase_0, phase_1, phase_2, phase_1_compute_score, phase_1_ignore_score, phase_2_fetch_distance, phase_2_compute_distance, valid_anchor, invalid_anchor, ignorelisted_anchor, new_anchor
 
 
 

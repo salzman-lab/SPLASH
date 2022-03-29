@@ -326,7 +326,9 @@ class StatusChecker():
                 self.ignorelist[anchor] = True
 
         # pop anchor from all dicts
-        self.anchor_counts.pop(anchor, None)
+        self.anchor_counts.total_counts.pop(anchor, None)
+        self.anchor_counts.all_target_counts.pop(anchor, None)
+        self.anchor_counts.top_target_counts.pop(anchor, None)
         self.anchor_targets_samples.pop(anchor, None)
         self.anchor_targets.pop(anchor, None)
         self.anchor_scores_topTargets.pop(anchor, None)
