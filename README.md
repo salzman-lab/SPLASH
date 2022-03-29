@@ -11,6 +11,7 @@ Motivation
 # Prerequisites
 1. Install Java.
 2. Install [`nextflow`](https://nf-co.re/usage/installation) (`>=20.04.0`).
+3. Install [`docker`](https://www.docker.com/) or [`singularity`](https://sylabs.io/guides/3.5/user-guide/introduction.html). By using the `docker` or `singularity` nextflow profile, the pipeline can be run within the stringstats docker container (also available on [dockerhub](https://hub.docker.com/repository/docker/mariekevromman/stringstats)), which contains all the required dependencies.
 
 # Test Run Command
 To test this pipeine, use the command below. The `test` profie will launch a pipeline run with a small dataset.
