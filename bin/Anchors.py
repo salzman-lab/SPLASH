@@ -190,7 +190,8 @@ class AnchorCounts(dict):
     """
     def __init__(self, num_samples):
         self.total_counts = {}
-        self.sample_counts = {}
+        self.all_target_counts = {}
+        self.top_target_counts = {}
         self.num_samples = num_samples
         self.num_unique_anchors = 0
 
@@ -221,7 +222,7 @@ class AnchorCounts(dict):
             increment = self.num_samples
             self.total_counts[anchor] += increment
 
-    def update_sample_counts(self, anchor, sample, iteration):
+    def update_top_target_counts(self, anchor, sample, iteration):
         """
         Update {anchor : {sample : count}} relative to the iteration and num_samples
         """
@@ -231,18 +232,41 @@ class AnchorCounts(dict):
         increment_count = 1 + (self.num_samples * L)
 
         # if the anchor is already in the dict
-        if anchor in self.sample_counts:
-            if sample in self.sample_counts[anchor]:
+        if anchor in self.top_target_counts:
+            if sample in self.top_target_counts[anchor]:
                 # if this is not new, increment relative to sample number and iteration
-                self.sample_counts[anchor][sample] += increment_count
+                self.top_target_counts[anchor][sample] += increment_count
 
             else:
                 # if this is new, intialize with init_count
-                self.sample_counts[anchor][sample] = init_count
+                self.top_target_counts[anchor][sample] = init_count
 
         # if this is a new anchor, initialize with int_count
         else:
-            self.sample_counts[anchor] = {sample : init_count}
+            self.top_target_counts[anchor] = {sample : init_count}
+
+    def update_all_target_counts(self, anchor, sample, iteration):
+        """
+        Update {anchor : {sample : count}} relative to the iteration and num_samples
+        """
+        L = math.floor(iteration / 100000)
+
+        init_count = self.num_samples
+        increment_count = 1 + (self.num_samples * L)
+
+        # if the anchor is already in the dict
+        if anchor in self.all_target_counts:
+            if sample in self.all_target_counts[anchor]:
+                # if this is not new, increment relative to sample number and iteration
+                self.all_target_counts[anchor][sample] += increment_count
+
+            else:
+                # if this is new, intialize with init_count
+                self.all_target_counts[anchor][sample] = init_count
+
+        # if this is a new anchor, initialize with int_count
+        else:
+            self.all_target_counts[anchor] = {sample : init_count}
 
     def get_total_counts(self, anchor):
         """
@@ -421,6 +445,7 @@ class AnchorTargets(dict):
         Return the unique targets of an anchor
         """
         return self[anchor]
+
 
 
 class StatusChecker():

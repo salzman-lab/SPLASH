@@ -1,7 +1,7 @@
 
 process GET_ANCHORS {
 
-    label 'process_high'
+    label 'process_medium'
     conda (params.enable_conda ? "conda-forge::python=3.9.5 pandas=1.4.1 numpy=1.22.3" : null)
 
     input:

@@ -9,26 +9,26 @@ class Read():
     """
     def __init__(self, read):
         self.read = read
-    
-    def get_anchors(self, anchor_len, anchor_mode, window_slide, looklength, kmer_size):
+
+    def get_anchors(self, anchor_mode, window_slide, looklength, kmer_size):
         """
         Get list of chunked anchors from read
         """
         if anchor_mode == 'chunk':
-            step_size = anchor_len 
+            step_size = kmer_size
         elif anchor_mode == 'tile':
             step_size = window_slide
 
-        last_base = looklength + kmer_size
+        last_base = len(self.read) - (looklength + 2 * kmer_size)
         anchor_list = [
-            self.read[0+i:anchor_len+i] 
-            for i 
-            in range(0, last_base, step_size) 
-            if len(self.read[0+i:anchor_len+i])==anchor_len
+            self.read[0+i:kmer_size+i]
+            for i
+            in range(0, last_base, step_size)
+            if len(self.read[0+i:kmer_size+i])==kmer_size
         ]
         return anchor_list
 
-    def get_target(self, anchor, target_dist, target_len):
+    def get_target(self, anchor, looklength, kmer_size):
         """
         Get targets for a given anchor that are size=target_len and target_dist away from the anchor
         """
@@ -36,13 +36,13 @@ class Read():
         anchor_end = self.read.index(anchor) + len(anchor)
 
         # get target position
-        target_start = anchor_end + target_dist
-        target_end = target_start + target_len
+        target_start = anchor_end + looklength
+        target_end = target_start + kmer_size
 
         target = self.read[target_start:target_end]
 
         # if adj anchor exists, add adj anchor to anchor_dict
-        if len(target) == target_len:
+        if len(target) == kmer_size:
             return target
         else:
             return None
