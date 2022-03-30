@@ -398,7 +398,7 @@ class AnchorScoresTopTargets(dict):
         """
         # Convert dict to dataframe
         scores_df = pd.DataFrame()
-        for anchor, (scores, _) in self.items():
+        for (anchor, scores) in self.items():
             scores_df = scores_df.append(pd.Series(scores, name=anchor))
 
         # drop any anchors that do not have scores for at least 3 samples

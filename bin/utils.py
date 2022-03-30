@@ -246,10 +246,10 @@ def get_iteration_summary_scores(
         # loop over each anchor in the list of all anchors from each read
         for anchor in anchor_list:
 
-            if status_checker.is_ignorelisted(anchor):
-                ignorelisted_anchor += 1
-            if not anchor_counts.contains(anchor) and len(anchor_counts.total_counts) >= anchor_freeze_threshold:
-                new_anchor += 1
+            # if status_checker.is_ignorelisted(anchor):
+            #     ignorelisted_anchor += 1
+            # if not anchor_counts.contains(anchor) and len(anchor_counts.total_counts) >= anchor_freeze_threshold:
+            #     new_anchor += 1
 
             # if this anchor-target pair is eligible for computation, proceed
             if is_valid_anchor_target(anchor, read_counter_freeze, anchor_counts, anchor_freeze_threshold, status_checker):

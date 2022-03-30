@@ -268,8 +268,8 @@ def main():
         logging.info(f'\tIteration run time = {round(run_time, 2 )} seconds')
         logging.info("")
         logging.info(f'\tinvalid anchors = {invalid_anchor} ({invalid_anchor_percent}%)')
-        logging.info(f'\t\tanchor was on the ignorelist = {ignorelisted_anchor}')
-        logging.info(f'\t\tanchor is new and anchor_counter is full = {new_anchor}')
+        # logging.info(f'\t\tanchor was on the ignorelist = {ignorelisted_anchor}')
+        # logging.info(f'\t\tanchor is new and anchor_counter is full = {new_anchor}')
         logging.info("")
         logging.info(f'\tvalid anchors = {valid_anchor} ({valid_anchor_percent}%)')
         logging.info(f'\t\tphase_0 anchors = {phase_0} ({phase_0_perecent}%)')
@@ -352,6 +352,7 @@ def main():
         .index
         .to_list()
     )
+
     # filter for these anchors and drop any duplicates
     final_anchors = (
         pd.DataFrame(
@@ -360,9 +361,6 @@ def main():
         )
         .drop_duplicates()
     )
-
-    # output for debugging
-    anchor_scores_topTargets.get_phase_scores_df().to_csv("scores_df.tsv", index=False, sep='\t')
 
     ## output this final anchors list
     final_anchors.to_csv(args.outfile, index=False, sep='\t')
