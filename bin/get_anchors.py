@@ -118,7 +118,6 @@ def main():
     logging.info(f'Number of total anchor counts required to calculate phase_1 score = {args.anchor_counts_threshold}')
     logging.info('min(Mean scores) to ignorelist = 3')
     logging.info(f'Percentile of scores to ignorelist = 40-60')
-    logging.info(f'Read freeze threshold = 300k reads')
     logging.info(f'Anchor freeze threshold = {args.anchor_freeze_threshold} anchors')
     logging.info('')
 
@@ -242,11 +241,19 @@ def main():
         with open(f'ignorelist_iteration_{iteration}.tsv', 'w') as outfile:
             outfile.write("\n".join(status_checker.ignorelist))
 
-        valid_anchor_percent = round((valid_anchor / (valid_anchor + invalid_anchor)) * 100, 2)
-        invalid_anchor_percent = round((invalid_anchor / (valid_anchor + invalid_anchor)) * 100, 2)
-        phase_0_perecent = round((phase_0 / (phase_0+phase_1+phase_2)) * 100, 2)
-        phase_1_percent = round((phase_1 / (phase_0+phase_1+phase_2)) * 100, 2)
-        phase_2_percent = round((phase_2 / (phase_0+phase_1+phase_2)) * 100, 2)
+        try:
+            valid_anchor_percent = round((valid_anchor / (valid_anchor + invalid_anchor)) * 100, 2)
+            invalid_anchor_percent = round((invalid_anchor / (valid_anchor + invalid_anchor)) * 100, 2)
+            phase_0_perecent = round((phase_0 / (phase_0+phase_1+phase_2)) * 100, 2)
+            phase_1_percent = round((phase_1 / (phase_0+phase_1+phase_2)) * 100, 2)
+            phase_2_percent = round((phase_2 / (phase_0+phase_1+phase_2)) * 100, 2)
+
+        except:
+            valid_anchor_percent = 0
+            invalid_anchor_percent = 0
+            phase_0_perecent = 0
+            phase_1_percent = 0
+            phase_2_percent = 0
 
         """logging"""
         logging.info("-----------------------------------------------------------------------------------------------------------------")
