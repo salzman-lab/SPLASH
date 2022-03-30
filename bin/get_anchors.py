@@ -142,7 +142,7 @@ def main():
 
     # if not using standard deviation score, make dict of {sample : group_id}
     group_ids_dict = {}
-    if not use_std or samples.shape[1] != 1:
+    if not use_std or sample_list.shape[1] != 1:
         group_ids = sample_list.iloc[:,1].tolist()
         for i in range(0, len(samples)):
             group_ids_dict[samples[i]] = group_ids[i]
