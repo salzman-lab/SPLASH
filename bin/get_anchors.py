@@ -96,12 +96,6 @@ def get_args():
 def main():
     args = get_args()
 
-    # redefine bool
-    if args.use_std == "true":
-        use_std = True
-    elif args.use_std == "false":
-        use_std = False
-
     # set up logging
     logging.basicConfig(
         filename = f'get_anchors.log',
@@ -127,6 +121,15 @@ def main():
         args.samplesheet,
         header=None
     )
+
+    # redefine bool
+    if args.use_std == "true":
+        use_std = True
+    elif args.use_std == "false":
+        use_std = False
+    if sample_list.shape[1] == 1:
+        use_std = True
+    print(use_std)
 
     # get list of samples from fastq_files
     # if fastq_file = "file1.fastq.gz", sample = "file1"
