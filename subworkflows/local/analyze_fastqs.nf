@@ -1,4 +1,3 @@
-
 include { GET_READ_LENGTH           } from '../../modules/local/get_read_length'
 include { SPLIT_FASTQS              } from '../../modules/local/split_fastqs'
 include { GET_ANCHORS               } from '../../modules/local/get_anchors'
@@ -6,6 +5,8 @@ include { PARSE_ANCHORS             } from '../../modules/local/parse_anchors'
 include { COMPUTE_ANCHOR_SCORES     } from '../../modules/local/compute_anchor_scores'
 include { BOWTIE2_ANNOTATION        } from '../../modules/local/bowtie2_annotation'
 include { ADD_ANNOTATIONS           } from '../../modules/local/add_annotations'
+
+include { TRIMGALORE                } from '../../modules/nf-core/modules/trimgalore/main'
 
 workflow ANALYZE_FASTQS {
     take:
@@ -50,11 +51,19 @@ workflow ANALYZE_FASTQS {
         ch_anchors = params.anchors_file
 
     } else {
+
+        /*
+        // Trim fastqs
+        */
+        TRIMGALORE(
+            ch_fastqs
+        )
+
         /*
         // Process to split each fastq into size read_chunk and gzip compress
         */
         SPLIT_FASTQS(
-            ch_fastqs,
+            TRIMGALORE.out.fastq,
             num_lines,
             num_chunk_lines
         )
@@ -160,5 +169,3 @@ workflow ANALYZE_FASTQS {
     )
 
 }
-
-
