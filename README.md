@@ -60,7 +60,7 @@ In this example bowtie2 samplesheet, the output anchors and targets will be alig
 
 
 ## Optional Inputs
-*`--anchors_file`*
+### *`--anchors_file`*
 
 To bypass the `get_anchors` step and input a list of anchors of interest, provide this parameter.
 
@@ -79,7 +79,8 @@ nextflow run kaitlinchaung/stringstats \
     -latest
 ```
 
-*`--reannotate`*
+### *`--reannotate`*
+
 This option allows users to reannotate previous stringstats results with fastas from a different `--bowtie2_samplesheet`. This requires the paths to the previous stringstats results files. If a `--bowtie2_samplesheet` is not provided, it will default to the set of references that is available to Sherlock users.
 
 An example run command with this optional input:
