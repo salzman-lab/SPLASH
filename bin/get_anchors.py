@@ -129,7 +129,6 @@ def main():
         use_std = False
     if sample_list.shape[1] == 1:
         use_std = True
-    print(use_std)
 
     # get list of samples from fastq_files
     # if fastq_file = "file1.fastq.gz", sample = "file1"

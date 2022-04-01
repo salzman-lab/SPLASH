@@ -7,9 +7,10 @@ import re
 import sys
 import argparse
 import logging
+from Bio import SeqIO
 
 
-def buildConcensus(kmers, consensus_length, direction):
+def build_consensus(kmers, consensus_length, direction):
     """
     Takes a list (for each keyed anchor), and a sequence of bases up to consensus_length;
     Computes base composition of the next seq of bases and outputs
@@ -48,130 +49,123 @@ def buildConcensus(kmers, consensus_length, direction):
     return baseComp, baseCount, baseFrac
 
 
-def recordNextKmers(consensus_length, looklength, kmer_size, myseqs, DNAdict, signif_anchors, anchor_dict, fastq_id, direction):
+def get_targets_consensus_seqs(fastq_file, num_parse_anchors_reads, anchor_dict, consensus_length, kmer_size, looklength, direction):
     """
-    anchorlist is a list -- we will loopthrough the sequence myseq and check if any of the anchorlist kmers are defined
-    anchorlength is length of kmers in file
-    LOOK AHEAD IN THE STRING
+    For each read, check if there are any valid targets and/or consensus sequences,
+    and append them to their respective dictionaries
     """
+    # intialize read counter
+    num_reads = 0
 
-    j = 0
-    ## Consensus anchor step ##
-    for myseq in myseqs:
+    # intialise dict
+    target_dict = {}
+    consensus_dict = anchor_dict.copy()
 
-        ## CONSENSUS_ANCHORS STEP ##
-        matching_seqs = [a for a in signif_anchors if a in myseq]
-        if matching_seqs:
-            for anchor in matching_seqs:
-                # get consensus candidate position
-                if direction == 'down':
-                    consensus_seq_start = myseq.index(anchor) + len(anchor)  # end of the anchor
-                    consensus_seq_end = consensus_seq_start + consensus_length   # end of the anchor + consensus_length
-
-                if direction == 'up':
-                    consensus_seq_end = myseq.index(anchor) # start of the anchor
-                    consensus_seq_start = max(0, consensus_seq_end - consensus_length)
-
-                # get consensus candidate
-                consensus_seq = myseq[consensus_seq_start:consensus_seq_end]
-
-                # keep dict size small for computational efficiency
-                if len(DNAdict[anchor]) < 100:
-                    DNAdict[anchor].append(consensus_seq)
-
-        ## ADJ_KMER STEP ##
-        matching_anchors = [a for a in signif_anchors if a in myseq]
-        if matching_anchors:
-
-            # check for adj_kmers
-            for anchor in matching_anchors:
-                # get anchor position
-                anchor_start = myseq.index(anchor)
-                anchor_end = anchor_start + len(anchor)
-                # get adjacent anchor position
-                if direction == 'down':
-                    adj_kmer_start = anchor_end + looklength
-                    adj_kmer_end = adj_kmer_start + kmer_size
-
-                if direction == 'up':
-                    adj_kmer_end = anchor_start
-                    adj_kmer_start = max(0, anchor_end - (kmer_size + looklength))
-
-                adj_kmer = myseq[adj_kmer_start:adj_kmer_end]
-
-                # if adj anchor exists, add adj anchor to anchor_dict
-                if len(adj_kmer) == kmer_size:
-                    anchor_tuple = (anchor, adj_kmer)
-
-                    if anchor_tuple not in anchor_dict.keys():
-                        anchor_dict[anchor_tuple] = 1
-                    else:
-                        anchor_dict[anchor_tuple] += 1
-        j += 1
-        if j % 100000 == 1:
-            print(j)
-
-    return DNAdict, anchor_dict
-
-
-def returnSeqs(fastq_file, num_parse_anchors_reads):
-    """
-    GETTING REAL SEQS
-    """
-
-    myseqs = []
-    tot_lines = 0
-
+    # parse reads from fastq file
     with gzip.open(fastq_file, 'rt') as handle:
-        for read_seq in handle:
-            # check we're in sequence line (remainder of 2)
-            tot_lines += 1
-            if tot_lines%4!=2:
-                continue
-            # strip of new line character
-            read_seq = read_seq.strip('\n')
+        for record in SeqIO.parse(handle, 'fastq'):
 
-            if len(myseqs) < num_parse_anchors_reads:
-                myseqs.append(read_seq)
+            # get read and increment counter
+            read = str(record.seq)
+            num_reads += 1
 
-    return myseqs
+            # only proceed if we have not yet reached read threshold
+            if num_reads < num_parse_anchors_reads:
+
+                # tile the read by 1bp and check if tiles exist in the anchor dict
+                # this is more computationally efficient than checking each read for any anchors
+                for i in range(0, len(read)):
+
+                    # define current tile as potential anchor
+                    anchor = read[0+i:kmer_size+i]
+
+                    # if potential anchor is in anchor_dict
+                    if anchor in anchor_dict:
+
+                        # get anchor start and end positions
+                        anchor_start = read.index(anchor)
+                        anchor_end = anchor_start + kmer_size
+
+                        # fetch sequences, relative to position
+                        if direction == 'down':
+                            # get downstream target start and end positions
+                            target_start = anchor_end + looklength
+                            target_end = target_start + kmer_size
+
+                            # get downstream consensus start and end positions
+                            consensus_seq_start = anchor_end
+                            consensus_seq_end = consensus_seq_start + consensus_length
+
+                        if direction == 'up':
+                            # get upstream target stand and end positions
+                            target_end = anchor_start - looklength
+                            target_start = max(0, anchor_end - (kmer_size + looklength))
+
+                            # get upstream consensus start and end positions
+                            consensus_seq_end = anchor_start
+                            consensus_seq_start = max(0, consensus_seq_end - consensus_length)
+
+                        # define target and consensus sequences
+                        target = read[target_start : target_end]
+                        consensus_seq = read[consensus_seq_start:consensus_seq_end]
+
+                        # if target is large enough, add it to the target_dict
+                        if len(target) == kmer_size:
+                            anchor_tuple = (anchor, target)
+
+                            if anchor_tuple not in target_dict.keys():
+                                target_dict[anchor_tuple] = 1
+                            else:
+                                target_dict[anchor_tuple] += 1
+
+                        # if we have less than 100 candidate consensus sequences, add it to the consensus_dict
+                        if len(consensus_dict[anchor]) < 100:
+                            consensus_dict[anchor].append(consensus_seq)
+
+    return target_dict, consensus_dict
 
 
-def returnAnchors(infile, direction):
+def output_consensus(consensus_dict, consensus_length, direction, out_consensus_fasta_file, out_counts_file, out_fractions_file):
     """
-    GETTING REAL SEQS
+    Build consensus sequences and write out
     """
 
-    anchors=[]
-    # Count reads
-    tot_lines =  0
+    # Open output file
+    outfile_1 = open(out_consensus_fasta_file, "w")
+    outfile_2 = open(out_counts_file, "w")
+    outfile_3 = open(out_fractions_file, "w")
 
-    if direction == 'up':
-        ind_qval = 5
-        ind_seq = 6
-    elif direction == 'down':
-        ind_qval = 10
-        ind_seq = 11
+    # Process for each anchor that contains candidate consensus sequences
+    for anchor in consensus_dict.keys():
 
-    with gzip.open(infile, "rt") as handle:
+        if len(consensus_dict.get(anchor)) > 0 :
 
-        # parse read
-        for line in handle:
+            # build the consensus
+            out = build_consensus(consensus_dict.get(anchor), consensus_length, direction)
 
-            # check we're in sequence line (remainder of 2)
-            tot_lines += 1
-            if tot_lines>1 :
-                # strip of new line character
-                qval = line.strip().split("\t")[ind_qval]
-                seq = line.strip().split("\t")[ind_seq]
+            if len(out[1])>0:
 
-                if 'QVAL' in qval: # exclude header lies
-                    next
-                else:
-                    ## edit so that either qup or qdown is less than 0.01
-                    if float(qval) < .01 : # lots of clusters
-                        anchors.append(seq)
-    return list(set(anchors))
+                # write out fasta entry
+                outfile_1.write(
+                    f'>{anchor}\n{out[0]}\n'
+                )
+
+                # write out counts entry
+                str2 = '\t'.join([str(x) for x in out[1]])
+                outfile_2.write(
+                    f'{anchor}\t{out[0]}\t{str2}\n'
+                )
+
+                # write out fraction entry
+                str3 = '\t'.join([str(x) for x in out[2]])
+                outfile_3.write(
+                    f'{anchor}\t{out[0]}\t{str3}\n'
+                )
+
+    # close files
+    outfile_1.close()
+    outfile_2.close()
+    outfile_3.close()
 
 
 def get_args():
@@ -211,9 +205,9 @@ def get_args():
         type=str,
         help='output fractions file'
     )
-    parser.add_argument("--out_adj_kmer_file",
+    parser.add_argument("--out_target_file",
         type=str,
-        help='output adj_kmer file'
+        help='output target file'
     )
     parser.add_argument("--consensus_length",
         type=int,
@@ -238,81 +232,30 @@ def get_args():
     return args
 
 
-def write_out(nextseqs, consensus_length, direction, out_consensus_fasta_file, out_counts_file, out_fractions_file):
-    """
-    write out files
-    """
-
-    # filse for writing
-    outfile_1 = open(out_consensus_fasta_file, "w")
-    outfile_2 = open(out_counts_file, "w")
-    outfile_3 = open(out_fractions_file, "w")
-
-    for kk in nextseqs.keys():
-    # gets the value as an array
-    # syntax for getting the values of a key
-        if len(nextseqs.get(kk)) > 0 :  # build concensus
-            out = buildConcensus(nextseqs.get(kk), consensus_length, direction)
-            if len(out[1])>0:
-                outfile_1.write(
-                    f'>{kk}\n{out[0]}\n'
-                )
-
-                str2 = '\t'.join([str(x) for x in out[1]])
-                outfile_2.write(
-                    f'{kk}\t{out[0]}\t{str2}\n'
-                )
-
-                str3 = '\t'.join([str(x) for x in out[2]])
-                outfile_3.write(
-                    f'{kk}\t{out[0]}\t{str3}\n'
-                )
-
-    outfile_1.close()
-    outfile_2.close()
-    outfile_3.close()
-
-
 def main():
     args = get_args()
 
-    # get reads from fastq
-    myseqs = returnSeqs(
-        args.fastq_file,
-        args.num_parse_anchors_reads
-    )
-
-    # dict for significant anchors and their downstream kmers
-    anchor_dict = {}
-
-    # create dict from signif anchors
-    signif_anchors_df = (
+    # get anchors from file
+    anchors = (
         pd.read_csv(
             args.anchors_file,
             sep='\t'
-        )
-    )
-    signif_anchors = (
-        signif_anchors_df['anchor']
+        )['anchor']
         .drop_duplicates()
         .tolist()
     )
 
-    # DNA dictionary stores the set of reads after each anchor in the anchorlist
-    DNAdict = {}
-    for an in signif_anchors:
-        DNAdict[an] = []
+    # create dict with anchors as keys
+    anchor_dict = {a:[] for a in anchors}
 
     # get all of the next kmers for the anchors in PREPARATION FOR BUILDING CONCENSUS
-    nextseqs, anchor_dict = recordNextKmers(
-        args.consensus_length,
-        args.looklength,
-        args.kmer_size,
-        myseqs,
-        DNAdict,
-        signif_anchors,
+    target_dict, consensus_dict = get_targets_consensus_seqs(
+        args.fastq_file,
+        args.num_parse_anchors_reads,
         anchor_dict,
-        args.fastq_id,
+        args.consensus_length,
+        args.kmer_size,
+        args.looklength,
         args.direction
     )
 
@@ -320,13 +263,15 @@ def main():
         # write out anchor dict for merging later
         anchor_df = (
             pd.DataFrame.from_dict(
-                anchor_dict,
+                target_dict,
                 orient='index'
             )
             .reset_index()
             .dropna()
         )
 
+        # reformat such that there are is a column of counts per anchor-target,
+        # where the column is the fastq_id
         anchor_df.columns = ['anchor_tuple', args.fastq_id]
         anchor_df[['anchor', 'target']] = (
             pd.DataFrame(
@@ -335,18 +280,22 @@ def main():
             )
         )
 
+        # final output columns
         anchor_df = anchor_df[['anchor', 'target', args.fastq_id]]
+
     else:
         anchor_df = pd.DataFrame.from_dict(anchor_dict)
 
+    # output anchor-target counts for this fastq
     anchor_df.to_csv(
-        args.out_adj_kmer_file,
+        args.out_target_file,
         index=False,
         sep='\t'
     )
 
-    write_out(
-        nextseqs,
+    # build and output the consensus files
+    output_consensus(
+        consensus_dict,
         args.consensus_length,
         args.direction,
         args.out_consensus_fasta_file,
@@ -355,5 +304,6 @@ def main():
     )
 
 
-
 main()
+
+
