@@ -35,6 +35,8 @@ include { GET_SOFTWARE_VERSIONS } from '../modules/local/get_software_versions' 
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
 include { ANALYZE_FASTQS } from '../subworkflows/local/analyze_fastqs'
+include { REANNOTATE     } from '../subworkflows/local/reannotate'
+
 
 /*
 ========================================================================================
@@ -56,9 +58,16 @@ include { ANALYZE_FASTQS } from '../subworkflows/local/analyze_fastqs'
 
 workflow STRINGSTATS {
 
-    ANALYZE_FASTQS (
-        params.input
-    )
+    if (params.reannotate) {
+        REANNOTATE(
+            params.anchor_target_counts,
+            params.anchor_scores
+        )
+    } else {
+        ANALYZE_FASTQS(
+            params.input
+        )
+    }
 
 }
 
