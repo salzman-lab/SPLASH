@@ -111,6 +111,7 @@ nextflow run kaitlinchaung/stringstats \
 | Argument              | Description       | Default  |
 | --------------------- | ----------------- |--------- |
 | --kmer_size | Length of sequences for anchors and targets | 27 |
+| --unmapped | Boolean value to indicate if all reads should be used as input, or only the unmapped reads (based on bowtie2 mapping against provided `--genome`). If `--unmapped false`, all reads will be used in this run; if `--unmapped true`, only the unmapped reads will be used in this run; options: `true`, `false`   | `false` |
 
 `get_anchors`
 
