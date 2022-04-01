@@ -96,7 +96,9 @@ nextflow run kaitlinchaung/stringstats \
 
 ## Parameters
 
-Please note that input parameters should be passed with the a double-hypen, while Nextflow-specific parameters should be passed with a single hyphen. For example:
+Please note that input parameters should be passed with the a double-hypen, while Nextflow-specific parameters should be passed with a single hyphen. Parameters that are not explicitly defined will be set to the defaults below.
+
+For example:
 ```
 nextflow run kaitlinchaung/stringstats \
     --input input.txt \
