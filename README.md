@@ -50,6 +50,7 @@ In this example samplesheet, 4 fastq files are being analyzed, without comparing
 The bowtie2 samplesheet should be 1-column file with no header, consisting of:
 1. full paths to [bowtie2 references](bowtie link), including the reference stem
 
+Currently, this paramter defaults to a set of references that is available to Sherlock users.
 
 In this example bowtie2 samplesheet, the output anchors and targets will be aligned to the *mm10* and *hg38* indices.
 ```
@@ -78,10 +79,23 @@ nextflow run kaitlinchaung/stringstats \
     -latest
 ```
 
+*`--reannotate`*
+This option allows users to reannotate previous stringstats results with fastas from a different `--bowtie2_samplesheet`. This requires the paths to the previous stringstats results files. If a `--bowtie2_samplesheet` is not provided, it will default to the set of references that is available to Sherlock users.
+
+An example run command with this optional input:
+```
+nextflow run kaitlinchaung/stringstats \
+    --input samplesheet.csv \
+    --reannotate true \
+    --anchor_target_counts /results/anchor_targets_counts.tsv \
+    --anchor_scores /results/anchor_scores/tsv \
+    -r main \
+    -latest
+```
 
 ## Parameters
 
-Please note that input parameters should be passed with the a double-hypen, while Nextflow-specific parameters should be passed with a single hyphen. For example: 
+Please note that input parameters should be passed with the a double-hypen, while Nextflow-specific parameters should be passed with a single hyphen. For example:
 ```
 nextflow run kaitlinchaung/stringstats \
     --input input.txt \
@@ -142,7 +156,7 @@ nextflow run kaitlinchaung/stringstats \
 
 `compute_anchor_scores`
 1. `anchor_target_counts.tsv`
-    * A table of anchor-target counts per fastq file, with targets sorted by decreasing abundance per anchor 
+    * A table of anchor-target counts per fastq file, with targets sorted by decreasing abundance per anchor
     * For each anchor-target, the minimum Hamming distnace of each target with its previus targets is reported
 
 
