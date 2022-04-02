@@ -7,6 +7,8 @@ process COMPUTE_ANCHOR_SCORES {
 
     input:
     path ch_targets_samplesheet
+    val bound_distance
+    val max_distance
 
     output:
     path outfile_counts_distances   , emit: anchor_target_counts
@@ -22,6 +24,8 @@ process COMPUTE_ANCHOR_SCORES {
     """
     compute_anchor_scores.py \\
         --samplesheet ${ch_targets_samplesheet} \\
+        --bound_distance ${bound_distance} \\
+        --max_distance ${max_distance} \\
         --outfile_counts_distances ${outfile_counts_distances} \\
         --outfile_anchor_scores ${outfile_anchor_scores} \\
         --outfile_anchor_fasta ${outfile_anchor_fasta} \\

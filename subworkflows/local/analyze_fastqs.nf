@@ -120,7 +120,9 @@ workflow ANALYZE_FASTQS {
     // Process to get anchor scores and anchor-target counts
     */
     COMPUTE_ANCHOR_SCORES(
-        targets_samplesheet
+        targets_samplesheet,
+        params.bound_distance,
+        params.max_distance
     )
 
     // create samplesheet of bowtie2 indices
