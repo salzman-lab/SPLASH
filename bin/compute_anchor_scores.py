@@ -13,6 +13,14 @@ def get_args():
         help='input samplesheet'
     )
     parser.add_argument(
+        "--bound_distance",
+        type=str
+    )
+    parser.add_argument(
+        "--max_distance",
+        type=int
+    )
+    parser.add_argument(
         "--outfile_counts_distances",
         type=str
     )
@@ -43,7 +51,7 @@ def distance(seq1, seq2):
     return distance
 
 
-def get_distance_df(anchor, df):
+def get_distance_df(anchor, df, bound_distance):
     """
     Takes a df of anchor counts and returns a df of hamming distances per target, relative to target abundance
     """
@@ -70,6 +78,9 @@ def get_distance_df(anchor, df):
         else:
             min_dist = min([distance(x, sequence) for x in candidates])
 
+        if bound_distance:
+            min_dist = min(bound_distance, min_dist)
+
         # record target and it's distance
         min_dists.append((sequence, min_dist))
 
@@ -86,7 +97,7 @@ def get_distance_df(anchor, df):
     return distance_df
 
 
-def get_distance_scores(anchor, counts):
+def get_distance_scores(anchor, counts, bound_distance):
     """
     Get distance scores for one anchor
     """
@@ -119,7 +130,7 @@ def get_distance_scores(anchor, counts):
     )
 
     # now that the targets are sorted by abundance, get the distances per target
-    distance_df = get_distance_df(anchor, counts)
+    distance_df = get_distance_df(anchor, counts, bound_distance)
 
     # make version of counts with distance column
     counts_distances = counts.copy()
@@ -167,6 +178,12 @@ def get_distance_scores(anchor, counts):
 def main():
     args = get_args()
 
+    # define
+    if args.bound_distance == 'true':
+        bound_distance = args.max_distance
+    elif args.bound_distance == 'false':
+        bound_distance = None
+
     # read in all the dfs
     with open(args.samplesheet) as file:
         df_paths = file.readlines()
@@ -195,7 +212,7 @@ def main():
 
     # get score for each anchor and append score to output df
     for anchor, df in counts.groupby('anchor'):
-        anchor_scores, counts_distances = get_distance_scores(anchor, df)
+        anchor_scores, counts_distances = get_distance_scores(anchor, df, bound_distance)
         anchor_scores_df = anchor_scores_df.append(anchor_scores)
         counts_distances_df = counts_distances_df.append(counts_distances)
 

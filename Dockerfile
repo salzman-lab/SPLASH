@@ -25,3 +25,10 @@ RUN wget https://github.com/BenLangmead/bowtie2/releases/download/v2.4.5/bowtie2
 RUN unzip bowtie2-2.4.5-linux-x86_64.zip
 ENV PATH="/bin/bowtie2-2.4.5-linux-x86_64:${PATH}"
 WORKDIR /
+
+# install cutadapt
+RUN python3 -m pip install --user --upgrade cutadapt
+ENV PATH="/root/.local/bin:${PATH}"
+
+# install bedtools
+RUN apt-get install -y bedtools

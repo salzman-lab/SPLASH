@@ -23,7 +23,7 @@ process PARSE_ANCHORS {
     out_consensus_fasta_file    = "${fastq_id}_${direction}.fasta"
     out_counts_file             = "${fastq_id}_${direction}_counts.tab"
     out_fractions_file          = "${fastq_id}_${direction}_fractions.tab"
-    out_adj_kmer_file           = "${fastq_id}_target_counts.tsv"
+    out_target_file           = "${fastq_id}_target_counts.tsv"
     """
     parse_anchors.py \\
         --num_parse_anchors_reads ${num_parse_anchors_reads} \\
@@ -33,7 +33,7 @@ process PARSE_ANCHORS {
         --out_consensus_fasta_file ${out_consensus_fasta_file} \\
         --out_counts_file ${out_counts_file} \\
         --out_fractions_file ${out_fractions_file} \\
-        --out_adj_kmer_file ${out_adj_kmer_file} \\
+        --out_target_file ${out_target_file} \\
         --consensus_length ${consensus_length} \\
         --kmer_size ${kmer_size} \\
         --direction ${direction} \\

@@ -125,7 +125,10 @@ nextflow run kaitlinchaung/stringstats \
 | --anchor_mode | Mode of fetching candidate anchors from reads, options: `chunk`, `tile` | `tile` |
 | --window_slide | If `--anchor_mode tile`, the number of bases to slide across the read to fetch the candidate anchors. If `--window_slide 5`, candidate anchors will start at positions [0,4,9,...] | 5 |
 | --use_std | Boolean value if the anchor significance scores should be computed with standard deviation, options: `true`, `false` | `true` |
-| --compute_target_distance | Boolean value if the target distance should be computed upon the encounter of a target. If `--compute_target_distance false`, the target distance of a new target will be assigned a conservative estimate of 1, options: `true`, `false` | `false` |
+| --compute_target_distance | Boolean value if the target distance should be computed upon the encounter of a target. If `--compute_target_distance false`, the target distance of a new target will be assigned a conservative estimate of 1, options: `true`, `false` | `trie` |
+| --bound_distance | Boolean value if the target distances should be bound by `--max_distance`. If `--bound_distance true`, the maximum target distance will be `--max_distance`, options: `true`, `false` | `true` |
+| --max_distance | Integer value of the maximum target distance allowed | 10 |
+
 
 `parse_anchors`
 
