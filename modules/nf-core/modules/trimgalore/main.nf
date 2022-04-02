@@ -11,7 +11,7 @@ process TRIMGALORE {
     tuple val(fastq_id), path(fastq)
 
     output:
-    tuple val(fastq_id), path("*trimmed.fq.gz")        , emit: fastq
+    tuple val(fastq_id), path("*trimmed.fq.gz") , emit: fastq
     tuple val(fastq_id), path("*report.txt")    , emit: log
 
     tuple val(fastq_id), path("*.html")         , emit: html optional true
@@ -31,7 +31,7 @@ process TRIMGALORE {
     // Added soft-links to original fastqs for consistent naming in MultiQC
     """
     trim_galore \\
-        ${fastq_id}.fastq.gz \\
+        ${fastq} \\
         --gzip
     """
 }
