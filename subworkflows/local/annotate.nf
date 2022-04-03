@@ -1,12 +1,11 @@
 include { GET_FASTA             } from '../../modules/local/get_fasta'
 include { BOWTIE2_ANNOTATION    } from '../../modules/local/bowtie2_annotation'
-include { ADD_ANNOTATIONS       } from '../../modules/local/add_annotations'
+include { MERGE_ANNOTATIONS     } from '../../modules/local/merge_annotations'
 
 
-workflow REANNOTATE {
+workflow ANNOTATE {
     take:
     anchor_target_counts
-    anchor_scores
 
     main:
 
@@ -52,10 +51,9 @@ workflow REANNOTATE {
     /*
     // Process to merge anchor scores with anchor hits
     */
-    ADD_ANNOTATIONS(
+    MERGE_ANNOTATIONS(
         anchor_hits_samplesheet,
-        target_hits_samplesheet,
-        anchor_scores
+        target_hits_samplesheet
     )
 
 }

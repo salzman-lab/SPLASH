@@ -3,20 +3,16 @@ include { SPLIT_FASTQS              } from '../../modules/local/split_fastqs'
 include { GET_ANCHORS               } from '../../modules/local/get_anchors'
 include { PARSE_ANCHORS             } from '../../modules/local/parse_anchors'
 include { COMPUTE_ANCHOR_SCORES     } from '../../modules/local/compute_anchor_scores'
-include { BOWTIE2_ANNOTATION        } from '../../modules/local/bowtie2_annotation'
-include { ADD_ANNOTATIONS           } from '../../modules/local/add_annotations'
 
 include { TRIMGALORE                } from '../../modules/nf-core/modules/trimgalore/main'
 
 workflow ANALYZE_FASTQS {
-    take:
-    samplesheet
 
     main:
 
     // parse samplesheet
     Channel
-        .fromPath(samplesheet)
+        .fromPath(params.input)
         .splitCsv(
             header: false
         )
@@ -79,7 +75,7 @@ workflow ANALYZE_FASTQS {
             params.n_iterations,
             params.chunk_size,
             params.kmer_size,
-            file(samplesheet),
+            file(params.input),
             params.target_counts_threshold,
             params.anchor_counts_threshold,
             params.anchor_freeze_threshold,
@@ -125,49 +121,7 @@ workflow ANALYZE_FASTQS {
         params.max_distance
     )
 
-    // create samplesheet of bowtie2 indices
-    ch_indices = Channel.fromPath(params.bowtie2_samplesheet)
-        .splitCsv(
-            header: false
-        )
-        .map{ row ->
-            row[0]
-        }
-
-    // define
-    anchor_fasta = COMPUTE_ANCHOR_SCORES.out.anchor_fasta.first()
-    target_fasta = COMPUTE_ANCHOR_SCORES.out.target_fasta.first()
-
-    /*
-    // Process to align anchors to each bowtie2 index
-    */
-    BOWTIE2_ANNOTATION(
-        anchor_fasta,
-        target_fasta,
-        ch_indices
-    )
-
-    // create samplesheet of the anchor hits files
-    BOWTIE2_ANNOTATION.out.anchor_hits
-        .collectFile(name: "anchor_samplesheet.txt") { file ->
-            def X=file; X.toString() + '\n'
-        }
-        .set{ anchor_hits_samplesheet }
-
-    // create samplesheet of the target hits files
-    BOWTIE2_ANNOTATION.out.target_hits
-        .collectFile(name: "target_samplesheet.txt") { file ->
-            def X=file; X.toString() + '\n'
-        }
-        .set{ target_hits_samplesheet }
-
-    /*
-    // Process to merge anchor scores with anchor hits
-    */
-    ADD_ANNOTATIONS(
-        anchor_hits_samplesheet,
-        target_hits_samplesheet,
-        COMPUTE_ANCHOR_SCORES.out.anchor_scores
-    )
+    emit:
+    anchor_target_counts = COMPUTE_ANCHOR_SCORES.out.anchor_target_counts
 
 }

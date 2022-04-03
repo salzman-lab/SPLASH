@@ -12,8 +12,16 @@ process GET_FASTA {
 
     script:
     """
-    cut -f1 ${anchor_target_counts} | tail -n +2 | sort | uniq | awk '{print ">"\$0"\\n"\$0}' > anchors.fasta
+    cut -f1 ${anchor_target_counts} \
+        | tail -n +2 \
+        | sort \
+        | uniq \
+        | awk '{print ">"\$0"\\n"\$0}' > anchors.fasta
 
-    cut -f2 ${anchor_target_counts} | tail -n +2 | sort | uniq | awk '{print ">"\$0"\\n"\$0}' > targets.fasta
+    cut -f2 ${anchor_target_counts} \
+        | tail -n +2 \
+        | sort \
+        | uniq \
+        | awk '{print ">"\$0"\\n"\$0}' > targets.fasta
     """
 }

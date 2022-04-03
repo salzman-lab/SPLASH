@@ -17,11 +17,7 @@ def get_args():
         type=str
     )
     parser.add_argument(
-        "--anchor_scores",
-        type=str
-    )
-    parser.add_argument(
-        "--outfile_ann_anchor_scores",
+        "--outfile_ann_anchors",
         type=str
     )
     parser.add_argument(
@@ -39,16 +35,14 @@ def main():
     with open(args.anchor_hits_samplesheet) as file:
         anchor_hits_paths = file.readlines()
 
-    # read in summary table
-    df = pd.read_csv(args.anchor_scores, sep='\t')
-
+    anchor_anns = pd.read_csv(anchor_hits_paths[0].strip(), sep='\t')
     # iteratively merge in hits on anchor column
-    for hits_path in anchor_hits_paths:
+    for hits_path in anchor_hits_paths[1:]:
         hits = pd.read_csv(hits_path.strip(), sep='\t')
-        df = df.merge(hits, on='anchor')
+        anchor_anns = anchor_anns.merge(hits, on='anchor')
 
-    df.to_csv(
-        args.outfile_ann_anchor_scores,
+    anchor_anns.to_csv(
+        args.outfile_ann_anchors,
         sep='\t',
         index=False
     )
@@ -56,7 +50,7 @@ def main():
     # read in target_hits
     with open(args.target_hits_samplesheet) as file:
         target_hits_paths = file.readlines()
-    
+
     target_anns = pd.read_csv(target_hits_paths[0].strip(), sep='\t')
     # iteratively merge in hits on taret column
     for hits_path in target_hits_paths[1:]:
