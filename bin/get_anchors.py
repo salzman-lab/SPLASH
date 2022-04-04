@@ -145,11 +145,11 @@ def main():
     logging.info(f'anchor_freeze_threshold  = {args.anchor_freeze_threshold}')
     logging.info(f'read_freeze_threshold    = {args.read_freeze_threshold}')
     logging.info(f'anchor_score_threshold   = {args.anchor_score_threshold}')
-    logging.info(f'anchor_mode = {args.anchor_mode}')
+    logging.info(f'anchor_mode              = {args.anchor_mode}')
     if args.anchor_mode == 'tile':
         logging.info(f'window_slide             = {args.window_slide}')
     logging.info(f'c_type                   = {args.c_type}')
-    logging.info(f'looklength = {args.looklength}')
+    logging.info(f'looklength               = {args.looklength}')
     logging.info(f'num_keep_anchors         = {args.num_keep_anchors}')
     logging.info(f'use_std                  = {use_std}')
     logging.info(f'compute_target_distance  = {args.compute_target_distance}')

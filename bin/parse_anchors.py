@@ -256,10 +256,7 @@ def main():
 
     # get anchors from file
     anchors = (
-        pd.read_csv(
-            args.anchors_file,
-            sep='\t'
-        )['anchor']
+        pd.read_csv(args.anchors_file,sep='\t')['anchor']
         .drop_duplicates()
         .tolist()
     )
@@ -267,7 +264,7 @@ def main():
     # create dict with anchors as keys
     anchor_dict = {a:[] for a in anchors}
 
-    logging.info(f'Starting fetching')
+    logging.info(f'Starting target fetching')
 
     # get all of the next kmers for the anchors in PREPARATION FOR BUILDING CONCENSUS
     target_dict, consensus_dict = get_targets_consensus_seqs(
@@ -280,15 +277,12 @@ def main():
         args.direction
     )
 
-    logging.info(f'Finished fetching')
+    logging.info(f'Finished target fetching')
 
     if anchor_dict:
         # write out anchor dict for merging later
         anchor_df = (
-            pd.DataFrame.from_dict(
-                target_dict,
-                orient='index'
-            )
+            pd.DataFrame.from_dict(target_dict, orient='index')
             .reset_index()
             .dropna()
         )
@@ -310,11 +304,7 @@ def main():
         anchor_df = pd.DataFrame.from_dict(anchor_dict)
 
     # output anchor-target counts for this fastq
-    anchor_df.to_csv(
-        args.out_target_file,
-        index=False,
-        sep='\t'
-    )
+    anchor_df.to_csv(args.out_target_file, index=False, sep='\t')
 
     logging.info(f'Starting consensus building')
     # build and output the consensus files
