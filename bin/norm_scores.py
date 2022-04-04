@@ -71,8 +71,12 @@ def main():
     n_j = (
         counts                          # file of anchor-target-sample counts
         .drop('min_distance', axis=1)   # df of anchor-targets x sample counts
-        .groupby('anchor')              # over all anchors,
+        .groupby('anchor')              # over all anchors
         .sum()                          # get the per-sample sums
+    )
+
+    sqrt_n_j = (
+        n_j                             # per-sample sums
         .apply(np.sqrt)                 # square-root the per anchor-sample sums
     )
 
@@ -82,22 +86,18 @@ def main():
         .drop('anchor_score', axis=1)   # drop anchor_score column
     )
 
-    c_j_S_j = (
+    norm_summary_score = (
         scores                          # df of anchor x S_j
         .assign(**group_ids_dict)       # map group_ids to samples
         .mul(scores)                    # multiply S_j by group_ids
-    )
-
-    norm_summary_score = (
-        c_j_S_j                         # c_j * S*j
-        .mul(n_j, axis=1)               # multiply by n_j (square-root of per anchor-sample sums)
+        .mul(sqrt_n_j, axis=1)          # multiply by n_j (square-root of per anchor-sample sums)
         .sum(axis=1)                    # sum over samples, to get a per-anchor score
     )
 
-    sum_n_j_c_j = (
-        n_j                             # square-root of per anchor-sample sums
+    sum_sqrt_n_j_c_j = (
+        sqrt_n_j                        # square-root of per anchor-sample sums
         .assign(**group_ids_dict)       # map sums to group_ids
-        .mul(n_j)                       # multiply n_j by group_ids
+        .mul(sqrt_n_j)                  # multiply n_j by group_ids
         .sum(axis=1)                    # sum over samples, to get a per-anchor score
     )
 
@@ -111,43 +111,42 @@ def main():
     )
 
     # initialise
-    scores_table['X'] = None
-    scores_table['variance_d'] = None
+    scores_table['expectation'] = None
+    scores_table['variance_distance'] = None
 
-    # for each anchor, get X and variance_d
+    # for each anchor, get expectation and variance_distance
     for anchor, df in counts.groupby('anchor'):
 
-        # subset
-        df = df[['min_distance']]
+        # subset and rename min_distance as i
+        df = (
+            df[['min_distance']]
+            .rename(columns={'min_distance' : 'i'})
+        )
 
-        # get fraction of times each distance occurs, p_hat
+        # get fraction of times each distance occurs as p_hat
         dist_dict = (
-            df['min_distance']
+            df['i']
             .value_counts(normalize=True)
             .to_dict()
         )
 
-        # map p_hat to min_distance
-        df = (
-            df
-            .replace({'min_distance' : dist_dict})
-            .rename(columns={'min_distance' : 'p_hat'})
-        )
+        # map p_hat to i
+        df['p_hat'] = df['i'].map(dist_dict)
 
         # get i (targets are already sorted by abundance)
         df['i'] = df.index
 
         # define X
-        X = sum((df['i'] * df['p_hat'] / args.kmer_size) * sum_n_j_c_j[anchor])
+        expectation = sum((df['i'] * df['p_hat'] / args.kmer_size) * sum_n_j_c_j[anchor])
 
         # define variance_d
-        variance_d_first_sum = sum(df['p_hat'] * df['i']**2 / args.kmer_size)
-        variance_d_second_sum = sum((df['p_hat'] * df['i'] / args.kmer_size)**2)
-        variance_d = variance_d_first_sum - variance_d_second_sum
+        variance_distance_first_sum = sum(df['p_hat'] * df['i']**2 / args.kmer_size)
+        variance_distance_second_sum = (sum(df['p_hat'] * df['i'] / args.kmer_size)) ** 2
+        variance_distance = variance_distance_first_sum - variance_distance_second_sum
 
         # add these values to the score table
-        scores_table.loc[anchor, 'X'] = X
-        scores_table.loc[anchor, 'variance_d'] = variance_d
+        scores_table.loc[anchor, 'expectation'] = expectation
+        scores_table.loc[anchor, 'variance_distance'] = variance_distance
 
     # output scores table
     (
