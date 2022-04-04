@@ -69,10 +69,7 @@ def compute_phase_1_score(anchor, df):
 
     # dataframe of [target, target_distance]
     distance_df = (
-        pd.DataFrame(
-            min_dists,
-            columns=['target', 'distance']
-        )
+        pd.DataFrame(min_dists, columns=['target', 'distance'])
         .set_index("target")
     )
     distance_df.index.name = None
@@ -84,10 +81,7 @@ def compute_phase_1_score(anchor, df):
     numerator = (
         df
         .set_index('target')
-        .multiply(
-            distance_df['distance'],
-            axis=0
-        )
+        .multiply(distance_df['distance'], axis=0)
         .sum(axis=0)
     )
 
@@ -101,11 +95,7 @@ def compute_phase_1_score(anchor, df):
 
     scores = (
         numerator
-        .divide(
-            denominator,
-            fill_value=0,
-            axis=0
-        )
+        .divide(denominator, fill_value=0, axis=0)
     )
 
     return scores, min_dists

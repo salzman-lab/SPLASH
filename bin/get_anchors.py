@@ -382,10 +382,7 @@ def main():
 
     # filter for these anchors and drop any duplicates
     final_anchors = (
-        pd.DataFrame(
-            keep_anchors,
-            columns = ['anchor']
-        )
+        pd.DataFrame(keep_anchors, columns = ['anchor'])
         .drop_duplicates()
     )
 

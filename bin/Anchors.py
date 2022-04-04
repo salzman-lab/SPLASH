@@ -130,7 +130,6 @@ class AnchorTargetsSamples(dict):
         df = df[df['anchor'].isin(final_anchors_list)]
         return df
 
-
     def get_anchor_counts_df(self, anchor):
         """
         Return a table of anchors x samples counts for a specific anchor, sorted by abundance
@@ -171,13 +170,8 @@ class AnchorTargetsSamples(dict):
         anchor_df['count'] = anchor_df.sum(axis=1)
         anchor_df = (
             anchor_df
-            .sort_values(
-                'count',
-                ascending=False)
-            .drop(
-                'count',
-                axis=1
-            )
+            .sort_values('count', ascending=False)
+            .drop('count', axis=1)
             .reset_index()
         )
 
@@ -448,14 +442,8 @@ class AnchorScoresTopTargets(dict):
             )
 
             df = (
-                pd.DataFrame(
-                    first_sum - second_sum,
-                    columns=['score']
-                )
-                .sort_values(
-                    'score',
-                    ascending=False
-                )
+                pd.DataFrame(first_sum - second_sum, columns=['score'])
+                .sort_values('score', ascending=False)
             )
         return df
 
