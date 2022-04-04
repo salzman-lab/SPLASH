@@ -29,7 +29,7 @@ workflow ANALYZE_FASTQS {
     num_lines = params.chunk_size * params.n_iterations * 4
     num_chunk_lines = params.chunk_size * 4
 
-    if (params.use_read_len) {
+    if (params.use_read_length) {
         /*
         // Get read length of dataset
         */
@@ -80,6 +80,7 @@ workflow ANALYZE_FASTQS {
             params.target_counts_threshold,
             params.anchor_counts_threshold,
             params.anchor_freeze_threshold,
+            params.read_freeze_threshold,
             params.anchor_score_threshold,
             params.anchor_mode,
             params.c_type,

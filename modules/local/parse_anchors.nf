@@ -18,6 +18,7 @@ process PARSE_ANCHORS {
     path "*_target_counts.tsv"  , emit: targets
     path "*.fasta"              , emit: consensus_fasta
     path "*.tab"                , emit: consensus_stats
+    path "*log"                 , emit: log
 
     script:
     out_consensus_fasta_file    = "${fastq_id}_${direction}.fasta"

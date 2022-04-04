@@ -235,6 +235,25 @@ def get_args():
 def main():
     args = get_args()
 
+    # set up logging
+    logging.basicConfig(
+        filename = f'parse_anchors_{args.fastq_id}.log',
+        format='%(asctime)s %(levelname)-8s %(message)s',
+        level=logging.INFO,
+        filemode='w',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+
+    """logging"""
+    logging.info("--------------------------------------Parameters--------------------------------------")
+    logging.info(f'consensus_length = {args.consensus_length}')
+    logging.info(f'direction        = {args.direction}')
+    logging.info(f'kmer_size        = {args.kmer_size}')
+    logging.info(f'looklength       = {args.looklength}')
+    logging.info("--------------------------------------Parameters--------------------------------------")
+    logging.info('')
+    """logging"""
+
     # get anchors from file
     anchors = (
         pd.read_csv(
@@ -248,6 +267,8 @@ def main():
     # create dict with anchors as keys
     anchor_dict = {a:[] for a in anchors}
 
+    logging.info(f'Starting fetching')
+
     # get all of the next kmers for the anchors in PREPARATION FOR BUILDING CONCENSUS
     target_dict, consensus_dict = get_targets_consensus_seqs(
         args.fastq_file,
@@ -258,6 +279,8 @@ def main():
         args.looklength,
         args.direction
     )
+
+    logging.info(f'Finished fetching')
 
     if anchor_dict:
         # write out anchor dict for merging later
@@ -293,6 +316,7 @@ def main():
         sep='\t'
     )
 
+    logging.info(f'Starting consensus building')
     # build and output the consensus files
     output_consensus(
         consensus_dict,
@@ -302,6 +326,7 @@ def main():
         args.out_counts_file,
         args.out_fractions_file
     )
+    logging.info(f'Finished consensus building')
 
 
 main()

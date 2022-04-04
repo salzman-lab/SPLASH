@@ -54,6 +54,10 @@ def get_args():
         type=int
     )
     parser.add_argument(
+        "--read_freeze_threshold",
+        type=int
+    )
+    parser.add_argument(
         "--anchor_mode",
         type=str
     )
@@ -96,25 +100,6 @@ def get_args():
 def main():
     args = get_args()
 
-    # set up logging
-    logging.basicConfig(
-        filename = f'get_anchors.log',
-        format='%(asctime)s %(levelname)-8s %(message)s',
-        level=logging.INFO,
-        filemode='w',
-        datefmt='%Y-%m-%d %H:%M:%S'
-    )
-
-    # logging
-    logging.info(args.samplesheet)
-    logging.info('Keeplist if in top or bottom 1000 scores')
-    logging.info(f'Number of targets required to calculate phase_1 score = {args.target_counts_threshold}')
-    logging.info(f'Number of total anchor counts required to calculate phase_1 score = {args.anchor_counts_threshold}')
-    logging.info('min(Mean scores) to ignorelist = 3')
-    logging.info(f'Percentile of scores to ignorelist = 40-60')
-    logging.info(f'Anchor freeze threshold = {args.anchor_freeze_threshold} anchors')
-    logging.info('')
-
     # read in samples from samplesheet
     # [fastq_file, optional group_id]
     sample_list = pd.read_csv(
@@ -129,6 +114,48 @@ def main():
         use_std = False
     if sample_list.shape[1] == 1:
         use_std = True
+
+    # set up logging
+    logging.basicConfig(
+        filename = f'get_anchors.log',
+        format='%(asctime)s %(levelname)-8s %(message)s',
+        level=logging.INFO,
+        filemode='w',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+
+    """logging"""
+    logging.info("--------------------------------------Parameters--------------------------------------")
+    logging.info(f'samplesheet = {args.samplesheet}')
+    logging.info(f'Number of targets per anchor required to calculate phase_1 score = {args.target_counts_threshold}')
+    logging.info(f'Number of total anchors required to calculate phase_1 score = {args.anchor_counts_threshold}')
+    logging.info(f'Keeplist condition: top {args.num_keep_anchors} anchor significance scores if more than {args.anchor_score_threshold} anchors with scores')
+    logging.info(f'Ignorelist condition: phase 1 scores with mean(S_i) < 3')
+    logging.info(f'Ignorelist condition: if more than {args.anchor_score_threshold} anchors with scores, scores in 40-60% percentile')
+    logging.info(f'Ignorelist condition: computing min_anchor_counts with c_type = {args.c_type}')
+    logging.info(f'Anchor freeze threshold = {args.anchor_freeze_threshold} anchors')
+    logging.info(f'Read freeze threshold = {args.read_freeze_threshold} anchors')
+    logging.info('')
+
+    logging.info(f'n_iterations             = {args.n_iterations}')
+    logging.info(f'chunk_size               = {args.max_reads}')
+    logging.info(f'kmer_size                = {args.kmer_size}')
+    logging.info(f'target_counts_threshold  = {args.target_counts_threshold}')
+    logging.info(f'anchor_counts_threshold  = {args.anchor_counts_threshold}')
+    logging.info(f'anchor_freeze_threshold  = {args.anchor_freeze_threshold}')
+    logging.info(f'read_freeze_threshold    = {args.read_freeze_threshold}')
+    logging.info(f'anchor_score_threshold   = {args.anchor_score_threshold}')
+    logging.info(f'anchor_mode = {args.anchor_mode}')
+    if args.anchor_mode == 'tile':
+        logging.info(f'window_slide             = {args.window_slide}')
+    logging.info(f'c_type                   = {args.c_type}')
+    logging.info(f'looklength = {args.looklength}')
+    logging.info(f'num_keep_anchors         = {args.num_keep_anchors}')
+    logging.info(f'use_std                  = {use_std}')
+    logging.info(f'compute_target_distance  = {args.compute_target_distance}')
+    logging.info("--------------------------------------Parameters--------------------------------------")
+    logging.info('')
+    """logging"""
 
     # get list of samples from fastq_files
     # if fastq_file = "file1.fastq.gz", sample = "file1"
@@ -179,18 +206,18 @@ def main():
     # begin iterations
     for iteration in range(1, args.n_iterations+1):
 
-        # only continue accumulations if we have less than 10k anchors with candidate scores
-        if len(anchor_scores_topTargets) >= 10000:
+        # only continue accumulations if we have less than num_keep_anchors anchors with candidate scores
+        if len(anchor_scores_topTargets) >= args.num_keep_anchors:
             break
 
         # initialise loggging counters
         ignore_summary_scores = 0
         ignore_abundance = 0
 
-        # if we are at more than 300k reads, set the read_counter freeze so that we don't add any more anchors
-        # if we are at more than 300k reads, clear the ignorelist
+        # if we are at more than read_freeze_threshold reads, set the read_counter freeze so that we don't add any more anchors
+        # if we are at more than read_freeze_threshold reads, clear the ignorelist
         num_reads = iteration * args.max_reads
-        if num_reads >= 3000000:
+        if num_reads >= args.read_freeze_threshold:
             read_counter_freeze = True
             status_checker.ignorelist.clear()
         else:
@@ -243,6 +270,8 @@ def main():
         with open(f'ignorelist_iteration_{iteration}.tsv', 'w') as outfile:
             outfile.write("\n".join(status_checker.ignorelist))
 
+
+        """logging"""
         try:
             valid_anchor_percent = round((valid_anchor / (valid_anchor + invalid_anchor)) * 100, 2)
             invalid_anchor_percent = round((invalid_anchor / (valid_anchor + invalid_anchor)) * 100, 2)
@@ -257,8 +286,6 @@ def main():
             phase_1_percent = 0
             phase_2_percent = 0
 
-        """logging"""
-        logging.info("-----------------------------------------------------------------------------------------------------------------")
         logging.info(f'i = {iteration}')
         logging.info(f'\tReads procesed per file = {num_reads}')
         logging.info(f'\tReads processed total = {num_reads * len(samples)}')
@@ -291,7 +318,7 @@ def main():
         logging.info(f'\t\t\tabundance requirement = {anchor_min_count} minimum total anchors')
         logging.info(f'\t\tanchors that have failed the diversity requirement = {phase_1_ignore_score}')
         logging.info("")
-        """logging"""
+        logging.info("-----------------------------------------------------------------------------------------------------------------")
 
         # add row to stats df
         stats = stats.append(
@@ -314,6 +341,7 @@ def main():
             },
             ignore_index=True
         )
+        """logging"""
 
     ## done with all iterations ##
 

@@ -13,6 +13,7 @@ process GET_ANCHORS {
     val target_counts_threshold
     val anchor_counts_threshold
     val anchor_freeze_threshold
+    val read_freeze_threshold
     val anchor_score_threshold
     val anchor_mode
     val c_type
@@ -40,6 +41,7 @@ process GET_ANCHORS {
         --anchor_counts_threshold ${anchor_counts_threshold} \\
         --anchor_freeze_threshold ${anchor_freeze_threshold} \\
         --anchor_score_threshold ${anchor_score_threshold} \\
+        --read_freeze_threshold ${read_freeze_threshold} \\
         --anchor_mode ${anchor_mode} \\
         --window_slide ${window_slide} \\
         --c_type ${c_type} \\
