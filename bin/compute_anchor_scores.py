@@ -3,7 +3,8 @@
 import gzip
 import argparse
 import pandas as pd
-
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -47,33 +48,37 @@ def get_distance_df(anchor, df, bound_distance):
     """
     Takes a df of anchor counts and returns a df of hamming distances per target, relative to target abundance
     """
-    # exhaustive method if anchor we are at 100K reads or if we have not seen this anchor before
+
+    # initalise
     min_dists = []
 
-    # for each targets, compare hamming distances between itself and all previous targets
+    # in this dataframe of targets sorted by decreasing abundance,
+    # compare hamming distances between each target and all preceding targets
     for index, row in df.iterrows():
 
         # current target
         sequence = row['target']
 
-        # get all preceeding targets
+        # get all preceding targets
         candidates = (
             df['target']
             .loc[0:index-1]
             .to_numpy()
         )
 
-        # if it's the first and most abundant target, it gets a distance of 0
+        # if it's the first and most abundant target, it is initialized with a distance of 0
         if index == 0:
             min_dist = 0
-        # else, assign the minimum distance to all preceeding targets
+
+        # else, assign min_dist to be the min dist between itself and all preceding targets
         else:
             min_dist = min([distance(x, sequence) for x in candidates])
 
+        # if we are bounding the distance, use the min of the max_distance and the current min_dist
         if bound_distance:
             min_dist = min(bound_distance, min_dist)
 
-        # record target and it's distance
+        # record target and its distance
         min_dists.append((sequence, min_dist))
 
     # convert to df, to be used as scalar multiplier of the numerator
@@ -82,7 +87,7 @@ def get_distance_df(anchor, df, bound_distance):
             min_dists,
             columns=['target', 'min_distance']
         )
-        .set_index("target")
+        .set_index('target')
     )
     distance_df.index.name = None
 
@@ -106,55 +111,59 @@ def get_distance_scores(anchor, counts, bound_distance):
     # make count column to sort anchors by abundance
     counts['count'] = counts.sum(axis=1)
 
-    # take the top 50 most abundant anchors
+    # take the top 50 most abundant targets
     counts = (
         counts
-        .sort_values( # sort by counts
+        .sort_values(       # sort by counts
             'count',
             ascending=False
         )
-        .drop( # delete it because you don't need it anymore
+        .drop(              # delete it because you don't need it anymore
             'count',
             axis=1
         )
-        .reset_index()
-        .head(50)
+        .reset_index()      # reset the index
+        .head(50)           # take top 50 most abundant targets
     )
 
     # now that the targets are sorted by abundance, get the distances per target
     distance_df = get_distance_df(anchor, counts, bound_distance)
 
-    # make version of counts with distance column
+    # make df of counts and distances
     counts_distances = counts.copy()
+
+    # set anchor column
     counts_distances['anchor'] = anchor
+    # merge anchor-target counts with target distnaces
     counts_distances = pd.merge(
         counts_distances,
         distance_df,
         left_on='target',
         right_index=True
     )
+    # move anchor column to the first column
     first_column = counts_distances.pop('anchor')
     counts_distances.insert(0, 'anchor', first_column)
 
     # get sum(n_i * d_i) term
     numerator = (
         counts
-        .set_index('target')
-        .multiply(                  # multiply each count by the minimum distance
+        .set_index('target')                # make df of targets x sample_counts
+        .multiply(                          # multiply each target count by its respective min_dist
             distance_df['min_distance'],
             axis=0
         )
-        .sum(axis=0)                # get sum of (counts * min_dist) across samples
+        .sum(axis=0)                        # get sum of (counts * min_dist) across samples
     )
 
     # get sum(n_i) term
     denominator = (
         counts
-        .set_index('target')
-        .sum(axis=0)                # get sum of counts across samples
+        .set_index('target')                # make df of targets x sample_counts
+        .sum(axis=0)                        # get sum of counts across samples
     )
 
-    # return new row
+    # get S_i = sum(n_i * d_i) / sum(n_i)
     row = (
         numerator
         .divide(
@@ -176,17 +185,14 @@ def main():
     elif args.bound_distance == 'false':
         bound_distance = None
 
-    # read in all the dfs
+    # read in target_counts paths
     with open(args.samplesheet) as file:
         df_paths = file.readlines()
-
+    # merge all target_counts files
     counts = pd.read_csv(df_paths[0].strip(), sep='\t')
-    counts=counts.rename(columns = {'adj_kmer':'target'})
     for df_path in df_paths[1:]:
         try:
             df = pd.read_csv(df_path.strip(), sep='\t')
-            df=df.rename(columns = {'adj_kmer':'target'})
-
             counts = counts.merge(
                 df,
                 on=['anchor', 'target'],
@@ -196,21 +202,27 @@ def main():
         except pd.errors.EmptyDataError:
             pass
 
+    # fill NA with 0
     counts = counts.fillna(0)
 
-    # get distance scores of anchors that are not in the whitelist (if an anchor has ever been called significant, no need to compute its scores)
+    counts.to_csv('counts.tsv', sep='\t', index=False)
+
+    # intialise
     anchor_scores_df = pd.DataFrame()
     counts_distances_df = pd.DataFrame()
 
-    # get score for each anchor and append score to output df
+    # get scores for each anchor
     for anchor, df in counts.groupby('anchor'):
         anchor_scores, counts_distances = get_distance_scores(anchor, df, bound_distance)
+        # append anchor score row
         anchor_scores_df = anchor_scores_df.append(anchor_scores)
+        # append coutns_distances df
         counts_distances_df = counts_distances_df.append(counts_distances)
 
-    # output anchor scores file
+    # get anchor_score value as std of all anchor sample scores
     anchor_scores_df['anchor_score'] = anchor_scores_df.std(axis=1)
     anchor_scores_df.index.name = 'anchor'
+    # output anchor scores file
     anchor_scores_df.reset_index().to_csv(args.outfile_anchor_scores, sep='\t', index=False)
 
     # output anchor targets counts file

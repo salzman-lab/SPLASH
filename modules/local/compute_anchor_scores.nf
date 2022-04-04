@@ -23,6 +23,6 @@ process COMPUTE_ANCHOR_SCORES {
         --bound_distance ${bound_distance} \\
         --max_distance ${max_distance} \\
         --outfile_counts_distances ${outfile_counts_distances} \\
-        --outfile_anchor_scores ${outfile_anchor_scores} \\
+        --outfile_anchor_scores ${outfile_anchor_scores}
     """
 }

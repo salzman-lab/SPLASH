@@ -3,6 +3,7 @@ include { SPLIT_FASTQS              } from '../../modules/local/split_fastqs'
 include { GET_ANCHORS               } from '../../modules/local/get_anchors'
 include { PARSE_ANCHORS             } from '../../modules/local/parse_anchors'
 include { COMPUTE_ANCHOR_SCORES     } from '../../modules/local/compute_anchor_scores'
+include { NORM_SCORES               } from '../../modules/local/norm_scores'
 
 include { TRIMGALORE                } from '../../modules/nf-core/modules/trimgalore/main'
 
@@ -121,7 +122,20 @@ workflow ANALYZE_FASTQS {
         params.max_distance
     )
 
+    anchor_scores           = COMPUTE_ANCHOR_SCORES.out.anchor_scores.first()
+    anchor_target_counts    = COMPUTE_ANCHOR_SCORES.out.anchor_target_counts.first()
+
+    /*
+    // Process to compute norm scores
+    */
+    NORM_SCORES(
+        anchor_scores,
+        anchor_target_counts,
+        params.input,
+        params.kmer_size
+    )
+
     emit:
-    anchor_target_counts = COMPUTE_ANCHOR_SCORES.out.anchor_target_counts
+    anchor_target_counts = anchor_target_counts
 
 }
