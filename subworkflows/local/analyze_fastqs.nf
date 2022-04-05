@@ -25,10 +25,6 @@ workflow ANALYZE_FASTQS {
         }
         .set{ ch_fastqs }
 
-    // definitions
-    num_lines = params.chunk_size * params.n_iterations * 4
-    num_chunk_lines = params.chunk_size * 4
-
     if (params.use_read_length) {
         /*
         // Get read length of dataset
@@ -43,56 +39,8 @@ workflow ANALYZE_FASTQS {
         looklength = params.looklength
     }
 
-    if (params.anchors_file) {
-        // use input anchors file
-        ch_anchors = params.anchors_file
-
-    } else {
-
-        /*
-        // Trim fastqs
-        */
-        TRIMGALORE(
-            ch_fastqs
-        )
-
-        /*
-        // Process to split each fastq into size read_chunk and gzip compress
-        */
-        SPLIT_FASTQS(
-            TRIMGALORE.out.fastq,
-            num_lines,
-            num_chunk_lines
-        )
-
-        ch_split_fastqs = SPLIT_FASTQS.out.fastq.collect()
-
-        /*
-        // Process to get list of candidate anchors via onthefly
-        */
-
-        GET_ANCHORS(
-            ch_split_fastqs,
-            params.n_iterations,
-            params.chunk_size,
-            params.kmer_size,
-            file(params.input),
-            params.target_counts_threshold,
-            params.anchor_counts_threshold,
-            params.anchor_freeze_threshold,
-            params.read_freeze_threshold,
-            params.anchor_score_threshold,
-            params.anchor_mode,
-            params.c_type,
-            params.window_slide,
-            looklength,
-            params.num_keep_anchors,
-            params.use_std,
-            params.compute_target_distance
-        )
-
-        ch_anchors = GET_ANCHORS.out.anchors
-    }
+    // use input anchors file
+    ch_anchors = file(params.anchors_file)
 
     /*
     // Process to get consensus sequences and target counts for annchors
@@ -106,37 +54,5 @@ workflow ANALYZE_FASTQS {
         params.direction,
         looklength
     )
-
-    // Create samplesheet of target counts files
-    PARSE_ANCHORS.out.targets
-        .collectFile() { file ->
-            def X=file; X.toString() + '\n'
-        }
-        .set{ targets_samplesheet }
-
-    /*
-    // Process to get anchor scores and anchor-target counts
-    */
-    COMPUTE_ANCHOR_SCORES(
-        targets_samplesheet,
-        params.bound_distance,
-        params.max_distance
-    )
-
-    anchor_scores           = COMPUTE_ANCHOR_SCORES.out.anchor_scores.first()
-    anchor_target_counts    = COMPUTE_ANCHOR_SCORES.out.anchor_target_counts.first()
-
-    /*
-    // Process to compute norm scores
-    */
-    NORM_SCORES(
-        anchor_scores,
-        anchor_target_counts,
-        params.input,
-        params.kmer_size
-    )
-
-    emit:
-    anchor_target_counts = anchor_target_counts
 
 }
