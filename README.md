@@ -51,9 +51,7 @@ In this example samplesheet, 4 fastq files are being analyzed.
 /data/file4.fastq.gz
 ```
 
-*`--anchors_file`
-
-To bypass the `get_anchors` step and input a list of anchors of interest, provide this parameter.
+`--anchors_file`
 
 The anchors file should be a 1 column file with a header, consisting of a list of anchor sequences of interest, with one anchor per line. An example:
 ```
