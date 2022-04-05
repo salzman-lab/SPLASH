@@ -137,7 +137,7 @@ def main():
         df['i'] = df.index
 
         # define X
-        expectation = sum((df['i'] * df['p_hat'] / args.kmer_size) * sum_n_j_c_j[anchor])
+        expectation = sum((df['i'] * df['p_hat'] / args.kmer_size) * sum_sqrt_n_j_c_j[anchor])
 
         # define variance_d
         variance_distance_first_sum = sum(df['p_hat'] * df['i']**2 / args.kmer_size)
