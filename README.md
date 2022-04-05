@@ -39,10 +39,11 @@ nextflow run kaitlinchaung/stringstats \
 *`--input`*
 
 The input samplesheet should be a comma-separated file with no header, consisting of:
-1. full paths to gzip fastq files to analyze, path basenames must be unique ie file1, file2, file3
+    1. full paths to gzip fastq files to analyze, path basenames must be unique ie file1, file2, file3
 
+This file must have an extension of `.csv`.
 
-In this example samplesheet, 4 fastq files are being analyzed
+In this example samplesheet, 4 fastq files are being analyzed.
 ```
 /data/file1.fastq.gz
 /data/file2.fastq.gz
