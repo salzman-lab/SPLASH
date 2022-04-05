@@ -42,7 +42,8 @@ def main():
     # [fastq_file, optional group_id]
     sample_list = pd.read_csv(
         args.samplesheet,
-        header=None
+        header=None,
+        sep='\t'
     )
 
     # get list of samples from fastq_files
@@ -118,31 +119,37 @@ def main():
     for anchor, df in counts.groupby('anchor'):
 
         # subset and rename min_distance as i
-        df = (
-            df[['min_distance']]
+        distances = (
+            df
+            .drop(['anchor', 'target'], axis=1)
             .rename(columns={'min_distance' : 'i'})
         )
 
+        # initialise
+        p = pd.DataFrame()
+        p['i'] = range(0, args.kmer_size+1)
+        p['counts'] = 0
+
+        for i, df in distances.groupby('i'):
+            # get total counts for targets with that distance
+            count = (
+                df
+                .drop('i', axis=1)
+                .values
+                .sum()
+            )
+            # set the count
+            p.loc[p['i']==i, 'counts'] = count
+
         # get fraction of times each distance occurs as p_hat
-        dist_dict = (
-            df['i']
-            .value_counts(normalize=True)
-            .to_dict()
-        )
+        p['p_hat'] = p['counts']/p['counts'].sum()
 
-        # map p_hat to i
-        df['p_hat'] = df['i'].map(dist_dict)
-
-        # get i (targets are already sorted by abundance)
-        df['i'] = df.index
-
-        # define X
-        expectation = sum((df['i'] * df['p_hat'] / args.kmer_size) * sum_sqrt_n_j_c_j[anchor])
+        # define expectation of score-- no /args.kmersize needed -- if p_hat is a vector of prbabilities-- it already sums to 1 -- if its not, pls make p_hat into a vector of probabilities becuase that's what p_hat means mathematicallyz
+        expectation = sum(p['i'] * p['p_hat'] * sum_sqrt_n_j_c_j[anchor])
 
         # define variance_d
-        variance_distance_first_sum = sum(df['p_hat'] * df['i']**2 / args.kmer_size)
-        variance_distance_second_sum = (sum(df['p_hat'] * df['i'] / args.kmer_size)) ** 2
-        variance_distance = variance_distance_first_sum - variance_distance_second_sum
+        # @kaitlin if p_hat is a vector of probs, we do not need /args.kmer_size
+        variance_distance = sum(p['p_hat'] * p['i']**2) - (sum(p['p_hat'] * p['i'])) ** 2
 
         # add these values to the score table
         scores_table.loc[anchor, 'expectation'] = expectation
