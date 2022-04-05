@@ -279,7 +279,7 @@ def main():
 
     logging.info(f'Finished target fetching')
 
-    if not all(map(lambda x: x == [], target_dict.values()))::
+    if not all(map(lambda x: x == [], target_dict.values())):
         # write out anchor dict for merging later
         anchor_df = (
             pd.DataFrame.from_dict(target_dict, orient='index')
