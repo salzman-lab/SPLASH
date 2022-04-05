@@ -132,7 +132,7 @@ workflow ANALYZE_FASTQS {
     NORM_SCORES(
         anchor_scores,
         anchor_target_counts,
-        params.input,
+        file(params.input),
         params.kmer_size
     )
 
