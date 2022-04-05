@@ -67,11 +67,6 @@ workflow STRINGSTATS {
     } else {
         // Perform analysis on anchors and targets
         ANALYZE_FASTQS()
-
-        // Annotate anchors and targets
-        ANNOTATE(
-            ANALYZE_FASTQS.out.anchor_target_counts
-        )
     }
 
 }
