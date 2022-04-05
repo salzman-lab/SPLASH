@@ -279,7 +279,7 @@ def main():
 
     logging.info(f'Finished target fetching')
 
-    if anchor_dict:
+    if not all(map(lambda x: x == [], target_dict.values())):
         # write out anchor dict for merging later
         anchor_df = (
             pd.DataFrame.from_dict(target_dict, orient='index')
@@ -296,7 +296,7 @@ def main():
                 index=anchor_df.index
             )
         )
-
+        print(anchor_df.head())
         # final output columns
         anchor_df = anchor_df[['anchor', 'target', args.fastq_id]]
 
