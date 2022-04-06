@@ -113,7 +113,7 @@ def get_targets_consensus_seqs(fastq_file, num_parse_anchors_reads, anchor_dict,
                         if len(target) == kmer_size:
                             anchor_tuple = (anchor, target)
 
-                            if anchor_tuple not in target_dict.keys():
+                            if anchor_tuple not in target_dict:
                                 target_dict[anchor_tuple] = 1
                             else:
                                 target_dict[anchor_tuple] += 1
@@ -296,12 +296,12 @@ def main():
                 index=anchor_df.index
             )
         )
-        print(anchor_df.head())
+
         # final output columns
         anchor_df = anchor_df[['anchor', 'target', args.fastq_id]]
 
     else:
-        anchor_df = pd.DataFrame.from_dict(anchor_dict)
+        anchor_df = pd.DataFrame(columns=['anchor', 'target', args.fastq_id])
 
     # output anchor-target counts for this fastq
     anchor_df.to_csv(args.out_target_file, index=False, sep='\t')
