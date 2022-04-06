@@ -176,13 +176,18 @@ def main():
         for i in range(0, len(samples)):
             group_ids_dict[samples[i]] = group_ids[i]
 
+    # create sample index dict
+    sample_index_dict = {}
+    for i in range(len(samples)):
+        sample_index_dict[samples[i]] = i
+
     # initialise objects
-    anchor_counts = Anchors.AnchorCounts(len(samples))          # {anchor : counts}
-    anchor_targets_samples = Anchors.AnchorTargetsSamples()     # {anchor : {samples : {targets : counts}}}
-    anchor_targets = Anchors.AnchorTargets()                    # {anchor : targets}
-    anchor_scores_topTargets = Anchors.AnchorScoresTopTargets() # {anchor : [scores, top_targets]}
-    anchor_target_distances = Anchors.AnchorTargetDistances()   # {anchor : {targets : distances}}
-    anchor_status = Anchors.AnchorStatus()                      # [anchor1, anchor2]
+    anchor_counts = Anchors.AnchorCounts(len(samples))                          # {anchor : counts}
+    anchor_targets_samples = Anchors.AnchorTargetsSamples(sample_index_dict)    # {anchor : {target : [sample_1_count, ...]}}
+    anchor_targets = Anchors.AnchorTargets()                                    # {anchor : targets}
+    anchor_scores_topTargets = Anchors.AnchorScoresTopTargets()                 # {anchor : scores]}
+    anchor_target_distances = Anchors.AnchorTargetDistances()                   # {anchor : {targets : distance}}
+    anchor_status = Anchors.AnchorStatus()                                      # [anchor1, anchor2]
     status_checker = Anchors.StatusChecker(
         anchor_counts,
         anchor_targets_samples,
@@ -309,7 +314,7 @@ def main():
         logging.info(f'\tnumber of anchors with candidate scores = {len(anchor_scores_topTargets)}')
         logging.info(f'\t\tsize of anchor_counts dict = {len(anchor_counts.total_counts)}')
         logging.info(f'\t\tsize of all_target_counts dict = {len(anchor_counts.all_target_counts)}')
-        logging.info(f'\t\tsize of anchor_targets_samples dict = {len(anchor_targets_samples)}')
+        logging.info(f'\t\tsize of anchor_targets_samples dict = {len(anchor_targets_samples.counter)}')
         logging.info(f'\t\tsize of anchor_scores_topTargets dict = {len(anchor_scores_topTargets)}')
         logging.info(f'\t\tsize of anchor_target_distances dict = {len(anchor_target_distances)}')
         logging.info("")
@@ -333,7 +338,7 @@ def main():
                 'Phase 2 topTargets': phase_2_fetch_distance,
                 'Phase 2 Other Targets': phase_2_compute_distance,
                 'anchor_counts': len(anchor_counts.total_counts),
-                'anchor_targets_samples': len(anchor_targets_samples),
+                'anchor_targets_samples': len(anchor_targets_samples.counter),
                 'anchor_scores_topTargets': len(anchor_scores_topTargets),
                 'anchor_target_distances': len(anchor_target_distances),
                 'ignorelist total': len(status_checker.ignorelist),

@@ -82,100 +82,46 @@ class AnchorTargetDistances(dict):
         return self[anchor][target]
 
 
-class AnchorTargetsSamples(dict):
-    def __init__(self):
-        self = {}
+class AnchorTargetsSamples():
+    def __init__(self, sample_index_dict):
+        self.counter = {}
+        self.sample_index_dict = sample_index_dict
+        self.name_dict = {v:k for k,v in self.sample_index_dict.items()}
 
     def update(self, anchor, target, sample):
         """
-        Update {anchor : {sample : {target : count}}
+        Update {anchor : {target : [sample_1_count, sample_2_count, ...]}
         """
-        if anchor in self:
-            if sample in self[anchor]:
-                if target in self[anchor][sample]:
-                    self[anchor][sample][target] += 1
-                else:
-                    self[anchor][sample][target] = 1
-            else:
-                self[anchor][sample] = {target : 1}
+        # get sample index
+        sample_index = self.sample_index_dict[sample]
+
+        # intialise
+        if anchor not in self.counter:
+            self.counter[anchor] = {target : [0] * len(self.sample_index_dict)}
+            self.counter[anchor][target][sample_index] = 1
+
         else:
-            self[anchor] = {sample : {target : 1}}
-
-        return self
-
-    def get_counts_df(self, final_anchors_list):
-        """
-        Return a table of anchors and their target counts
-        """
-        # nested dict to dataframe
-        df_rows = []
-        for anchor, anchor_dict in self.items():
-            for sample, target_dict in anchor_dict.items():
-                for target, count in target_dict.items():
-                    df_rows.append([anchor, sample, target, count])
-
-        # pivot table to anchors x counts
-        df = (
-            pd.DataFrame(
-                df_rows,
-                columns=['anchor', 'sample', 'target', 'count']
-            )
-            .pivot(
-                index=['anchor', 'target'],
-                columns=['sample'],
-                values='count'
-            )
-            .reset_index()
-        )
-        df = df[df['anchor'].isin(final_anchors_list)]
-        return df
+            if target not in self.counter[anchor]:
+                self.counter[anchor].update({target : [0] * len(self.sample_index_dict)})
+                self.counter[anchor][target][sample_index] = 1
+            else:
+                self.counter[anchor][target][sample_index] += 1
 
     def get_anchor_counts_df(self, anchor):
         """
         Return a table of anchors x samples counts for a specific anchor, sorted by abundance
         """
-        # filter dict for the anchor
-        d = {k:v for (k,v) in self.items() if k == anchor}
-
-        # nested dict to table
-        df_rows = []
-        for anchor, anchor_dict in d.items():
-            for sample, target_dict in anchor_dict.items():
-                for target, count in target_dict.items():
-                    df_rows.append([anchor, sample, target, count])
-
-        # pivot table to anchors x counts
+        df = pd.DataFrame(self.counter[anchor]).T
+        df.columns = [self.name_dict[c] for c in df.columns]
+        df['count'] = df.sum(axis=1)
         df = (
-            pd.DataFrame(
-                df_rows,
-                columns=['anchor', 'sample', 'target', 'count']
-            )
-            .pivot(
-                index=['anchor', 'target'],
-                columns=['sample'],
-                values='count'
-            )
-        )
-        df.columns.name = None
-
-        # remove anchor column and set targets as index
-        anchor_df = (
             df
-            .reset_index()
-            .drop('anchor', axis=1)
-            .set_index('target')
-        )
-
-        # sort targets by abundance
-        anchor_df['count'] = anchor_df.sum(axis=1)
-        anchor_df = (
-            anchor_df
             .sort_values('count', ascending=False)
             .drop('count', axis=1)
             .reset_index()
+            .rename(columns={'index':'target'})
         )
-
-        return anchor_df
+        return df
 
 
 class AnchorCounts(dict):
@@ -323,7 +269,7 @@ class StatusChecker():
         self.anchor_counts.total_counts.pop(anchor, None)
         self.anchor_counts.all_target_counts.pop(anchor, None)
         self.anchor_counts.top_target_counts.pop(anchor, None)
-        self.anchor_targets_samples.pop(anchor, None)
+        self.anchor_targets_samples.counter.pop(anchor, None)
         self.anchor_targets.pop(anchor, None)
         self.anchor_scores_topTargets.pop(anchor, None)
         self.anchor_target_distances.pop(anchor, None)
