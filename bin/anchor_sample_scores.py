@@ -9,9 +9,9 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--samplesheet",
+        "--targets_samplesheet",
         type=str,
-        help='input samplesheet'
+        help='input targets_samplesheet'
     )
     parser.add_argument(
         "--bound_distance",
@@ -30,7 +30,7 @@ def get_args():
         type=str
     )
     parser.add_argument(
-        "--outfile_anchor_scores",
+        "--outfile_anchor_sample_scores",
         type=str
     )
     args = parser.parse_args()
@@ -214,7 +214,7 @@ def main():
         bound_distance = None
 
     # read in target_counts paths
-    with open(args.samplesheet) as file:
+    with open(args.targets_samplesheet) as file:
         df_paths = file.readlines()
     # merge all target_counts files
     counts = pd.read_csv(df_paths[0].strip(), sep='\t')
@@ -236,22 +236,27 @@ def main():
     counts.to_csv('counts.tsv', sep='\t', index=False)
 
     # intialise
-    anchor_scores_df = pd.DataFrame()
+    anchor_sample_scores_df = pd.DataFrame()
     counts_distances_df = pd.DataFrame()
 
     # get scores for each anchor
     for anchor, df in counts.groupby('anchor'):
-        anchor_scores, counts_distances = get_distance_scores(anchor, df, bound_distance, args.kmer_size)
+        anchor_sample_scores, counts_distances = get_distance_scores(
+            anchor,
+            df,
+            bound_distance,
+            args.kmer_size
+        )
         # append anchor score row
-        anchor_scores_df = anchor_scores_df.append(anchor_scores)
+        anchor_sample_scores_df = anchor_sample_scores_df.append(anchor_sample_scores)
         # append coutns_distances df
         counts_distances_df = counts_distances_df.append(counts_distances)
 
     # get anchor_score value as std of all anchor sample scores
-    anchor_scores_df['anchor_score'] = anchor_scores_df.std(axis=1)
-    anchor_scores_df.index.name = 'anchor'
+    anchor_sample_scores_df['anchor_sample_std'] = anchor_sample_scores_df.std(axis=1)
+    anchor_sample_scores_df.index.name = 'anchor'
     # output anchor scores file
-    anchor_scores_df.reset_index().to_csv(args.outfile_anchor_scores, sep='\t', index=False)
+    anchor_sample_scores_df.reset_index().to_csv(args.outfile_anchor_sample_scores, sep='\t', index=False)
 
     # output anchor targets counts file
     counts_distances_df.to_csv(args.outfile_counts_distances, sep='\t', index=False)

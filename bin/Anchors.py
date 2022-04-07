@@ -336,11 +336,11 @@ class AnchorTopTargetsScores(dict):
         distance = min([utils.get_distance(target, t) for t in topTargets])
         return distance
 
-    def get_final_anchors(self, anchor_score_threshold, num_keep_anchors):
+    def get_final_anchors(self, num_keep_anchors):
         """
         Get final anchors for parse_anchors
         """
-        if len(self) < anchor_score_threshold:
+        if len(self) < num_keep_anchors:
             anchors = list(self.keys())
         else:
             df = pd.DataFrame(self).T

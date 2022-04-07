@@ -82,7 +82,7 @@ def compute_phase_1_scores(anchor_counts, group_ids_dict, kmer_size):
     p['p_hat'] = p['counts'] / p['counts'].sum()
 
     # get u
-    mu = (p['i'] * p['p_hat']).sum() / kmer_size
+    mu = (p['i'] * p['p_hat']).sum()
 
     # center the distances with u
     anchor_counts['distance_centered'] = anchor_counts['distance'] - mu
@@ -114,11 +114,12 @@ def compute_phase_1_scores(anchor_counts, group_ids_dict, kmer_size):
     return phase_1_scores, distance_df['distance'], mu
 
 
-def compute_phase_2_scores(previous_score, n, distance, mu, group_ids_dict):
+def compute_phase_2_scores(previous_score, n, distance, mu, c):
     """
     Returns phase_2 scores, given a distance of a new target
     """
-    new_score = previous_score * (n/n+1) + ((distance - mu) * pd.Series(group_ids_dict) / (n + 1))
+    new_mu = mu * (n/(n+1)) + (distance / (n+1))
+    new_score = previous_score * (n/(n+1)) + ((distance - new_mu) * c / (n + 1))
 
     return new_score
 
@@ -205,7 +206,7 @@ def get_iteration_summary_scores(
     iteration,
     read_chunk,
     kmer_size,
-    looklength,
+    lookahead,
     num_reads,
     anchor_counts,
     anchor_targets_samples,
@@ -244,7 +245,7 @@ def get_iteration_summary_scores(
         read, sample = read_tuple
 
         # get list of all anchors from each read
-        anchor_list = read.get_anchors(anchor_mode, window_slide, looklength, kmer_size)
+        anchor_list = read.get_anchors(anchor_mode, window_slide, lookahead, kmer_size)
 
         # loop over each anchor in the list of all anchors from each read
         for anchor in anchor_list:
@@ -256,7 +257,7 @@ def get_iteration_summary_scores(
                     phase_0 += 1
 
                 # get target
-                target = read.get_target(anchor, looklength, kmer_size)
+                target = read.get_target(anchor, lookahead, kmer_size)
 
                 # updates, always
                 anchor_counts.update_total_counts(anchor, iteration)                # update anchor total counts
@@ -285,7 +286,7 @@ def get_iteration_summary_scores(
                     )
 
                     # if mean(S_i) < 3 and we have not entered read_counter_freeze, ignorelist this anchor
-                    if scores.mean() < 3:
+                    if mu < 4:
 
                         status_checker.update_ignorelist(anchor, read_counter_freeze)
 

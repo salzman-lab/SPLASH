@@ -49,7 +49,7 @@ def build_consensus(kmers, consensus_length, direction):
     return baseComp, baseCount, baseFrac
 
 
-def get_targets_consensus_seqs(fastq_file, num_parse_anchors_reads, anchor_dict, consensus_length, kmer_size, looklength, direction):
+def get_targets_consensus_seqs(fastq_file, num_parse_anchors_reads, anchor_dict, consensus_length, kmer_size, lookahead, direction):
     """
     For each read, check if there are any valid targets and/or consensus sequences,
     and append them to their respective dictionaries
@@ -89,7 +89,7 @@ def get_targets_consensus_seqs(fastq_file, num_parse_anchors_reads, anchor_dict,
                         # fetch sequences, relative to position
                         if direction == 'down':
                             # get downstream target start and end positions
-                            target_start = anchor_end + looklength
+                            target_start = anchor_end + lookahead
                             target_end = target_start + kmer_size
 
                             # get downstream consensus start and end positions
@@ -98,8 +98,8 @@ def get_targets_consensus_seqs(fastq_file, num_parse_anchors_reads, anchor_dict,
 
                         if direction == 'up':
                             # get upstream target stand and end positions
-                            target_end = anchor_start - looklength
-                            target_start = max(0, anchor_end - (kmer_size + looklength))
+                            target_end = anchor_start - lookahead
+                            target_start = max(0, anchor_end - (kmer_size + lookahead))
 
                             # get upstream consensus start and end positions
                             consensus_seq_end = anchor_start
@@ -224,7 +224,7 @@ def get_args():
         help='up or down'
     )
     parser.add_argument(
-        "--looklength",
+        "--lookahead",
         help='up or down',
         type=int
     )
@@ -249,7 +249,7 @@ def main():
     logging.info(f'consensus_length = {args.consensus_length}')
     logging.info(f'direction        = {args.direction}')
     logging.info(f'kmer_size        = {args.kmer_size}')
-    logging.info(f'looklength       = {args.looklength}')
+    logging.info(f'lookahead       = {args.lookahead}')
     logging.info("--------------------------------------Parameters--------------------------------------")
     logging.info('')
     """logging"""
@@ -273,7 +273,7 @@ def main():
         anchor_dict,
         args.consensus_length,
         args.kmer_size,
-        args.looklength,
+        args.lookahead,
         args.direction
     )
 

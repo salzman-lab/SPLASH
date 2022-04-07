@@ -34,7 +34,7 @@ def get_args():
         type=int
     )
     parser.add_argument(
-        "--looklength",
+        "--lookahead",
         type=int
     )
     parser.add_argument(
@@ -153,7 +153,7 @@ def main():
     if args.anchor_mode == 'tile':
         logging.info(f'window_slide             = {args.window_slide}')
     logging.info(f'c_type                   = {args.c_type}')
-    logging.info(f'looklength               = {args.looklength}')
+    logging.info(f'lookahead               = {args.lookahead}')
     logging.info(f'num_keep_anchors         = {args.num_keep_anchors}')
     logging.info(f'use_std                  = {use_std}')
     logging.info(f'compute_target_distance  = {args.compute_target_distance}')
@@ -245,7 +245,7 @@ def main():
             iteration,
             read_chunk,
             args.kmer_size,
-            args.looklength,
+            args.lookahead,
             args.max_reads,
             anchor_counts,
             anchor_targets_samples,
@@ -360,7 +360,7 @@ def main():
     ## done with all iterations ##
 
     # after all iterations are done accumulating, calculate the summary score
-    keep_anchors = anchor_topTargets_scores.get_final_anchors(args.anchor_score_threshold, args.num_keep_anchors)
+    keep_anchors = anchor_topTargets_scores.get_final_anchors(args.num_keep_anchors)
 
     # filter for these anchors and drop any duplicates
     final_anchors = (

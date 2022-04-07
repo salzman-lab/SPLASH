@@ -2,7 +2,7 @@ include { GET_READ_LENGTH           } from '../../modules/local/get_read_length'
 include { SPLIT_FASTQS              } from '../../modules/local/split_fastqs'
 include { GET_ANCHORS               } from '../../modules/local/get_anchors'
 include { PARSE_ANCHORS             } from '../../modules/local/parse_anchors'
-include { COMPUTE_ANCHOR_SCORES     } from '../../modules/local/compute_anchor_scores'
+include { ANCHOR_SAMPLE_SCORES      } from '../../modules/local/anchor_sample_scores'
 include { NORM_SCORES               } from '../../modules/local/norm_scores'
 
 include { TRIMGALORE                } from '../../modules/nf-core/modules/trimgalore/main'
@@ -11,7 +11,7 @@ workflow ANALYZE_FASTQS {
 
     main:
 
-    // parse samplesheet
+    // Step 0: parse samplesheet
     Channel
         .fromPath(params.input)
         .splitCsv(
@@ -25,10 +25,11 @@ workflow ANALYZE_FASTQS {
         }
         .set{ ch_fastqs }
 
-    // definitions
+    // Step 0: definitions
     num_lines = params.chunk_size * params.n_iterations * 4
     num_chunk_lines = params.chunk_size * 4
 
+    // Step 0: define lookahead parameter
     if (params.use_read_length) {
         /*
         // Get read length of dataset
@@ -37,12 +38,13 @@ workflow ANALYZE_FASTQS {
             ch_fastqs.first()
         )
         read_length = GET_READ_LENGTH.out.read_length.toInteger()
-        looklength = ((read_length - 2 * params.kmer_size) / 2).toInteger()
+        lookahead = ((read_length - 2 * params.kmer_size) / 2).toInteger()
 
     } else {
-        looklength = params.looklength
+        lookahead = params.lookahead
     }
 
+    // Step 1: get significant anchors
     if (params.anchors_file) {
         // use input anchors file
         ch_anchors = params.anchors_file
@@ -85,7 +87,7 @@ workflow ANALYZE_FASTQS {
             params.anchor_mode,
             params.c_type,
             params.window_slide,
-            looklength,
+            lookahead,
             params.num_keep_anchors,
             params.use_std,
             params.compute_target_distance,
@@ -95,6 +97,7 @@ workflow ANALYZE_FASTQS {
         ch_anchors = GET_ANCHORS.out.anchors
     }
 
+    // Step 2
     /*
     // Process to get consensus sequences and target counts for annchors
     */
@@ -105,7 +108,7 @@ workflow ANALYZE_FASTQS {
         params.consensus_length,
         params.kmer_size,
         params.direction,
-        looklength
+        lookahead
     )
 
     // Create samplesheet of target counts files
@@ -115,26 +118,29 @@ workflow ANALYZE_FASTQS {
         }
         .set{ targets_samplesheet }
 
+    // Step 3
     /*
     // Process to get anchor scores and anchor-target counts
     */
-    COMPUTE_ANCHOR_SCORES(
+    ANCHOR_SAMPLE_SCORES(
         targets_samplesheet,
         params.bound_distance,
         params.max_distance,
         params.kmer_size
     )
 
-    anchor_scores           = COMPUTE_ANCHOR_SCORES.out.anchor_scores.first()
-    anchor_target_counts    = COMPUTE_ANCHOR_SCORES.out.anchor_target_counts.first()
+    anchor_sample_scores = ANCHOR_SAMPLE_SCORES.out.anchor_sample_scores.first()
+    anchor_target_counts = ANCHOR_SAMPLE_SCORES.out.anchor_target_counts.first()
 
+    // Step 4
     /*
     // Process to compute norm scores
     */
     NORM_SCORES(
-        anchor_scores,
+        anchor_sample_scores,
         anchor_target_counts,
         file(params.input),
+        params.use_std,
         params.kmer_size
     )
 
