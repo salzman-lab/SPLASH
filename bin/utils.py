@@ -285,14 +285,14 @@ def get_iteration_summary_scores(
                         kmer_size
                     )
 
-                    # if mean(S_i) < 3 and we have not entered read_counter_freeze, ignorelist this anchor
-                    if mu < 4:
+                    # if mu < 2 and we have not entered read_counter_freeze, ignorelist this anchor
+                    if mu < 2:
 
                         status_checker.update_ignorelist(anchor, read_counter_freeze)
 
                         phase_1_ignore_score += 1
 
-                    # if mean(S_i) >= 3, proceed with updates and transition to phase_2
+                    # if mu < 2, proceed with updates and transition to phase_2
                     else:
 
                         # updates
