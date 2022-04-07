@@ -18,10 +18,11 @@ process GET_ANCHORS {
     val anchor_mode
     val c_type
     val window_slide
-    val looklength
+    val lookahead
     val num_keep_anchors
     val use_std
     val compute_target_distance
+    val max_ignorelist
 
     output:
     path "anchors.tsv"      , emit: anchors
@@ -45,10 +46,11 @@ process GET_ANCHORS {
         --anchor_mode ${anchor_mode} \\
         --window_slide ${window_slide} \\
         --c_type ${c_type} \\
-        --looklength ${looklength} \\
+        --lookahead ${lookahead} \\
         --num_keep_anchors ${num_keep_anchors} \\
         --use_std ${use_std} \\
         --compute_target_distance ${compute_target_distance} \\
+        --max_ignorelist ${max_ignorelist} \\
         --outfile ${outfile}
     """
 }

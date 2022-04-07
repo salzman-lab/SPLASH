@@ -6,9 +6,10 @@ process NORM_SCORES {
 
 
     input:
-    path anchor_scores
+    path anchor_sample_scores
     path anchor_target_counts
     path samplesheet
+    val use_std
     val kmer_size
 
     output:
@@ -18,9 +19,10 @@ process NORM_SCORES {
     outfile_norm_scores        = "anchor_norm_scores.tsv"
     """
     norm_scores.py \\
-        --anchor_scores ${anchor_scores} \\
+        --anchor_sample_scores ${anchor_sample_scores} \\
         --anchor_target_counts ${anchor_target_counts} \\
         --samplesheet ${samplesheet} \\
+        --use_std ${use_std} \\
         --kmer_size ${kmer_size} \\
         --outfile_norm_scores ${outfile_norm_scores}
     """

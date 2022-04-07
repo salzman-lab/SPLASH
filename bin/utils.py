@@ -37,22 +37,16 @@ def is_ignorelisted(self, anchor):
         return False
 
 
-def compute_phase_1_score(anchor, df):
-    """
-    Computes the transition score for an anchor
-    """
-    # get list of targets for this anchor
-    top_targets = list(df['target'])
-
-    min_dists = []
+def compute_phase_1_scores(anchor_counts, group_ids_dict, kmer_size):
+    # intialise a df for targets x distances
+    distance_df = pd.DataFrame(index=anchor_counts['target'], columns=['distance'])
 
     # iterate over targets sorted by decreasing abundance
-    # get min hamming distance of each target to its preceeding targets, such that
-    #   for target in n_1...n_5, get d_n_i = min_(1=j)(distance(n_i, n_j))
-    for index, row in df.iterrows():
-        sequence = row['target']
+    # get min hamming distance of each target to its preceeding targets
+    for index, row in anchor_counts.iterrows():
+        target = row['target']
         candidates = (
-            df['target']
+            anchor_counts['target']
             .loc[0:index-1]
             .to_numpy()
         )
@@ -63,50 +57,69 @@ def compute_phase_1_score(anchor, df):
 
         # else, get the min distance to all preceeding targets
         else:
-            min_dist = min([get_distance(sequence, x) for x in candidates])
+            min_dist = min([get_distance(target, x) for x in candidates])
 
-        min_dists.append((sequence, min_dist))
+        # update target distances
+        distance_df.loc[distance_df.index==target, 'distance'] = min_dist
+        anchor_counts.loc[anchor_counts['target']==target, 'distance'] = min_dist
 
-    # dataframe of [target, target_distance]
-    distance_df = (
-        pd.DataFrame(min_dists, columns=['target', 'distance'])
-        .set_index("target")
-    )
-    distance_df.index.name = None
+    # intialise
+    p = pd.DataFrame()
+    p['i'] = range(0, kmer_size+1)
+    p['counts'] = 0
 
-    # get phase_1 score of sum(n_i * d_i) / sum(n_i)
+    # for each distance, get the the total number of occurrences of that distance
+    for i, df in anchor_counts.groupby('distance'):
+        count = (
+            df
+            .drop(['target', 'distance'], axis=1)
+            .values
+            .sum()
+        )
+        p.loc[p['i']==i, 'counts'] = count
 
-    # sum(n_i * d_i)
-    # scale by distances, and get sum of (counts * min_dist) across samples
+    # get proportion of counts with that distance
+    p['p_hat'] = p['counts'] / p['counts'].sum()
+
+    # get u
+    mu = (p['i'] * p['p_hat']).sum()
+
+    # center the distances with u
+    anchor_counts['distance_centered'] = anchor_counts['distance'] - mu
+
+    # prepare df to get terms
+    anchor_counts = (
+        anchor_counts
+        .drop(['distance'], axis=1)
+        .set_index('target')
+        )
+
+    m = anchor_counts.drop('distance_centered', axis=1)
+    distance_centered = anchor_counts['distance_centered']
+
     numerator = (
-        df
-        .set_index('target')
-        .multiply(distance_df['distance'], axis=0)
+        m
+        .mul(pd.Series(group_ids_dict))
+        .mul(distance_centered, axis=0)
         .sum(axis=0)
     )
 
-    # sum(n_i)
-    # get sum of counts across samples
-    denominator = (
-        df
-        .set_index('target')
-        .sum(axis=0)
-    )
+    denominator = m.sum(axis=0)
 
-    scores = (
+    phase_1_scores = (
         numerator
         .divide(denominator, fill_value=0, axis=0)
     )
 
-    return scores, min_dists
+    return phase_1_scores, distance_df['distance'], mu
 
 
-def compute_phase_2_score(previous_score, n, distance):
+def compute_phase_2_scores(previous_score, n, distance, mu, c):
     """
     Returns phase_2 scores, given a distance of a new target
     """
-    # n -> sample-anchor specific
-    new_score = previous_score * (n/(n+1)) + (distance/n+1)
+    new_mu = mu * (n/(n+1)) + (distance / (n+1))
+    new_score = previous_score * (n/(n+1)) + ((distance - new_mu) * c / (n + 1))
 
     return new_score
 
@@ -193,13 +206,13 @@ def get_iteration_summary_scores(
     iteration,
     read_chunk,
     kmer_size,
-    looklength,
+    lookahead,
     num_reads,
     anchor_counts,
     anchor_targets_samples,
     anchor_targets,
-    anchor_scores_topTargets,
-    anchor_target_distances,
+    anchor_topTargets_scores,
+    anchor_topTargets_distances,
     anchor_status,
     status_checker,
     read_counter_freeze,
@@ -208,7 +221,8 @@ def get_iteration_summary_scores(
     anchor_freeze_threshold,
     anchor_mode,
     window_slide,
-    compute_target_distance):
+    compute_target_distance,
+    group_ids_dict):
     """
     Return the summary scores for the reads of one iteration
     """
@@ -231,15 +245,10 @@ def get_iteration_summary_scores(
         read, sample = read_tuple
 
         # get list of all anchors from each read
-        anchor_list = read.get_anchors(anchor_mode, window_slide, looklength, kmer_size)
+        anchor_list = read.get_anchors(anchor_mode, window_slide, lookahead, kmer_size)
 
         # loop over each anchor in the list of all anchors from each read
         for anchor in anchor_list:
-
-            # if status_checker.is_ignorelisted(anchor):
-            #     ignorelisted_anchor += 1
-            # if not anchor_counts.contains(anchor) and len(anchor_counts.total_counts) >= anchor_freeze_threshold:
-            #     new_anchor += 1
 
             # if this anchor-target pair is eligible for computation, proceed
             if is_valid_anchor_target(anchor, read_counter_freeze, anchor_counts, anchor_freeze_threshold, status_checker):
@@ -248,7 +257,7 @@ def get_iteration_summary_scores(
                     phase_0 += 1
 
                 # get target
-                target = read.get_target(anchor, looklength, kmer_size)
+                target = read.get_target(anchor, lookahead, kmer_size)
 
                 # updates, always
                 anchor_counts.update_total_counts(anchor, iteration)                # update anchor total counts
@@ -270,24 +279,26 @@ def get_iteration_summary_scores(
                     phase_1 += 1
 
                     # compute phase_1 score
-                    scores, topTargets_distances = compute_phase_1_score(
-                        anchor,
-                        anchor_targets_samples.get_anchor_counts_df(anchor)
+                    scores, topTargets_distances, mu = compute_phase_1_scores(
+                        anchor_targets_samples.get_anchor_counts_df(anchor),
+                        group_ids_dict,
+                        kmer_size
                     )
 
-                    # if mean(S_i) < 3 and we have not entered read_counter_freeze, ignorelist this anchor
-                    if scores.mean() < 3:
+                    # if mu < 2 and we have not entered read_counter_freeze, ignorelist this anchor
+                    if mu < 2:
 
                         status_checker.update_ignorelist(anchor, read_counter_freeze)
 
                         phase_1_ignore_score += 1
 
-                    # if mean(S_i) >= 3, proceed with updates and transition to phase_2
+                    # if mu < 2, proceed with updates and transition to phase_2
                     else:
 
                         # updates
-                        anchor_scores_topTargets.initialise(anchor, scores)                               # update the topTargets for anchor
-                        anchor_target_distances.update_topTargets_distances(anchor, topTargets_distances) # update distances for topTargets for anchor
+                        anchor_topTargets_scores.initialise(anchor, scores)                               # update the topTargets for anchor
+                        anchor_topTargets_distances.update_distances(anchor, topTargets_distances) # update distances for topTargets for anchor
+                        anchor_topTargets_distances.update_mu(anchor, mu)
 
                         # after phase_1/transition score computation, assign this anchor to phase_2 and only compute phase_2 score for this anchor
                         anchor_status.assign_phase_2(anchor)
@@ -300,10 +311,10 @@ def get_iteration_summary_scores(
                     phase_2 += 1
 
                     # if this is a target that we have seen before
-                    if anchor_target_distances.has_distance(anchor, target):
+                    if anchor_topTargets_distances.has_distance(anchor, target):
 
                         # get its previously-recorded distance
-                        distance = anchor_target_distances.get_distance(anchor, target)
+                        distance = anchor_topTargets_distances.get_distance(anchor, target)
                         phase_2_fetch_distance += 1
 
                     # if we have never seen this target before
@@ -311,22 +322,23 @@ def get_iteration_summary_scores(
 
                         # compute target distance from topTargets
                         if compute_target_distance:
-                            distance = anchor_scores_topTargets.compute_target_distance(anchor, target)
+                            distance = anchor_topTargets_scores.compute_target_distance(anchor, target)
                         else:
                             distance = 1
 
                         phase_2_compute_distance += 1
 
                     # compute phase_2 score
-                    new_score = compute_phase_2_score(
-                        anchor_scores_topTargets.get_score(anchor, sample),
+                    new_score = compute_phase_2_scores(
+                        anchor_topTargets_scores.get_score(anchor, sample),
                         anchor_counts.get_all_target_counts(anchor, sample),
-                        distance
+                        distance,
+                        anchor_topTargets_distances.get_mu(anchor),
+                        group_ids_dict[sample]
                     )
-                    anchor_scores_topTargets.get_score(anchor, sample)
 
                     # update the score for this anchor
-                    anchor_scores_topTargets.update(anchor, sample, new_score)
+                    anchor_topTargets_scores.update(anchor, sample, new_score)
 
                 valid_anchor += 1
             else:

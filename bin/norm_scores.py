@@ -8,7 +8,11 @@ import numpy as np
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--anchor_scores",
+        "--use_std",
+        type=str
+    )
+    parser.add_argument(
+        "--anchor_sample_scores",
         type=str
     )
     parser.add_argument(
@@ -36,7 +40,7 @@ def main():
 
     # read in files
     counts = pd.read_csv(args.anchor_target_counts, sep='\t')
-    scores = pd.read_csv(args.anchor_scores, sep='\t')
+    anchor_sample_scores = pd.read_csv(args.anchor_sample_scores, sep='\t')
 
     # read in samples from samplesheet
     # [fastq_file, optional group_id]
@@ -45,6 +49,14 @@ def main():
         header=None,
         sep='\t'
     )
+
+    # redefine bool
+    if args.use_std == "true":
+        use_std = True
+    elif args.use_std == "false":
+        use_std = False
+    if sample_list.shape[1] == 1:
+        use_std = True
 
     # get list of samples from fastq_files
     # if fastq_file = "file1.fastq.gz", sample = "file1"
@@ -71,7 +83,7 @@ def main():
     # define terms
     n_j = (
         counts                          # file of anchor-target-sample counts
-        .drop('min_distance', axis=1)   # df of anchor-targets x sample counts
+        .drop('distance', axis=1)       # df of anchor-targets x sample counts
         .groupby('anchor')              # over all anchors
         .sum()                          # get the per-sample sums
     )
@@ -81,48 +93,59 @@ def main():
         .apply(np.sqrt)                 # square-root the per anchor-sample sums
     )
 
-    scores = (
-        scores                          # file of scores per anchor and per anchor-sample
-        .set_index('anchor')            # df of anchor x S_j
-        .drop('anchor_score', axis=1)   # drop anchor_score column
+    anchor_sample_scores = (
+        anchor_sample_scores                    # file of anchor_sample_scores per anchor and per anchor-sample
+        .set_index('anchor')                    # df of anchor x S_j
+        .drop('anchor_sample_std', axis=1)      # drop anchor_score column
     )
 
-    norm_summary_score = (
-        scores                          # df of anchor x S_j
-        .assign(**group_ids_dict)       # map group_ids to samples
-        .mul(scores)                    # multiply S_j by group_ids
-        .mul(sqrt_n_j, axis=1)          # multiply by n_j (square-root of per anchor-sample sums)
-        .sum(axis=1)                    # sum over samples, to get a per-anchor score
-    )
+    if use_std:
+        norm_summary_score = (
+            anchor_sample_scores                # df of anchor x S_j
+            .mul(pd.Series(group_ids_dict))     # multiply by group_ids
+            .mul(sqrt_n_j, axis=1)              # multiply by n_j (square-root of per anchor-sample sums)
+            .std(axis=1)                        # std over samples, to get a per-anchor score
+        )
+    else:
+        norm_summary_score = (
+            anchor_sample_scores                # df of anchor x S_j
+            .mul(pd.Series(group_ids_dict))     # multiply by group_ids
+            .mul(sqrt_n_j, axis=1)              # multiply by n_j (square-root of per anchor-sample sums)
+            .sum(axis=1)                        # sum over samples, to get a per-anchor score
+        )
 
     sum_sqrt_n_j_c_j = (
-        sqrt_n_j                        # square-root of per anchor-sample sums
-        .assign(**group_ids_dict)       # map sums to group_ids
-        .mul(sqrt_n_j)                  # multiply n_j by group_ids
-        .sum(axis=1)                    # sum over samples, to get a per-anchor score
+        sqrt_n_j                                # square-root of per anchor-sample sums
+        .mul(pd.Series(group_ids_dict))         # multiply by group_ids
+        .sum(axis=1)                            # sum over samples, to get a per-anchor score
     )
 
     # intialise the scores table
+    scores_table = n_j.copy()
+    scores_table['total_anchor_counts'] = scores_table.sum(axis=1)
     scores_table = (
         pd.merge(
-            n_j.copy(),
+            scores_table,
             pd.DataFrame(norm_summary_score, columns=['norm_summary_score']),
             on='anchor'
         )
     )
 
-    # initialise
+    # initialise columns
+    scores_table['first_moment'] = None
+    scores_table['second_moment'] = None
+    scores_table['fourth_moment'] = None
     scores_table['expectation'] = None
     scores_table['variance_distance'] = None
 
     # for each anchor, get expectation and variance_distance
     for anchor, df in counts.groupby('anchor'):
 
-        # subset and rename min_distance as i
+        # subset and rename distance as i
         distances = (
             df
             .drop(['anchor', 'target'], axis=1)
-            .rename(columns={'min_distance' : 'i'})
+            .rename(columns={'distance' : 'i'})
         )
 
         # initialise
@@ -144,16 +167,23 @@ def main():
         # get fraction of times each distance occurs as p_hat
         p['p_hat'] = p['counts']/p['counts'].sum()
 
-        # define expectation of score-- no /args.kmersize needed -- if p_hat is a vector of prbabilities-- it already sums to 1 -- if its not, pls make p_hat into a vector of probabilities becuase that's what p_hat means mathematicallyz
+        # define moments
+        first_moment = (p['p_hat'] * p['i']).sum()
+        second_moment = (p['p_hat'] * p['i']**2).sum()
+        fourth_moment = (p['p_hat'] * p['i']**4).sum()
+
+        # define expectation of score
         expectation = sum(p['i'] * p['p_hat'] * sum_sqrt_n_j_c_j[anchor])
 
-        # define variance_d
-        # @kaitlin if p_hat is a vector of probs, we do not need /args.kmer_size
+        # define variance_distance
         variance_distance = sum(p['p_hat'] * p['i']**2) - (sum(p['p_hat'] * p['i'])) ** 2
 
         # add these values to the score table
         scores_table.loc[anchor, 'expectation'] = expectation
         scores_table.loc[anchor, 'variance_distance'] = variance_distance
+        scores_table.loc[anchor, 'first_moment'] = first_moment
+        scores_table.loc[anchor, 'second_moment'] = second_moment
+        scores_table.loc[anchor, 'fourth_moment'] = fourth_moment
 
     # output scores table
     (

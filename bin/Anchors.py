@@ -38,39 +38,36 @@ class AnchorStatus(dict):
             return False
 
 
-class AnchorTargetDistances(dict):
+class AnchorTopTargetsDistances(dict):
     """
     Dictionary object to keep track of anchors, targets, and their distances
     """
     def __init__(self):
-        self = {}
+        self.distances = {}
+        self.mu = {}
 
-    def update_target_distance(self, anchor, target, distance):
-        """
-        Update {anchor : {target : distance}}
-        """
-        if anchor not in self:
-            self[anchor] = {target : distance}
-        else:
-            if target not in self[anchor]:
-                self[anchor].update({target : distance})
-        return self
-
-    def update_topTargets_distances(self, anchor, topTargets_distances):
+    def update_distances(self, anchor, topTargets_distances):
         """
         Update {anchor : {target : distance}} with the distances of the topTargets
         """
-        if anchor in self:
-            self[anchor].update(dict(topTargets_distances))
+        if anchor in self.distances:
+            self.distances[anchor].update(dict(topTargets_distances))
         else:
-            self[anchor] = dict(topTargets_distances)
-        return self
+            self.distances[anchor] = dict(topTargets_distances)
+        return self.distances
+
+    def update_mu(self, anchor, mu):
+        """
+        Updte {anchor: mu}
+        """
+        self.mu[anchor] = mu
+        return self.mu
 
     def has_distance(self, anchor, target):
         """
         Return true if (anchor, target) has a pre-computed distance
         """
-        if target in self[anchor]:
+        if target in self.distances[anchor]:
             return True
         else:
             return False
@@ -79,8 +76,13 @@ class AnchorTargetDistances(dict):
         """
         Return distance for anchor:target pair
         """
-        return self[anchor][target]
+        return self.distances[anchor][target]
 
+    def get_mu(self, anchor):
+        """
+        Return distance for anchor:target pair
+        """
+        return self.mu[anchor]
 
 class AnchorTargetsSamples():
     def __init__(self, sample_index_dict):
@@ -246,22 +248,23 @@ class StatusChecker():
     """
     Object to keep track of keeplists and ignorelists
     """
-    def __init__(self, anchor_counts, anchor_targets_samples, anchor_targets, anchor_scores_topTargets, anchor_target_distances, anchor_status):
+    def __init__(self, anchor_counts, anchor_targets_samples, anchor_targets, anchor_topTargets_scores, anchor_topTargets_distances, anchor_status, max_ignorelist):
         self.ignorelist = {}
         self.keeplist = {}
         self.anchor_counts = anchor_counts
         self.anchor_targets_samples = anchor_targets_samples
         self.anchor_targets = anchor_targets
-        self.anchor_scores_topTargets = anchor_scores_topTargets
-        self.anchor_target_distances = anchor_target_distances
+        self.anchor_topTargets_scores = anchor_topTargets_scores
+        self.anchor_topTargets_distances = anchor_topTargets_distances
         self.anchor_status = anchor_status
+        self.max_ignorelist = max_ignorelist
 
     def update_ignorelist(self, anchor, read_counter_freeze):
         """
         Updates ignorelist and removes anchor from all of our dictionaries
         """
         # only add anchor to ignorlist if not in read_counter_freeze or if ignorelist is not larger than 4M
-        if (not read_counter_freeze) and (len(self.ignorelist) < 4000000):
+        if (not read_counter_freeze) and (len(self.ignorelist) < self.max_ignorelist):
             if anchor not in self.ignorelist:
                 self.ignorelist[anchor] = True
 
@@ -271,8 +274,9 @@ class StatusChecker():
         self.anchor_counts.top_target_counts.pop(anchor, None)
         self.anchor_targets_samples.counter.pop(anchor, None)
         self.anchor_targets.pop(anchor, None)
-        self.anchor_scores_topTargets.pop(anchor, None)
-        self.anchor_target_distances.pop(anchor, None)
+        self.anchor_topTargets_scores.pop(anchor, None)
+        self.anchor_topTargets_distances.distances.pop(anchor, None)
+        self.anchor_topTargets_distances.mu.pop(anchor, None)
         self.anchor_status.pop(anchor, None)
 
     def update_keeplist(self, anchor):
@@ -294,7 +298,7 @@ class StatusChecker():
 
 
 
-class AnchorScoresTopTargets(dict):
+class AnchorTopTargetsScores(dict):
     """
     Dictionary object to keep track of anchors, their current scores, and their top targets
     """
@@ -332,64 +336,21 @@ class AnchorScoresTopTargets(dict):
         distance = min([utils.get_distance(target, t) for t in topTargets])
         return distance
 
-    def get_summary_scores(self, group_ids_dict, use_std):
+    def get_final_anchors(self, num_keep_anchors):
         """
-        Return scores, scaled and sorted by abundance
+        Get final anchors for parse_anchors
         """
-        # Convert dict to dataframe
-        scores_df = pd.DataFrame()
-        for (anchor, scores) in self.items():
-            scores_df = scores_df.append(pd.Series(scores, name=anchor))
-
-        # drop any anchors that do not have scores for at least 3 samples
-        scores_df = scores_df.dropna(thresh=3)
-
-        # if we are using standard deviation score or there is no metadata component, get the std of scores
-        if (use_std or len(set(group_ids_dict.values())) == 1):
-            df = (
-                pd.DataFrame(
-                    scores_df.std(axis=1),
-                    columns=['score']
-                )
-            )
-
-        # else, compute the anchor significane score as sum(C_i*S_i) - sum(S_i(sum(C_i) / n_c))
+        if len(self) < num_keep_anchors:
+            anchors = list(self.keys())
         else:
-
-            # sum(C_i*S_i)
-            first_sum = (
-                scores_df
-                .assign(**group_ids_dict)
-                .mul(scores_df)
-                .dropna(axis=1)
-                .sum(axis=1)
+            df = pd.DataFrame(self).T
+            df['z'] = df.sum(axis=1)
+            anchors = (
+                df['z']
+                .sort_values(ascending=False)
+                .head(num_keep_anchors)
+                .index
+                .to_list()
             )
-
-            # sum(S_i(sum(C_i) / n_c))
-            second_sum = (
-                scores_df
-                .apply(
-                    lambda row:
-                    (
-                        (
-                            sum(
-                                ([group_ids_dict[col] for col in scores_df.columns if not np.isnan(row[col])])
-                            )
-                            *
-                            sum(
-                                [row[col] for col in scores_df.columns if not np.isnan(row[col])]
-                            )
-                        )
-                        /
-                        len(scores_df.columns)
-                    ),
-                    axis=1
-                )
-            )
-
-            df = (
-                pd.DataFrame(first_sum - second_sum, columns=['score'])
-                .sort_values('score', ascending=False)
-            )
-        return df
+        return anchors
 
