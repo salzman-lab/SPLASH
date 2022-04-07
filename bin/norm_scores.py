@@ -71,7 +71,7 @@ def main():
     # define terms
     n_j = (
         counts                          # file of anchor-target-sample counts
-        .drop('min_distance', axis=1)   # df of anchor-targets x sample counts
+        .drop('distance', axis=1)   # df of anchor-targets x sample counts
         .groupby('anchor')              # over all anchors
         .sum()                          # get the per-sample sums
     )
@@ -118,11 +118,11 @@ def main():
     # for each anchor, get expectation and variance_distance
     for anchor, df in counts.groupby('anchor'):
 
-        # subset and rename min_distance as i
+        # subset and rename distance as i
         distances = (
             df
             .drop(['anchor', 'target'], axis=1)
-            .rename(columns={'min_distance' : 'i'})
+            .rename(columns={'distance' : 'i'})
         )
 
         # initialise

@@ -92,6 +92,10 @@ def get_args():
         "--compute_target_distance",
         type=str
     )
+    parser.add_argument(
+        "--max_ignorelist",
+        type=int
+    )
 
     args = parser.parse_args()
     return args
@@ -175,6 +179,9 @@ def main():
         group_ids = sample_list.iloc[:,1].tolist()
         for i in range(0, len(samples)):
             group_ids_dict[samples[i]] = group_ids[i]
+    else:
+        for i in range(0, len(samples)):
+            group_ids_dict[samples[i]] = 1
 
     # create sample index dict
     sample_index_dict = {}
@@ -185,16 +192,17 @@ def main():
     anchor_counts = Anchors.AnchorCounts(len(samples))                          # {anchor : counts}
     anchor_targets_samples = Anchors.AnchorTargetsSamples(sample_index_dict)    # {anchor : {target : [sample_1_count, ...]}}
     anchor_targets = Anchors.AnchorTargets()                                    # {anchor : targets}
-    anchor_scores_topTargets = Anchors.AnchorScoresTopTargets()                 # {anchor : scores]}
-    anchor_target_distances = Anchors.AnchorTargetDistances()                   # {anchor : {targets : distance}}
+    anchor_topTargets_scores = Anchors.AnchorTopTargetsScores()                 # {anchor : scores]}
+    anchor_topTargets_distances = Anchors.AnchorTopTargetsDistances()                   # {anchor : {targets : distance}}
     anchor_status = Anchors.AnchorStatus()                                      # [anchor1, anchor2]
     status_checker = Anchors.StatusChecker(
         anchor_counts,
         anchor_targets_samples,
         anchor_targets,
-        anchor_scores_topTargets,
-        anchor_target_distances,
-        anchor_status
+        anchor_topTargets_scores,
+        anchor_topTargets_distances,
+        anchor_status,
+        args.max_ignorelist
     )
 
     # initialise dataframe of logging values
@@ -203,7 +211,7 @@ def main():
             'Run Time', 'Total Reads', 'Anchors with Scores',
             'Phase 1 Total', 'Phase 1 Kept', 'Phase 1 Ignored',
             'Phase 2 Total', 'Phase 2 topTargets', 'Phase 2 Other Targets',
-            'anchor_counts', 'anchor_targets_samples', 'anchor_scores_topTargets', 'anchor_target_distances',
+            'anchor_counts', 'anchor_targets_samples', 'anchor_topTargets_scores', 'anchor_topTargets_distances',
             'ignorelist total', 'ignorelist abundance'
         ]
     )
@@ -212,7 +220,7 @@ def main():
     for iteration in range(1, args.n_iterations+1):
 
         # only continue accumulations if we have less than num_keep_anchors anchors with candidate scores
-        if len(anchor_scores_topTargets) >= args.num_keep_anchors:
+        if len(anchor_topTargets_scores) >= args.anchor_score_threshold:
             break
 
         # initialise loggging counters
@@ -242,8 +250,8 @@ def main():
             anchor_counts,
             anchor_targets_samples,
             anchor_targets,
-            anchor_scores_topTargets,
-            anchor_target_distances,
+            anchor_topTargets_scores,
+            anchor_topTargets_distances,
             anchor_status,
             status_checker,
             read_counter_freeze,
@@ -252,7 +260,8 @@ def main():
             args.anchor_freeze_threshold,
             args.anchor_mode,
             args.window_slide,
-            args.compute_target_distance
+            args.compute_target_distance,
+            group_ids_dict
         )
         run_time = time.time() - start_time # get step total run time
 
@@ -311,12 +320,12 @@ def main():
         logging.info(f'\t\t\ttarget distance score is fetched = {phase_2_fetch_distance}')
         logging.info(f'\t\t\ttarget distance score is computed = {phase_2_compute_distance}')
         logging.info("")
-        logging.info(f'\tnumber of anchors with candidate scores = {len(anchor_scores_topTargets)}')
+        logging.info(f'\tnumber of anchors with candidate scores = {len(anchor_topTargets_scores)}')
         logging.info(f'\t\tsize of anchor_counts dict = {len(anchor_counts.total_counts)}')
         logging.info(f'\t\tsize of all_target_counts dict = {len(anchor_counts.all_target_counts)}')
         logging.info(f'\t\tsize of anchor_targets_samples dict = {len(anchor_targets_samples.counter)}')
-        logging.info(f'\t\tsize of anchor_scores_topTargets dict = {len(anchor_scores_topTargets)}')
-        logging.info(f'\t\tsize of anchor_target_distances dict = {len(anchor_target_distances)}')
+        logging.info(f'\t\tsize of anchor_topTargets_scores dict = {len(anchor_topTargets_scores)}')
+        logging.info(f'\t\tsize of anchor_topTargets_distances dict = {len(anchor_topTargets_distances)}')
         logging.info("")
         logging.info(f'\tignorelist size = {len(status_checker.ignorelist)}')
         logging.info(f'\t\tanchors that have failed the abundance requirement = {len(ignorelist_anchors_abundance)}')
@@ -330,7 +339,7 @@ def main():
             {
                 'Run Time' : run_time,
                 'Total Reads' : num_reads * len(samples),
-                'Anchors with Scores': len(anchor_scores_topTargets),
+                'Anchors with Scores': len(anchor_topTargets_scores),
                 'Phase 1 Total': phase_1,
                 'Phase 1 Kept': phase_1_compute_score,
                 'Phase 1 Ignored': phase_1_ignore_score,
@@ -339,8 +348,8 @@ def main():
                 'Phase 2 Other Targets': phase_2_compute_distance,
                 'anchor_counts': len(anchor_counts.total_counts),
                 'anchor_targets_samples': len(anchor_targets_samples.counter),
-                'anchor_scores_topTargets': len(anchor_scores_topTargets),
-                'anchor_target_distances': len(anchor_target_distances),
+                'anchor_topTargets_scores': len(anchor_topTargets_scores),
+                'anchor_topTargets_distances': len(anchor_topTargets_distances),
                 'ignorelist total': len(status_checker.ignorelist),
                 'ignorelist abundance': ignore_abundance
             },
@@ -351,39 +360,7 @@ def main():
     ## done with all iterations ##
 
     # after all iterations are done accumulating, calculate the summary score
-    summary_scores = anchor_scores_topTargets.get_summary_scores(group_ids_dict, use_std)
-
-    # only ignorelist if we have less than anchor_score_threshold anchors with scores
-    if len(anchor_scores_topTargets) >= args.anchor_score_threshold:
-
-        # ignorelist condition: ignorelist the anchors with scores in [40% quantile, 60% quantile]
-        lower = 0.4
-        upper = 0.6
-        lower_bound = summary_scores['score'].quantile([lower, upper]).loc[lower]
-        upper_bound = summary_scores['score'].quantile([lower, upper]).loc[upper]
-        # get anchors with scores in [40% quantile, 60% quantile]
-        ignorelist_anchors_percentile = (
-            summary_scores[(summary_scores['score'] > lower_bound) & (summary_scores['score'] < upper_bound)]
-            .index
-            .to_list()
-        )
-        # remove those anchors
-        summary_scores = summary_scores[~summary_scores['score'].isin(ignorelist_anchors_percentile)]
-
-    # output anchors with the highest scores
-    # get absolute value of scores
-    summary_scores['abs_score'] = summary_scores['score'].abs()
-    summary_scores = summary_scores.sort_values(
-        'abs_score',
-        ascending=False
-    )
-    # get anchors with the top num_keep_anchors of scores
-    keep_anchors = (
-        summary_scores
-        .head(args.num_keep_anchors)
-        .index
-        .to_list()
-    )
+    keep_anchors = anchor_topTargets_scores.get_final_anchors(args.anchor_score_threshold, args.num_keep_anchors)
 
     # filter for these anchors and drop any duplicates
     final_anchors = (

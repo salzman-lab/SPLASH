@@ -88,7 +88,8 @@ workflow ANALYZE_FASTQS {
             looklength,
             params.num_keep_anchors,
             params.use_std,
-            params.compute_target_distance
+            params.compute_target_distance,
+            params.max_ignorelist
         )
 
         ch_anchors = GET_ANCHORS.out.anchors
@@ -120,7 +121,8 @@ workflow ANALYZE_FASTQS {
     COMPUTE_ANCHOR_SCORES(
         targets_samplesheet,
         params.bound_distance,
-        params.max_distance
+        params.max_distance,
+        params.kmer_size
     )
 
     anchor_scores           = COMPUTE_ANCHOR_SCORES.out.anchor_scores.first()
