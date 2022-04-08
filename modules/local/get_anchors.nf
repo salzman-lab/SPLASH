@@ -23,6 +23,7 @@ process GET_ANCHORS {
     val use_std
     val compute_target_distance
     val max_ignorelist
+    val distance_type
 
     output:
     path "anchors.tsv"      , emit: anchors
@@ -51,6 +52,7 @@ process GET_ANCHORS {
         --use_std ${use_std} \\
         --compute_target_distance ${compute_target_distance} \\
         --max_ignorelist ${max_ignorelist} \\
+        --distance_type ${distance_type} \\
         --outfile ${outfile}
     """
 }

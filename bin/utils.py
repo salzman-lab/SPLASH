@@ -10,19 +10,23 @@ import logging
 import numpy as np
 from Bio import SeqIO
 import math
+import nltk
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 from datetime import datetime
 import Reads
 
 
-def get_distance(seq1, seq2):
+def get_distance(seq1, seq2, distance_type):
     """
-    Returns the Hamming distance between 2 strings
+    Returns the distance between 2 strings
     """
-    distance = 0
-    for x,y in zip(seq1, seq2):
-        distance = distance + (x != y)
+    if distance_type.lower() == 'hamming':
+        distance = 0
+        for x,y in zip(seq1, seq2):
+            distance = distance + (x != y)
+    elif distance_type.lower() == 'jaccard':
+        distance = 1 - (nltk.jaccard_distance(set(seq1), set(seq2)))
 
     return distance
 
@@ -37,7 +41,7 @@ def is_ignorelisted(self, anchor):
         return False
 
 
-def compute_phase_1_scores(anchor_counts, group_ids_dict, kmer_size):
+def compute_phase_1_scores(anchor_counts, group_ids_dict, kmer_size, distance_type):
     # intialise a df for targets x distances
     distance_df = pd.DataFrame(index=anchor_counts['target'], columns=['distance'])
 
@@ -57,7 +61,7 @@ def compute_phase_1_scores(anchor_counts, group_ids_dict, kmer_size):
 
         # else, get the min distance to all preceeding targets
         else:
-            min_dist = min([get_distance(target, x) for x in candidates])
+            min_dist = min([get_distance(target, x, distance_type) for x in candidates])
 
         # update target distances
         distance_df.loc[distance_df.index==target, 'distance'] = min_dist
@@ -222,7 +226,9 @@ def get_iteration_summary_scores(
     anchor_mode,
     window_slide,
     compute_target_distance,
-    group_ids_dict):
+    group_ids_dict,
+    distance_type
+    ):
     """
     Return the summary scores for the reads of one iteration
     """
@@ -282,21 +288,27 @@ def get_iteration_summary_scores(
                     scores, topTargets_distances, mu = compute_phase_1_scores(
                         anchor_targets_samples.get_anchor_counts_df(anchor),
                         group_ids_dict,
-                        kmer_size
+                        kmer_size,
+                        distance_type
                     )
 
-                    # if mu < 2 and we have not entered read_counter_freeze, ignorelist this anchor
-                    if mu < 2:
+                    # set mu_threshold
+                    if distance_type == 'hamming':
+                        mu_threshold = 2
+                    elif distance_type == 'jaccard':
+                        mu_threshold = 0.2
+
+                    # if mu < mu_threshold and we have not entered read_counter_freeze, ignorelist this anchor
+                    if mu < mu_threshold:
 
                         status_checker.update_ignorelist(anchor, read_counter_freeze)
 
                         phase_1_ignore_score += 1
 
-                    # if mu < 2, proceed with updates and transition to phase_2
+                    # if mu < mu_threshold, proceed with updates and transition to phase_2
                     else:
-
                         # updates
-                        anchor_topTargets_scores.initialise(anchor, scores)                               # update the topTargets for anchor
+                        anchor_topTargets_scores.initialise(anchor, scores)                        # update the topTargets for anchor
                         anchor_topTargets_distances.update_distances(anchor, topTargets_distances) # update distances for topTargets for anchor
                         anchor_topTargets_distances.update_mu(anchor, mu)
 
@@ -322,7 +334,7 @@ def get_iteration_summary_scores(
 
                         # compute target distance from topTargets
                         if compute_target_distance:
-                            distance = anchor_topTargets_scores.compute_target_distance(anchor, target)
+                            distance = anchor_topTargets_scores.compute_target_distance(anchor, target, distance_type)
                         else:
                             distance = 1
 
