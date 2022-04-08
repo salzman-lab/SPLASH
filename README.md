@@ -9,7 +9,7 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
 Motivation
 
 # Prerequisites
-** For sherlock users, more details found at https://github.com/kaitlinchaung/stringstats/blob/main/README.md **
+**For sherlock users, more details found at https://github.com/kaitlinchaung/stringstats/blob/main/nextflow.md**
 
 1. Install Java.
 2. Install [`nextflow`](https://nf-co.re/usage/installation) (`>=20.04.0`).
