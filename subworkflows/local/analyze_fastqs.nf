@@ -65,9 +65,11 @@ workflow ANALYZE_FASTQS {
         */
 
         if (params.unmapped) {
-            GET_UNMAPPED(TRIMGALORE.out.fastq)
 
-            ch_unmapped_fastqs = GET_UNMAPPED.out.fastq.collect()
+            GET_UNMAPPED(
+                TRIMGALORE.out.fastq,
+                params.index_bowtie
+            )
         
             /*
             // Process to split each fastq into size read_chunk and gzip compress

@@ -5,18 +5,15 @@ process GET_UNMAPPED {
 
     input:
     tuple val(fastq_id), path(fastq)
-    val index
-
+    val index_bowtie
 
     output:
-    path "*fastq.gz", emit: fastq
+    tuple val(fastq_id), path("*unmapped.fastq.gz")        , emit: fastq
+
 
     script:
     """
-    for file in *fastq
-    do
-        bowtie2 -x ${index} -U ${fastq} --un-gz ${fastq_id}.fastq.gz > ${fastq_id}.sam
-        rm ${fastq_id}.sam
-    done
+    bowtie2 -x ${index_bowtie} -U ${fastq} --un-gz ${fastq_id}_unmapped.fastq.gz > ${fastq_id}.sam
+    rm ${fastq_id}.sam
     """
 }
