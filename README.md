@@ -125,11 +125,11 @@ nextflow run kaitlinchaung/stringstats \
 | --target_counts_threshold | Number of unique targets per anchor to initialise phase 1 | 3 |
 | --anchor_counts_threshold | Number of total anchor counts to initialise phase 1 | 5 |
 | --anchor_freeze_threshold | Maximum number of candidate anchors to store and calculate at a time | 100000 |
-| --anchor_score_threshold  | Minimum number of candidate anchors with scores required to calculate anchor significance scores | 100000 |
+| --anchor_score_threshold  | Minimum number of candidate anchors with scores required to calculate anchor significance scores | 1000000 |
 | --anchor_mode | Mode of fetching candidate anchors from reads, options: `chunk`, `tile` | `tile` |
 | --window_slide | If `--anchor_mode tile`, the number of bases to slide across the read to fetch the candidate anchors. If `--window_slide 5`, candidate anchors will start at positions [0,4,9,...] | 5 |
-| --use_std | Boolean value if the anchor significance scores should be computed with standard deviation, options: `true`, `false` | `true` |
-| --compute_target_distance | Boolean value if the target distance should be computed upon the encounter of a target. If `--compute_target_distance false`, the target distance of a new target will be assigned a conservative estimate of 1, options: `true`, `false` | `trie` |
+| --use_std | Boolean value if the anchor significance scores should be computed with standard deviation, options: `true`, `false` | `false` |
+| --compute_target_distance | Boolean value if the target distance should be computed upon the encounter of a target. If `--compute_target_distance false`, the target distance of a new target will be assigned a conservative estimate of 1, options: `true`, `false` | `true` |
 | --bound_distance | Boolean value if the target distances should be bound by `--max_distance`. If `--bound_distance true`, the maximum target distance will be `--max_distance`, options: `true`, `false` | `true` |
 | --max_distance | Integer value of the maximum target distance allowed | 10 |
 
@@ -142,7 +142,7 @@ nextflow run kaitlinchaung/stringstats \
 | --direction | The relative direction to search for candidate consensus sequences and targets, options: `up`, `down` | `down` |
 | --use_read_length | Boolean value if the looklength should be calculated as a function of read length, options: `true`, `false` | `true` |
 | --looklength | If `--use_read_length false`, this is the distance to look for candidate consensus sequences and targets | 0 |
-| --num_keep_anchors | Maxiumum number of fastq reads to parse | 4000000 |
+| --num_keep_anchors | Maxiumum number of fastq reads to parse | 20000 |
 
 
 # Outputs
