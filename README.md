@@ -9,6 +9,8 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
 Motivation
 
 # Prerequisites
+** For sherlock users, more details found at https://github.com/kaitlinchaung/stringstats/blob/main/README.md **
+
 1. Install Java.
 2. Install [`nextflow`](https://nf-co.re/usage/installation) (`>=20.04.0`).
 3. Install [`docker`](https://www.docker.com/) or [`singularity`](https://sylabs.io/guides/3.5/user-guide/introduction.html). By using the `docker` or `singularity` nextflow profile, the pipeline can be run within the stringstats docker container (also available on [dockerhub](https://hub.docker.com/repository/docker/mariekevromman/stringstats)), which contains all the required dependencies.
@@ -179,7 +181,6 @@ nextflow run kaitlinchaung/stringstats \
 
 
 ## Citations
-
 
 
 This pipeline uses code and infrastructure developed and maintained by the [nf-core](https://nf-co.re) initative, and reused here under the [MIT license](https://github.com/nf-core/tools/blob/master/LICENSE).
