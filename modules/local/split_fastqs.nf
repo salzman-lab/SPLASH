@@ -15,7 +15,7 @@ process SPLIT_FASTQS {
     """
     zcat ${fastq} \\
         | head -n ${num_lines} \\
-        | split -l ${num_chunk_lines} --numeric-suffixes - ${fastq_id}_ --additional-suffix .fastq \\
+        | split -l ${num_chunk_lines} --numeric 1 --numeric-suffixes - ${fastq_id}_ --additional-suffix .fastq \\
         || true
 
     for file in *fastq
