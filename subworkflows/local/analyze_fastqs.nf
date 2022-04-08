@@ -1,4 +1,5 @@
 include { GET_READ_LENGTH           } from '../../modules/local/get_read_length'
+include { GET_UNMAPPED              } from '../../modules/local/get_unmapped'
 include { SPLIT_FASTQS              } from '../../modules/local/split_fastqs'
 include { GET_ANCHORS               } from '../../modules/local/get_anchors'
 include { PARSE_ANCHORS             } from '../../modules/local/parse_anchors'
@@ -59,15 +60,45 @@ workflow ANALYZE_FASTQS {
         )
 
         /*
-        // Process to split each fastq into size read_chunk and gzip compress
+        // only use unmapped reads
         */
-        SPLIT_FASTQS(
-            TRIMGALORE.out.fastq,
-            num_lines,
-            num_chunk_lines
-        )
 
-        ch_split_fastqs = SPLIT_FASTQS.out.fastq.collect()
+        if (params.unmapped) {
+
+            GET_UNMAPPED(
+                TRIMGALORE.out.fastq,
+                params.index_bowtie
+            )
+        
+            /*
+            // Process to split each fastq into size read_chunk and gzip compress
+            */
+            
+            SPLIT_FASTQS(
+                GET_UNMAPPED.out.fastq,
+                num_lines,
+                num_chunk_lines
+            )
+
+            ch_split_fastqs = SPLIT_FASTQS.out.fastq.collect()
+            }
+
+        else {
+            
+            /*
+            // Process to split each fastq into size read_chunk and gzip compress
+            */
+            
+            SPLIT_FASTQS(
+                TRIMGALORE.out.fastq,
+                num_lines,
+                num_chunk_lines
+            )
+
+            ch_split_fastqs = SPLIT_FASTQS.out.fastq.collect()
+
+            }
+
 
         /*
         // Process to get list of candidate anchors via onthefly
