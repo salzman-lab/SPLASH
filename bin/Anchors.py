@@ -9,6 +9,7 @@ import argparse
 import logging
 import numpy as np
 from Bio import SeqIO
+import nltk
 import math
 import logging
 import utils
@@ -328,12 +329,12 @@ class AnchorTopTargetsScores(dict):
         else:
             return 0
 
-    def compute_target_distance(self, anchor, target):
+    def compute_target_distance(self, anchor, target, distance_type):
         """
         Return the min distance of a target to any of its anchor's topTargets
         """
         topTargets = self[anchor].index.tolist()
-        distance = min([utils.get_distance(target, t) for t in topTargets])
+        distance = min([utils.get_distance(target, t, distance_type) for t in topTargets])
         return distance
 
     def get_final_anchors(self, num_keep_anchors):

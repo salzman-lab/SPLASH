@@ -69,11 +69,11 @@ workflow ANALYZE_FASTQS {
                 TRIMGALORE.out.fastq,
                 params.index_bowtie
             )
-        
+
             /*
             // Process to split each fastq into size read_chunk and gzip compress
             */
-            
+
             SPLIT_FASTQS(
                 GET_UNMAPPED.out.fastq,
                 num_lines,
@@ -84,11 +84,11 @@ workflow ANALYZE_FASTQS {
             }
 
         else {
-            
+
             /*
             // Process to split each fastq into size read_chunk and gzip compress
             */
-            
+
             SPLIT_FASTQS(
                 TRIMGALORE.out.fastq,
                 num_lines,
@@ -122,7 +122,8 @@ workflow ANALYZE_FASTQS {
             params.num_keep_anchors,
             params.use_std,
             params.compute_target_distance,
-            params.max_ignorelist
+            params.max_ignorelist,
+            params.distance_type
         )
 
         ch_anchors = GET_ANCHORS.out.anchors
@@ -157,7 +158,8 @@ workflow ANALYZE_FASTQS {
         targets_samplesheet,
         params.bound_distance,
         params.max_distance,
-        params.kmer_size
+        params.kmer_size,
+        params.distance_type
     )
 
     anchor_sample_scores = ANCHOR_SAMPLE_SCORES.out.anchor_sample_scores.first()

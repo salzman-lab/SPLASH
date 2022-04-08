@@ -4,7 +4,9 @@ import gzip
 import argparse
 import pandas as pd
 import warnings
+import nltk
 warnings.simplefilter(action='ignore', category=FutureWarning)
+import utils
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -24,6 +26,10 @@ def get_args():
     parser.add_argument(
         "--kmer_size",
         type=int
+    )
+    parser.add_argument(
+        "--distance_type",
+        type=str
     )
     parser.add_argument(
         "--outfile_counts_distances",
@@ -48,7 +54,7 @@ def distance(seq1, seq2):
     return distance
 
 
-def get_distance_df(anchor, df, bound_distance):
+def get_distance_df(anchor, df, bound_distance, distance_type):
     """
     Takes a df of anchor counts and returns a df of hamming distances per target, relative to target abundance
     """
@@ -76,7 +82,7 @@ def get_distance_df(anchor, df, bound_distance):
 
         # else, assign min_dist to be the min dist between itself and all preceding targets
         else:
-            min_dist = min([distance(x, sequence) for x in candidates])
+            min_dist = min([utils.get_distance(x, sequence, distance_type) for x in candidates])
 
         # if we are bounding the distance, use the min of the max_distance and the current min_dist
         if bound_distance:
@@ -98,17 +104,14 @@ def get_distance_df(anchor, df, bound_distance):
     return distance_df
 
 
-def get_distance_scores(anchor, counts, bound_distance, kmer_size):
+def get_distance_scores(anchor, counts, bound_distance, kmer_size, distance_type):
     """
     Get distance scores for one anchor
     """
     # create df of targets x sample_counts
     counts = (
         counts
-        .drop(
-            ['anchor'],
-            axis=1
-        )
+        .drop(['anchor'], axis=1)
         .set_index('target')
     )
 
@@ -118,20 +121,19 @@ def get_distance_scores(anchor, counts, bound_distance, kmer_size):
     # take the top 50 most abundant targets
     counts = (
         counts
-        .sort_values(       # sort by counts
-            'count',
-            ascending=False
-        )
-        .drop(              # delete it because you don't need it anymore
-            'count',
-            axis=1
-        )
+        .sort_values('count', ascending=False)
+        .drop('count', axis=1)
         .reset_index()      # reset the index
         .head(50)           # take top 50 most abundant targets
     )
 
     # now that the targets are sorted by abundance, get the distances per target
-    distance_df = get_distance_df(anchor, counts, bound_distance)
+    distance_df = get_distance_df(
+        anchor,
+        counts,
+        bound_distance,
+        distance_type
+    )
 
     # make df of counts and distances
     counts_distances = counts.copy()
@@ -178,7 +180,7 @@ def get_distance_scores(anchor, counts, bound_distance, kmer_size):
         counts
         .set_index('target')                # make df of targets x sample_counts
         .multiply(                          # multiply each target count by its respective min_dist
-            distance_df['distance'] - mu,
+            (distance_df['distance'] - mu),
             axis=0
         )
         .sum(axis=0)                        # get sum of (counts * min_dist) across samples
@@ -233,8 +235,6 @@ def main():
     # fill NA with 0
     counts = counts.fillna(0)
 
-    counts.to_csv('counts.tsv', sep='\t', index=False)
-
     # intialise
     anchor_sample_scores_df = pd.DataFrame()
     counts_distances_df = pd.DataFrame()
@@ -245,7 +245,8 @@ def main():
             anchor,
             df,
             bound_distance,
-            args.kmer_size
+            args.kmer_size,
+            args.distance_type
         )
         # append anchor score row
         anchor_sample_scores_df = anchor_sample_scores_df.append(anchor_sample_scores)

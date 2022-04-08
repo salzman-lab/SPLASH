@@ -9,6 +9,7 @@ process ANCHOR_SAMPLE_SCORES {
     val bound_distance
     val max_distance
     val kmer_size
+    val distance_type
 
     output:
     path outfile_counts_distances       , emit: anchor_target_counts
@@ -23,6 +24,7 @@ process ANCHOR_SAMPLE_SCORES {
         --bound_distance ${bound_distance} \\
         --max_distance ${max_distance} \\
         --kmer_size ${kmer_size} \\
+        --distance_type ${distance_type} \\
         --outfile_counts_distances ${outfile_counts_distances} \\
         --outfile_anchor_sample_scores ${outfile_anchor_sample_scores}
     """

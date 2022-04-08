@@ -96,6 +96,10 @@ def get_args():
         "--max_ignorelist",
         type=int
     )
+    parser.add_argument(
+        "--distance_type",
+        type=str
+    )
 
     args = parser.parse_args()
     return args
@@ -153,10 +157,12 @@ def main():
     if args.anchor_mode == 'tile':
         logging.info(f'window_slide             = {args.window_slide}')
     logging.info(f'c_type                   = {args.c_type}')
-    logging.info(f'lookahead               = {args.lookahead}')
+    logging.info(f'lookahead                = {args.lookahead}')
     logging.info(f'num_keep_anchors         = {args.num_keep_anchors}')
     logging.info(f'use_std                  = {use_std}')
     logging.info(f'compute_target_distance  = {args.compute_target_distance}')
+    logging.info(f'distance_type            = {args.distance_type}')
+
     logging.info("--------------------------------------Parameters--------------------------------------")
     logging.info('')
     """logging"""
@@ -261,7 +267,8 @@ def main():
             args.anchor_mode,
             args.window_slide,
             args.compute_target_distance,
-            group_ids_dict
+            group_ids_dict,
+            args.distance_type
         )
         run_time = time.time() - start_time # get step total run time
 
