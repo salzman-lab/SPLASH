@@ -19,6 +19,9 @@ WORKDIR /
 # make sure python3 is used when 'python' command is called
 ENV PATH="/bin/python3.9:${PATH}"
 
+# install bedtools
+RUN apt-get install -y bedtools
+
 # install bowtie
 WORKDIR /bin
 RUN wget https://github.com/BenLangmead/bowtie2/releases/download/v2.4.5/bowtie2-2.4.5-linux-x86_64.zip
@@ -26,9 +29,4 @@ RUN unzip bowtie2-2.4.5-linux-x86_64.zip
 ENV PATH="/bin/bowtie2-2.4.5-linux-x86_64:${PATH}"
 WORKDIR /
 
-# install cutadapt
-RUN python3 -m pip install --user --upgrade cutadapt
-ENV PATH="/root/.local/bin:${PATH}"
 
-# install bedtools
-RUN apt-get install -y bedtools
