@@ -337,6 +337,19 @@ class AnchorTopTargetsScores(dict):
         distance = min([utils.get_distance(target, t, distance_type) for t in topTargets])
         return distance
 
+    def get_blacklist_anchors(self):
+        """
+        Get sum of all scores and sort by sum descending
+        """
+        df = pd.DataFrame(self).T
+        df['z'] = df.sum(axis=1)
+        anchors = (
+            df[df['z'] < df['z'].quantile(0.2)]
+            .index
+            .to_list()
+        )
+        return anchors
+
     def get_final_anchors(self, num_keep_anchors):
         """
         Get final anchors for parse_anchors
