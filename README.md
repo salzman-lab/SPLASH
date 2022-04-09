@@ -132,6 +132,7 @@ nextflow run kaitlinchaung/stringstats \
 | --compute_target_distance | Boolean value if the target distance should be computed upon the encounter of a target. If `--compute_target_distance false`, the target distance of a new target will be assigned a conservative estimate of 1, options: `true`, `false` | `true` |
 | --bound_distance | Boolean value if the target distances should be bound by `--max_distance`. If `--bound_distance true`, the maximum target distance will be `--max_distance`, options: `true`, `false` | `true` |
 | --max_distance | Integer value of the maximum target distance allowed | 10 |
+| --distance_type | options: `hamming`, `jaccard` | `hamming` |
 
 
 `parse_anchors`

@@ -165,6 +165,17 @@ def main():
 
     logging.info("--------------------------------------Parameters--------------------------------------")
     logging.info('')
+
+    # initialise dataframe of logging values
+    stats = pd.DataFrame(
+        columns = [
+            'Run Time', 'Total Reads', 'Anchors with Scores',
+            'Phase 1 Total', 'Phase 1 Kept', 'Phase 1 Ignored',
+            'Phase 2 Total', 'Phase 2 topTargets', 'Phase 2 Other Targets',
+            'anchor_counts', 'anchor_targets_samples', 'anchor_topTargets_scores', 'anchor_topTargets_distances',
+            'ignorelist total', 'ignorelist abundance'
+        ]
+    )
     """logging"""
 
     # get list of samples from fastq_files
@@ -211,23 +222,20 @@ def main():
         args.max_ignorelist
     )
 
-    # initialise dataframe of logging values
-    stats = pd.DataFrame(
-        columns = [
-            'Run Time', 'Total Reads', 'Anchors with Scores',
-            'Phase 1 Total', 'Phase 1 Kept', 'Phase 1 Ignored',
-            'Phase 2 Total', 'Phase 2 topTargets', 'Phase 2 Other Targets',
-            'anchor_counts', 'anchor_targets_samples', 'anchor_topTargets_scores', 'anchor_topTargets_distances',
-            'ignorelist total', 'ignorelist abundance'
-        ]
-    )
-
     # begin iterations
     for iteration in range(1, args.n_iterations+1):
 
+        # intialise this for logging
+        ignorelist_anchors_score = []
         # only continue accumulations if we have less than num_keep_anchors anchors with candidate scores
         if len(anchor_topTargets_scores) >= args.anchor_score_threshold:
-            break
+
+            # ignorelist condition : ignorelist anchors that are in the bottom 20% of abs(sum(scores))
+            ignorelist_anchors_score = anchor_topTargets_scores.get_blacklist_anchors()
+            # update ignorelist
+            for anchor in ignorelist_anchors_score:
+                status_checker.update_ignorelist(anchor, read_counter_freeze)
+
 
         # initialise loggging counters
         ignore_summary_scores = 0
@@ -338,6 +346,7 @@ def main():
         logging.info(f'\t\tanchors that have failed the abundance requirement = {len(ignorelist_anchors_abundance)}')
         logging.info(f'\t\t\tabundance requirement = {anchor_min_count} minimum total anchors')
         logging.info(f'\t\tanchors that have failed the diversity requirement = {phase_1_ignore_score}')
+        logging.info(f'\t\tanchors that have failed the score requirement = {len(ignorelist_anchors_score)}')
         logging.info("")
         logging.info("-----------------------------------------------------------------------------------------------------------------")
 
