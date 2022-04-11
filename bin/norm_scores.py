@@ -176,7 +176,7 @@ def main():
         expectation = sum(p['i'] * p['p_hat'] * sum_sqrt_n_j_c_j[anchor])
 
         # define variance_distance
-        variance_distance = sum(p['p_hat'] * p['i']**2) - (sum(p['p_hat'] * p['i'])) ** 2
+        variance_distance = (p['p_hat'] * p['i']**2).sum() - ((p['p_hat'] * p['i']).sum()) ** 2
 
         # add these values to the score table
         scores_table.loc[anchor, 'expectation'] = expectation
