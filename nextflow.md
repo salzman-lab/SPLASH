@@ -46,6 +46,9 @@ Docker is another container management system, but it cannot run on Sherlock (or
 
 For those who choose to use conda over Singularity/Docker, conda must be [installed](https://docs.conda.io/en/latest/miniconda.html) and available (miniconda is fine, and is less bloated than anaconda).
 
+# Configure git private repositories
+If this repo is private, please follow these [instructions](https://www.nextflow.io/blog/2021/configure-git-repositories-with-nextflow.html) first.
+
 # Setting Up Your First Run
 
 Generally, the pipeline is launched from a head node, which will launch child processes for each step/branch of the pipeline. Thus, the pipeline can be launched in one of several ways:
