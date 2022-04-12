@@ -255,9 +255,20 @@ def main():
 
     # get anchor_score value as std of all anchor sample scores
     anchor_sample_scores_df['anchor_sample_std'] = anchor_sample_scores_df.std(axis=1)
+    # set index name
     anchor_sample_scores_df.index.name = 'anchor'
+    # get count of columns being used to calculate std
+    anchor_sample_scores_df['num_anchor_sample_scores'] = (
+        anchor_sample_scores_df
+        .drop('anchor_sample_std', axis=1)
+        .count(axis=1)
+    )
     # output anchor scores file
-    anchor_sample_scores_df.reset_index().to_csv(args.outfile_anchor_sample_scores, sep='\t', index=False)
+    (
+        anchor_sample_scores_df
+        .reset_index()
+        .to_csv(args.outfile_anchor_sample_scores, sep='\t', index=False)
+    )
 
     # output anchor targets counts file
     counts_distances_df.to_csv(args.outfile_counts_distances, sep='\t', index=False)
