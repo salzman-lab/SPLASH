@@ -123,7 +123,8 @@ workflow ANALYZE_FASTQS {
             params.use_std,
             params.compute_target_distance,
             params.max_ignorelist,
-            params.distance_type
+            params.distance_type,
+            params.score_type
         )
 
         ch_anchors = GET_ANCHORS.out.anchors

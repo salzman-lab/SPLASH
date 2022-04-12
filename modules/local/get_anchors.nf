@@ -24,6 +24,7 @@ process GET_ANCHORS {
     val compute_target_distance
     val max_ignorelist
     val distance_type
+    val score_type
 
     output:
     path "anchors.tsv"      , emit: anchors
@@ -53,6 +54,7 @@ process GET_ANCHORS {
         --compute_target_distance ${compute_target_distance} \\
         --max_ignorelist ${max_ignorelist} \\
         --distance_type ${distance_type} \\
+        --score_type ${score_type} \\
         --outfile ${outfile}
     """
 }

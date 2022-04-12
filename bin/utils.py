@@ -41,7 +41,7 @@ def is_ignorelisted(self, anchor):
         return False
 
 
-def compute_phase_1_scores(anchor_counts, group_ids_dict, kmer_size, distance_type):
+def compute_phase_1_scores(anchor_counts, group_ids_dict, kmer_size, distance_type, score_type):
     # intialise a df for targets x distances
     distance_df = pd.DataFrame(index=anchor_counts['target'], columns=['distance'])
 
@@ -88,34 +88,41 @@ def compute_phase_1_scores(anchor_counts, group_ids_dict, kmer_size, distance_ty
     # get u
     mu = (p['i'] * p['p_hat']).sum()
 
-    # center the distances with u
-    anchor_counts['distance_centered'] = anchor_counts['distance'] - mu
+    if score_type == 'slow':
+        # center the distances with u
+        anchor_counts['distance_centered'] = anchor_counts['distance'] - mu
 
-    # prepare df to get terms
-    anchor_counts = (
-        anchor_counts
-        .drop(['distance'], axis=1)
-        .set_index('target')
+        # prepare df to get terms
+        anchor_counts = (
+            anchor_counts
+            .drop(['distance'], axis=1)
+            .set_index('target')
+            )
+
+        m = anchor_counts.drop('distance_centered', axis=1)
+        distance_centered = anchor_counts['distance_centered']
+
+        numerator = (
+            m
+            .mul(pd.Series(group_ids_dict))
+            .mul(distance_centered, axis=0)
+            .sum(axis=0)
         )
 
-    m = anchor_counts.drop('distance_centered', axis=1)
-    distance_centered = anchor_counts['distance_centered']
+        denominator = m.sum(axis=0)
 
-    numerator = (
-        m
-        .mul(pd.Series(group_ids_dict))
-        .mul(distance_centered, axis=0)
-        .sum(axis=0)
-    )
+        phase_1_scores = (
+            numerator
+            .divide(denominator, fill_value=0, axis=0)
+        )
 
-    denominator = m.sum(axis=0)
+        distances = distance_df['distance']
 
-    phase_1_scores = (
-        numerator
-        .divide(denominator, fill_value=0, axis=0)
-    )
+    elif score_type == "fast":
+        phase_1_scores = pd.DataFrame()
+        distances = pd.DataFrame()
 
-    return phase_1_scores, distance_df['distance'], mu
+    return phase_1_scores, distances, mu
 
 
 def compute_phase_2_scores(previous_score, n, distance, mu, c):
@@ -207,6 +214,7 @@ def is_phase_1(anchor, anchor_status, anchor_targets, target_counts_threshold, a
 
 
 def get_iteration_summary_scores(
+    score_type,
     iteration,
     read_chunk,
     kmer_size,
@@ -289,7 +297,8 @@ def get_iteration_summary_scores(
                         anchor_targets_samples.get_anchor_counts_df(anchor),
                         group_ids_dict,
                         kmer_size,
-                        distance_type
+                        distance_type,
+                        score_type
                     )
 
                     # set mu_threshold
@@ -307,50 +316,57 @@ def get_iteration_summary_scores(
 
                     # if mu < mu_threshold, proceed with updates and transition to phase_2
                     else:
-                        # updates
+                        # add this anchor to dict
                         anchor_topTargets_scores.initialise(anchor, scores)                        # update the topTargets for anchor
-                        anchor_topTargets_distances.update_distances(anchor, topTargets_distances) # update distances for topTargets for anchor
-                        anchor_topTargets_distances.update_mu(anchor, mu)
 
-                        # after phase_1/transition score computation, assign this anchor to phase_2 and only compute phase_2 score for this anchor
-                        anchor_status.assign_phase_2(anchor)
+                        if score_type == 'slow':
 
-                        phase_1_compute_score += 1
+                            # updates
+                            anchor_topTargets_distances.update_distances(anchor, topTargets_distances) # update distances for topTargets for anchor
+                            anchor_topTargets_distances.update_mu(anchor, mu)
+
+                            # after phase_1/transition score computation, assign this anchor to phase_2 and only compute phase_2 score for this anchor
+                            anchor_status.assign_phase_2(anchor)
+
+                            phase_1_compute_score += 1
+
 
                 # compute phase_2 score
                 elif anchor_status.is_phase_2(anchor):
 
-                    phase_2 += 1
+                    if score_type == 'slow':
 
-                    # if this is a target that we have seen before
-                    if anchor_topTargets_distances.has_distance(anchor, target):
+                        phase_2 += 1
 
-                        # get its previously-recorded distance
-                        distance = anchor_topTargets_distances.get_distance(anchor, target)
-                        phase_2_fetch_distance += 1
+                        # if this is a target that we have seen before
+                        if anchor_topTargets_distances.has_distance(anchor, target):
 
-                    # if we have never seen this target before
-                    else:
+                            # get its previously-recorded distance
+                            distance = anchor_topTargets_distances.get_distance(anchor, target)
+                            phase_2_fetch_distance += 1
 
-                        # compute target distance from topTargets
-                        if compute_target_distance:
-                            distance = anchor_topTargets_scores.compute_target_distance(anchor, target, distance_type)
+                        # if we have never seen this target before
                         else:
-                            distance = 1
 
-                        phase_2_compute_distance += 1
+                            # compute target distance from topTargets
+                            if compute_target_distance:
+                                distance = anchor_topTargets_scores.compute_target_distance(anchor, target, distance_type)
+                            else:
+                                distance = 1
 
-                    # compute phase_2 score
-                    new_score = compute_phase_2_scores(
-                        anchor_topTargets_scores.get_score(anchor, sample),
-                        anchor_counts.get_all_target_counts(anchor, sample),
-                        distance,
-                        anchor_topTargets_distances.get_mu(anchor),
-                        group_ids_dict[sample]
-                    )
+                            phase_2_compute_distance += 1
 
-                    # update the score for this anchor
-                    anchor_topTargets_scores.update(anchor, sample, new_score)
+                        # compute phase_2 score
+                        new_score = compute_phase_2_scores(
+                            anchor_topTargets_scores.get_score(anchor, sample),
+                            anchor_counts.get_all_target_counts(anchor, sample),
+                            distance,
+                            anchor_topTargets_distances.get_mu(anchor),
+                            group_ids_dict[sample]
+                        )
+
+                        # update the score for this anchor
+                        anchor_topTargets_scores.update(anchor, sample, new_score)
 
                 valid_anchor += 1
             else:
