@@ -135,7 +135,7 @@ def compute_phase_2_scores(previous_score, n, distance, mu, c):
     return new_score
 
 
-def get_read_chunk(iteration, samples):
+def get_read_chunk(iteration, samples, n_iterations):
     """
     Returns reads from all files for this iteration
     """
@@ -143,7 +143,8 @@ def get_read_chunk(iteration, samples):
     for sample in samples:
 
         try:
-            fastq_file = f'{sample}_{iteration:02d}.fastq.gz'
+            n_digits = len(str(n_iterations))
+            fastq_file = f'{sample}_{str(iteration).zfill(n_digits)}.fastq.gz'
 
             with gzip.open(fastq_file, 'rt') as fastq:
                 for seqreacord in SeqIO.parse(fastq, 'fastq'):

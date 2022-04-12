@@ -255,7 +255,7 @@ def main():
             read_counter_freeze = False
 
         # get reads from this iteration's fastq files
-        read_chunk = utils.get_read_chunk(iteration, samples)
+        read_chunk = utils.get_read_chunk(iteration, samples, args.n_iterations)
 
         # accumulate for this iteration
         start_time = time.time() # get step start time

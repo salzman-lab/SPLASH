@@ -92,7 +92,8 @@ workflow ANALYZE_FASTQS {
             SPLIT_FASTQS(
                 TRIMGALORE.out.fastq,
                 num_lines,
-                num_chunk_lines
+                num_chunk_lines,
+                params.n_iterations
             )
 
             ch_split_fastqs = SPLIT_FASTQS.out.fastq.collect()
