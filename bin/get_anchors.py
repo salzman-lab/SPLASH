@@ -100,6 +100,10 @@ def get_args():
         "--distance_type",
         type=str
     )
+    parser.add_argument(
+        "--score_type",
+        type=str
+    )
 
     args = parser.parse_args()
     return args
@@ -256,6 +260,7 @@ def main():
         # accumulate for this iteration
         start_time = time.time() # get step start time
         phase_0, phase_1, phase_2, phase_1_compute_score, phase_1_ignore_score, phase_2_fetch_distance, phase_2_compute_distance, valid_anchor, invalid_anchor, ignorelisted_anchor, new_anchor = utils.get_iteration_summary_scores(
+            args.score_type,
             iteration,
             read_chunk,
             args.kmer_size,

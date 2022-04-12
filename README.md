@@ -133,6 +133,8 @@ nextflow run kaitlinchaung/stringstats \
 | --bound_distance | Boolean value if the target distances should be bound by `--max_distance`. If `--bound_distance true`, the maximum target distance will be `--max_distance`, options: `true`, `false` | `true` |
 | --max_distance | Integer value of the maximum target distance allowed | 10 |
 | --distance_type | options: `hamming`, `jaccard` | `hamming` |
+| --score_type | options: `fast`, `slow` | `fast` |
+
 
 
 `parse_anchors`
