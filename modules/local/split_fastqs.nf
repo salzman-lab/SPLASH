@@ -22,7 +22,10 @@ process SPLIT_FASTQS {
 
     for file in *fastq
     do
-        gzip \${file}
+        if [[ ! -f \${file}.gz ]]
+        then
+            gzip \${file}
+        fi
     done
     """
 }
