@@ -24,7 +24,7 @@ class Read():
             self.read[0+i:kmer_size+i]
             for i
             in range(0, last_base, step_size)
-            if len(self.read[0+i:kmer_size+i])==kmer_size
+            if (len(self.read[0+i:kmer_size+i])==kmer_size) and ("N" not in self.read[0+i:kmer_size+i])
         ]
         return anchor_list
 
@@ -42,7 +42,7 @@ class Read():
         target = self.read[target_start:target_end]
 
         # if adj anchor exists, add adj anchor to anchor_dict
-        if len(target) == kmer_size:
+        if (len(target) == kmer_size) and ("N" not in target):
             return target
         else:
             return None
