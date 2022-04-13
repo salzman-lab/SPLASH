@@ -11,6 +11,7 @@ import numpy as np
 from Bio import SeqIO
 import math
 import nltk
+import time
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 from datetime import datetime
@@ -205,6 +206,48 @@ def is_phase_1(anchor, anchor_status, anchor_targets, target_counts_threshold, a
         return False
 
 
+def log_params(args, use_std):
+    """
+    Output input parameters
+    """
+    logging.info("--------------------------------------Parameters--------------------------------------")
+    logging.info("--------------------------------------------------------------------------------------")
+    logging.info(f'samplesheet = {args.samplesheet}')
+    logging.info(f'Number of targets per anchor required to calculate phase_1 score = {args.target_counts_threshold}')
+    logging.info(f'Number of total anchors required to calculate phase_1 score = {args.anchor_counts_threshold}')
+    logging.info(f'Keeplist condition: top {args.num_keep_anchors} anchor significance scores if more than {args.anchor_score_threshold} anchors with scores')
+    logging.info(f'Ignorelist condition: phase 1 scores with mean(S_i) < 3')
+    logging.info(f'Ignorelist condition: if more than {args.anchor_score_threshold} anchors with scores, scores in 40-60% percentile')
+    logging.info(f'Ignorelist condition: computing min_anchor_counts with c_type = {args.c_type}')
+    logging.info(f'Anchor freeze threshold = {args.anchor_freeze_threshold} anchors')
+    logging.info(f'Read freeze threshold = {args.read_freeze_threshold} anchors')
+    logging.info('')
+
+    logging.info(f'n_iterations             = {args.n_iterations}')
+    logging.info(f'chunk_size               = {args.max_reads}')
+    logging.info(f'kmer_size                = {args.kmer_size}')
+    logging.info(f'target_counts_threshold  = {args.target_counts_threshold}')
+    logging.info(f'anchor_counts_threshold  = {args.anchor_counts_threshold}')
+    logging.info(f'anchor_freeze_threshold  = {args.anchor_freeze_threshold}')
+    logging.info(f'read_freeze_threshold    = {args.read_freeze_threshold}')
+    logging.info(f'anchor_score_threshold   = {args.anchor_score_threshold}')
+    logging.info(f'anchor_mode              = {args.anchor_mode}')
+    if args.anchor_mode == 'tile':
+        logging.info(f'window_slide             = {args.window_slide}')
+    logging.info(f'c_type                   = {args.c_type}')
+    logging.info(f'lookahead                = {args.lookahead}')
+    logging.info(f'num_keep_anchors         = {args.num_keep_anchors}')
+    logging.info(f'use_std                  = {use_std}')
+    logging.info(f'compute_target_distance  = {args.compute_target_distance}')
+    logging.info(f'distance_type            = {args.distance_type}')
+    logging.info(f'score_type               = {args.score_type}')
+    logging.info("--------------------------------------------------------------------------------------")
+    logging.info("--------------------------------------------------------------------------------------")
+    logging.info("")
+    logging.info("")
+    return None
+
+
 def get_iteration_summary_scores(
     score_type,
     iteration,
@@ -212,6 +255,7 @@ def get_iteration_summary_scores(
     kmer_size,
     lookahead,
     num_reads,
+    samples,
     anchor_counts,
     anchor_targets_samples,
     anchor_targets,
@@ -232,6 +276,8 @@ def get_iteration_summary_scores(
     """
     Return the summary scores for the reads of one iteration
     """
+    # logging: intialise
+    start_time = time.time()
     phase_0 = 0
     phase_1 = 0
     phase_2 = 0
@@ -241,8 +287,6 @@ def get_iteration_summary_scores(
     phase_2_compute_distance = 0
     valid_anchor = 0
     invalid_anchor = 0
-    ignorelisted_anchor = 0
-    new_anchor = 0
 
     # get reads for this iteration
     for read_tuple in read_chunk:
@@ -262,6 +306,7 @@ def get_iteration_summary_scores(
             # if this anchor-target pair is eligible for computation, proceed
             if is_valid_anchor_target(anchor, target, read_counter_freeze, anchor_counts, anchor_freeze_threshold, status_checker):
 
+                # logging
                 if is_phase_0(anchor, target_counts_threshold, anchor_targets):
                     phase_0 += 1
 
@@ -283,6 +328,7 @@ def get_iteration_summary_scores(
                 # if we are at threshold, only accumulate anchor_samples count and anchor total counts
                 if is_phase_1(anchor, anchor_status, anchor_targets, target_counts_threshold, anchor_counts, anchor_counts_threshold):
 
+                    # logging
                     phase_1 += 1
 
                     # compute phase_1 score
@@ -303,8 +349,10 @@ def get_iteration_summary_scores(
                     # if mu < mu_threshold and we have not entered read_counter_freeze, ignorelist this anchor
                     if mu < mu_threshold:
 
+                        # update ignorelist
                         status_checker.update_ignorelist(anchor, read_counter_freeze)
 
+                        # logging
                         phase_1_ignore_score += 1
 
                     # if mu < mu_threshold, proceed with updates and transition to phase_2
@@ -321,6 +369,7 @@ def get_iteration_summary_scores(
                             # after phase_1/transition score computation, assign this anchor to phase_2 and only compute phase_2 score for this anchor
                             anchor_status.assign_phase_2(anchor)
 
+                            # logging
                             phase_1_compute_score += 1
 
 
@@ -329,6 +378,7 @@ def get_iteration_summary_scores(
 
                     if score_type == 'slow':
 
+                        # logging
                         phase_2 += 1
 
                         # if this is a target that we have seen before
@@ -336,6 +386,8 @@ def get_iteration_summary_scores(
 
                             # get its previously-recorded distance
                             distance = anchor_topTargets_distances.get_distance(anchor, target)
+
+                            # logging
                             phase_2_fetch_distance += 1
 
                         # if we have never seen this target before
@@ -347,6 +399,7 @@ def get_iteration_summary_scores(
                             else:
                                 distance = 1
 
+                            # logging
                             phase_2_compute_distance += 1
 
                         # compute phase_2 score
@@ -361,12 +414,60 @@ def get_iteration_summary_scores(
                         # update the score for this anchor
                         anchor_topTargets_scores.update(anchor, sample, new_score)
 
+                # logging
                 valid_anchor += 1
+
             else:
+                # logging
                 invalid_anchor += 1
 
-    # return values for logging
-    return phase_0, phase_1, phase_2, phase_1_compute_score, phase_1_ignore_score, phase_2_fetch_distance, phase_2_compute_distance, valid_anchor, invalid_anchor, ignorelisted_anchor, new_anchor
+    # logging: get total run time
+    run_time = time.time() - start_time
 
+    # logging: get anchor percentages
+    try:
+        valid_anchor_percent = round((valid_anchor / (valid_anchor + invalid_anchor)) * 100, 2)
+        invalid_anchor_percent = round((invalid_anchor / (valid_anchor + invalid_anchor)) * 100, 2)
+        phase_0_perecent = round((phase_0 / (phase_0+phase_1+phase_2)) * 100, 2)
+        phase_1_percent = round((phase_1 / (phase_0+phase_1+phase_2)) * 100, 2)
+        phase_2_percent = round((phase_2 / (phase_0+phase_1+phase_2)) * 100, 2)
 
+    except:
+        valid_anchor_percent = 0
+        invalid_anchor_percent = 0
+        phase_0_perecent = 0
+        phase_1_percent = 0
+        phase_2_percent = 0
+
+    # logging: output for this iteration
+    logging.info("")
+    logging.info("-----------------------------------------------------------------------------------------------------------------")
+    logging.info("")
+    logging.info(f'i = {iteration}')
+    logging.info(f'\tReads procesed per file = {num_reads}')
+    logging.info(f'\tReads processed total = {num_reads * len(samples)}')
+    logging.info(f'\tRead_counter_freeze = {read_counter_freeze}')
+    logging.info("")
+    logging.info(f'\tIteration run time = {round(run_time, 2 )} seconds')
+    logging.info("")
+    logging.info(f'\tinvalid anchors = {invalid_anchor} ({invalid_anchor_percent}%)')
+    logging.info("")
+    logging.info(f'\tvalid anchors = {valid_anchor} ({valid_anchor_percent}%)')
+    logging.info(f'\t\tphase_0 anchors = {phase_0} ({phase_0_perecent}%)')
+    logging.info(f'\t\tphase_1 anchors = {phase_1} ({phase_1_percent}%)')
+    logging.info(f'\t\t\tscore passed diversity condition = {phase_1_compute_score}')
+    logging.info(f'\t\t\tscore failed diversity condition = {phase_1_ignore_score}')
+    logging.info(f'\t\tphase_2 anchors = {phase_2} ({phase_2_percent}%)')
+    logging.info(f'\t\t\ttarget distance score is fetched = {phase_2_fetch_distance}')
+    logging.info(f'\t\t\ttarget distance score is computed = {phase_2_compute_distance}')
+    logging.info("")
+    logging.info(f'\tnumber of anchors with candidate scores = {len(anchor_topTargets_scores)}')
+    logging.info(f'\t\tsize of anchor_counts dict = {len(anchor_counts.total_counts)}')
+    logging.info(f'\t\tsize of all_target_counts dict = {len(anchor_counts.all_target_counts)}')
+    logging.info(f'\t\tsize of anchor_targets_samples dict = {len(anchor_targets_samples.counter)}')
+    logging.info(f'\t\tsize of anchor_topTargets_scores dict = {len(anchor_topTargets_scores)}')
+    logging.info(f'\t\tsize of anchor_topTargets_distances dict = {len(anchor_topTargets_distances)}')
+    logging.info("")
+    logging.info(f'\tignorelist size = {len(status_checker.ignorelist)}')
+    logging.info(f'\t\tanchors that have failed the diversity requirement = {phase_1_ignore_score}')
 
