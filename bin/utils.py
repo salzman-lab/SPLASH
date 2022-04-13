@@ -326,7 +326,6 @@ def get_iteration_summary_scores(
     kmer_size,
     lookahead,
     num_reads,
-    samples,
     anchor_counts,
     anchor_targets_samples,
     anchor_targets,
@@ -516,7 +515,7 @@ def get_iteration_summary_scores(
     logging.info("")
     logging.info(f'i = {iteration}')
     logging.info(f'\tReads procesed per file = {num_reads}')
-    logging.info(f'\tReads processed total = {num_reads * len(samples)}')
+    logging.info(f'\tReads processed total = {len(read_chunk)}')
     logging.info(f'\tRead_counter_freeze = {read_counter_freeze}')
     logging.info("")
     logging.info(f'\tIteration run time = {round(run_time, 2 )} seconds')

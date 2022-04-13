@@ -197,7 +197,6 @@ def main():
             args.kmer_size,
             args.lookahead,
             args.max_reads,
-            samples,
             anchor_counts,
             anchor_targets_samples,
             anchor_targets,
