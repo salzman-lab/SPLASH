@@ -151,7 +151,11 @@ def main():
     )
 
     # get sample-related dicts
-    group_ids_dict, sample_index_dict = utils.get_sample_dict(sample_list, samples, use_std)
+    group_ids_dict, sample_index_dict = utils.get_sample_dict(
+        sample_list,
+        samples,
+        use_std
+    )
 
     # initialise objects
     anchor_counts = Anchors.AnchorCounts(len(samples))                          # {anchor : counts}
@@ -215,36 +219,23 @@ def main():
 
         # scores threshold : only continue accumulations if we have less than num_keep_anchors anchors with candidate scores
         # only do this iterative version if we are using the slow score
-        ignorelist_anchors_score = []
         if args.score_type == "slow" and len(anchor_topTargets_scores) >= args.num_keep_anchors:
-
-            # ignorelist condition : ignorelist anchors that are in the bottom 20% of abs(sum(scores))
-            ignorelist_anchors_score = anchor_topTargets_scores.get_blacklist_anchors(use_std)
-            # update ignorelist
-            for anchor in ignorelist_anchors_score:
-                status_checker.update_ignorelist(anchor, read_counter_freeze)
+            utils.ignorelist_scores(
+                anchor_topTargets_scores,
+                status_checker,
+                use_std,
+                read_counter_freeze
+            )
 
         # abundance threshold: ignorelist anchors that don't meet an abundance requirement
-        ignore_abundance = 0
-        k = math.floor(num_reads / 100000)
-        if args.c_type == "num_samples":
-            c = len(samples)
-        elif args.c_type == "constant":
-            c = 1
-        # define min number of counts required per anchor to prevent ignorelisting
-        anchor_min_count = k * c
-        # get the anchors that do not meet the abundance requirement of anchor_min_count
-        ignorelist_anchors_abundance = anchor_counts.get_ignorelist_anchors(anchor_min_count)
-        # add those anchors to the ignorelist
-        for anchor in ignorelist_anchors_abundance:
-            status_checker.update_ignorelist(anchor, read_counter_freeze)
-            ignore_abundance += 1
-
-        # logging: update sizes for abundance and score ignorelisting
-        logging.info(f'\t\tanchors that have failed the abundance requirement = {len(ignorelist_anchors_abundance)}')
-        logging.info(f'\t\t\tabundance requirement = {anchor_min_count} minimum total anchors')
-        logging.info(f'\t\tanchors that have failed the score requirement = {len(ignorelist_anchors_score)}')
-
+        utils.ignorelist_abundance(
+            anchor_counts,
+            status_checker,
+            num_reads,
+            args.c_type,
+            samples,
+            read_counter_freeze
+        )
 
     ## done with all iterations ##
 
@@ -256,8 +247,9 @@ def main():
                 group_ids_dict,
                 args.kmer_size,
                 args.distance_type,
-                args.score_type
+                "force"
             )
+
             # updates scores for each anchor
             anchor_topTargets_scores.initialise(anchor, scores)
 

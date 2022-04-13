@@ -367,6 +367,7 @@ class AnchorTopTargetsScores(dict):
         """
         Get final anchors for parse_anchors
         """
+        print(self)
         if len(self) < num_keep_anchors:
             anchors = list(self.keys())
         else:

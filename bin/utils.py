@@ -79,7 +79,7 @@ def compute_phase_1_scores(anchor_counts, group_ids_dict, kmer_size, distance_ty
     # get u
     mu = (p['i'] * p['p_hat']).sum()
 
-    if score_type == 'slow':
+    if score_type == 'slow' or score_type == "force":
         # center the distances with u
         anchor_counts['distance_centered'] = anchor_counts['distance'] - mu
 
@@ -226,6 +226,56 @@ def get_sample_dict(sample_list, samples, use_std):
         sample_index_dict[samples[i]] = i
 
     return group_ids_dict, sample_index_dict
+
+
+def ignorelist_scores(anchor_topTargets_scores, status_checker, use_std, read_counter_freeze):
+    """
+    Update ignorelist with an anchor if its scores are in the bottom 20% of either
+    std(data has no metadata) or sum(data has metadata)
+    """
+    # ignorelist condition : ignorelist anchors that are in the bottom 20% of abs(sum(scores))
+    ignorelist_anchors_score = anchor_topTargets_scores.get_blacklist_anchors(use_std)
+
+    # update ignorelist
+    for anchor in ignorelist_anchors_score:
+        status_checker.update_ignorelist(anchor, read_counter_freeze)
+
+    logging.info(f'\t\tanchors that have failed the score requirement = {len(ignorelist_anchors_score)}')
+
+    return
+
+
+def ignorelist_abundance(anchor_counts, status_checker, num_reads, c_type, samples, read_counter_freeze):
+    """
+    Update ignorelist with an anchor if its coutns do not meet an abundance requirement
+    """
+    # intialise
+    ignore_abundance = 1
+
+    # define
+    k = math.floor(num_reads / 100000)
+    if c_type == "num_samples":
+        c = len(samples)
+    elif c_type == "constant":
+        c = 1
+
+    # define min number of counts required per anchor to prevent ignorelisting
+    anchor_min_count = k * c
+
+    # get the anchors that do not meet the abundance requirement of anchor_min_count
+    ignorelist_anchors_abundance = anchor_counts.get_ignorelist_anchors(anchor_min_count)
+
+    # add those anchors to the ignorelist
+    for anchor in ignorelist_anchors_abundance:
+        status_checker.update_ignorelist(anchor, read_counter_freeze)
+        ignore_abundance += 1
+
+    # logging: update sizes for abundance and score ignorelisting
+    logging.info(f'\t\tanchors that have failed the abundance requirement = {len(ignorelist_anchors_abundance)}')
+    logging.info(f'\t\t\tabundance requirement = {anchor_min_count} minimum total anchors')
+
+    return
+
 
 
 def log_params(args, use_std):
