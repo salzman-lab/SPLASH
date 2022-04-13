@@ -123,6 +123,7 @@ def main():
         use_std = True
     elif args.use_std == "false":
         use_std = False
+    # if sampelsheet only has 1 column, force use_std
     if sample_list.shape[1] == 1:
         use_std = True
 
@@ -149,20 +150,8 @@ def main():
         .tolist()
     )
 
-    # if not using standard deviation score, make dict of {sample : group_id}
-    group_ids_dict = {}
-    if not use_std or sample_list.shape[1] != 1:
-        group_ids = sample_list.iloc[:,1].tolist()
-        for i in range(0, len(samples)):
-            group_ids_dict[samples[i]] = group_ids[i]
-    else:
-        for i in range(0, len(samples)):
-            group_ids_dict[samples[i]] = 1
-
-    # create sample index dict, of {sample : sample_id}
-    sample_index_dict = {}
-    for i in range(len(samples)):
-        sample_index_dict[samples[i]] = i
+    # get sample-related dicts
+    group_ids_dict, sample_index_dict = utils.get_sample_dict(sample_list, samples, use_std)
 
     # initialise objects
     anchor_counts = Anchors.AnchorCounts(len(samples))                          # {anchor : counts}
@@ -223,20 +212,20 @@ def main():
             args.distance_type
         )
 
-        # logging: initialise
-        ignorelist_anchors_score = []
-        ignore_abundance = 0
 
-        # only continue accumulations if we have less than num_keep_anchors anchors with candidate scores
-        if len(anchor_topTargets_scores) >= args.num_keep_anchors:
+        # scores threshold : only continue accumulations if we have less than num_keep_anchors anchors with candidate scores
+        # only do this iterative version if we are using the slow score
+        ignorelist_anchors_score = []
+        if args.score_type == "slow" and len(anchor_topTargets_scores) >= args.num_keep_anchors:
 
             # ignorelist condition : ignorelist anchors that are in the bottom 20% of abs(sum(scores))
-            ignorelist_anchors_score = anchor_topTargets_scores.get_blacklist_anchors()
+            ignorelist_anchors_score = anchor_topTargets_scores.get_blacklist_anchors(use_std)
             # update ignorelist
             for anchor in ignorelist_anchors_score:
                 status_checker.update_ignorelist(anchor, read_counter_freeze)
 
-        # ignorelist condition: ignorelist anchors that don't meet an abundance requirement
+        # abundance threshold: ignorelist anchors that don't meet an abundance requirement
+        ignore_abundance = 0
         k = math.floor(num_reads / 100000)
         if args.c_type == "num_samples":
             c = len(samples)
@@ -244,7 +233,7 @@ def main():
             c = 1
         # define min number of counts required per anchor to prevent ignorelisting
         anchor_min_count = k * c
-        # get the anchors that do not meet the abundance requirement of anchor_min_co
+        # get the anchors that do not meet the abundance requirement of anchor_min_count
         ignorelist_anchors_abundance = anchor_counts.get_ignorelist_anchors(anchor_min_count)
         # add those anchors to the ignorelist
         for anchor in ignorelist_anchors_abundance:
@@ -259,8 +248,21 @@ def main():
 
     ## done with all iterations ##
 
+    if args.score_type == "fast":
+        for anchor in anchor_topTargets_scores:
+            # get scores for each anchor
+            scores, _, _ = utils.compute_phase_1_scores(
+                anchor_targets_samples.get_anchor_counts_df(anchor),
+                group_ids_dict,
+                args.kmer_size,
+                args.distance_type,
+                args.score_type
+            )
+            # updates scores for each anchor
+            anchor_topTargets_scores.initialise(anchor, scores)
+
     # after all iterations are done accumulating, calculate the summary score
-    keep_anchors = anchor_topTargets_scores.get_final_anchors(args.num_keep_anchors)
+    keep_anchors = anchor_topTargets_scores.get_final_anchors(args.num_keep_anchors, use_std)
 
     # filter for these anchors and drop any duplicates
     final_anchors = (

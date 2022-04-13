@@ -206,6 +206,28 @@ def is_phase_1(anchor, anchor_status, anchor_targets, target_counts_threshold, a
         return False
 
 
+def get_sample_dict(sample_list, samples, use_std):
+    """
+    Return group_ids_dict and sample_index_dict
+    """
+    # if not using standard deviation score, make dict of {sample : group_id}
+    group_ids_dict = {}
+    if not use_std or sample_list.shape[1] != 1:
+        group_ids = sample_list.iloc[:,1].tolist()
+        for i in range(0, len(samples)):
+            group_ids_dict[samples[i]] = group_ids[i]
+    else:
+        for i in range(0, len(samples)):
+            group_ids_dict[samples[i]] = 1
+
+    # create sample index dict, of {sample : sample_id}
+    sample_index_dict = {}
+    for i in range(len(samples)):
+        sample_index_dict[samples[i]] = i
+
+    return group_ids_dict, sample_index_dict
+
+
 def log_params(args, use_std):
     """
     Output input parameters
@@ -230,7 +252,6 @@ def log_params(args, use_std):
     logging.info(f'anchor_counts_threshold  = {args.anchor_counts_threshold}')
     logging.info(f'anchor_freeze_threshold  = {args.anchor_freeze_threshold}')
     logging.info(f'read_freeze_threshold    = {args.read_freeze_threshold}')
-    logging.info(f'anchor_score_threshold   = {args.anchor_score_threshold}')
     logging.info(f'anchor_mode              = {args.anchor_mode}')
     if args.anchor_mode == 'tile':
         logging.info(f'window_slide             = {args.window_slide}')
@@ -358,12 +379,12 @@ def get_iteration_summary_scores(
                     # if mu < mu_threshold, proceed with updates and transition to phase_2
                     else:
                         # add this anchor to dict
-                        anchor_topTargets_scores.initialise(anchor, scores)                        # update the topTargets for anchor
+                        anchor_topTargets_scores.initialise(anchor, scores)
 
                         if score_type == 'slow':
 
                             # updates
-                            anchor_topTargets_distances.update_distances(anchor, topTargets_distances) # update distances for topTargets for anchor
+                            anchor_topTargets_distances.update_distances(anchor, topTargets_distances)
                             anchor_topTargets_distances.update_mu(anchor, mu)
 
                             # after phase_1/transition score computation, assign this anchor to phase_2 and only compute phase_2 score for this anchor

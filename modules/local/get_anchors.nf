@@ -28,8 +28,6 @@ process GET_ANCHORS {
 
     output:
     path "anchors.tsv"      , emit: anchors
-    path "ignorelist*"      , emit: ignorelist
-    path "run_stats.tsv"    , emit: run_stats
     path "*log"             , emit: log
 
     script:
