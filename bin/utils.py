@@ -31,16 +31,6 @@ def get_distance(seq1, seq2, distance_type):
     return distance
 
 
-def is_ignorelisted(self, anchor):
-    """
-    Returns true if an anchor has previously ignorelisted
-    """
-    if anchor in self.ignorelist:
-        return True
-    else:
-        return False
-
-
 def compute_phase_1_scores(anchor_counts, group_ids_dict, kmer_size, distance_type, score_type):
     # intialise a df for targets x distances
     distance_df = pd.DataFrame(index=anchor_counts['target'], columns=['distance'])
@@ -156,7 +146,7 @@ def get_read_chunk(iteration, samples, n_iterations):
     return read_chunk
 
 
-def is_valid_anchor_target(anchor, read_counter_freeze, anchor_counts, anchor_freeze_threshold, status_checker):
+def is_valid_anchor_target(anchor, target, read_counter_freeze, anchor_counts, anchor_freeze_threshold, status_checker):
     """
     Return True if an anchor is valid for further computation
     """
@@ -181,10 +171,11 @@ def is_valid_anchor_target(anchor, read_counter_freeze, anchor_counts, anchor_fr
     # assign correct break condition
     anchor_break_conditions = gt_read_threshold_breaks if read_counter_freeze else lt_read_threshold_breaks
 
-    if any(anchor_break_conditions):
-        return False
-    else:
+    # only return True if target is valid and none of the anchor break conditions are true
+    if target and not any(anchor_break_conditions):
         return True
+    else:
+        return False
 
 
 def is_phase_0(anchor, target_counts_threshold, anchor_targets):
@@ -265,28 +256,29 @@ def get_iteration_summary_scores(
         # loop over each anchor in the list of all anchors from each read
         for anchor in anchor_list:
 
+            # get target
+            target = read.get_target(anchor, lookahead, kmer_size)
+
             # if this anchor-target pair is eligible for computation, proceed
-            if is_valid_anchor_target(anchor, read_counter_freeze, anchor_counts, anchor_freeze_threshold, status_checker):
+            if is_valid_anchor_target(anchor, target, read_counter_freeze, anchor_counts, anchor_freeze_threshold, status_checker):
 
                 if is_phase_0(anchor, target_counts_threshold, anchor_targets):
                     phase_0 += 1
 
-                # get target
-                target = read.get_target(anchor, lookahead, kmer_size)
-
                 # updates, always
-                anchor_counts.update_total_counts(anchor, iteration)                # update anchor total counts
-                anchor_counts.update_all_target_counts(anchor, sample, iteration)   # update anchor-sample counts for all targets
+                anchor_counts.update_total_counts(anchor, iteration)
+                anchor_counts.update_all_target_counts(anchor, sample, iteration)
 
-                # if we have not yet logged this target as a top target and we are not at target_counts_threshold
+                # if we are in phase 0 and we have not yet logged this target as a top target,
+                # first accumulate this target as a top target and then accumulate its count (the order is important)
                 if not anchor_targets.is_topTarget(anchor, target):
                     if is_phase_0(anchor, target_counts_threshold, anchor_targets):
-                        anchor_targets.update_target(anchor, target)             # accumulate as a top target
-                        anchor_targets_samples.update(anchor, target, sample)    # acummulate counts of top target
+                        anchor_targets.update_target(anchor, target)
+                        anchor_targets_samples.update(anchor, target, sample)
 
-                # else, this is a top target that we have seen before, accumulate counts
+                # else, this is a top target that we have seen before, simply accumulate counts
                 else:
-                    anchor_targets_samples.update(anchor, target, sample)        # acummulate counts of top target
+                    anchor_targets_samples.update(anchor, target, sample)
 
                 # if we are at threshold, only accumulate anchor_samples count and anchor total counts
                 if is_phase_1(anchor, anchor_status, anchor_targets, target_counts_threshold, anchor_counts, anchor_counts_threshold):
