@@ -76,6 +76,7 @@ GGGGGGGGGG
 An example run command with this optional input:
 ```
 nextflow run kaitlinchaung/stringstats \
+    --input samplesheet.csv \
     --anchors_file anchors.txt \
     -r main \
     -latest
