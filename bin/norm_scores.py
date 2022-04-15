@@ -134,7 +134,9 @@ def main():
     # initialise columns
     scores_table['first_moment'] = None
     scores_table['second_moment'] = None
+    scores_table['third_moment'] = None
     scores_table['fourth_moment'] = None
+    scores_table['fourth_central_moment'] = None
     scores_table['expectation'] = None
     scores_table['variance_distance'] = None
 
@@ -170,20 +172,22 @@ def main():
         # define moments
         first_moment = (p['p_hat'] * p['i']).sum()
         second_moment = (p['p_hat'] * p['i']**2).sum()
+        third_moment = (p['p_hat'] * p['i']**3).sum()
         fourth_moment = (p['p_hat'] * p['i']**4).sum()
 
-        # define expectation of score
-        expectation = sum(p['i'] * p['p_hat'] * sum_sqrt_n_j_c_j[anchor])
+        mu = (p['i'] * p['p_hat']).sum()
+        fourth_central_moment = (p['i'] * (p['i'] - mu)**4).sum()
 
         # define variance_distance
         variance_distance = (p['p_hat'] * p['i']**2).sum() - ((p['p_hat'] * p['i']).sum()) ** 2
 
         # add these values to the score table
-        scores_table.loc[anchor, 'expectation'] = expectation
         scores_table.loc[anchor, 'variance_distance'] = variance_distance
         scores_table.loc[anchor, 'first_moment'] = first_moment
         scores_table.loc[anchor, 'second_moment'] = second_moment
+        scores_table.loc[anchor, 'third_moment'] = third_moment
         scores_table.loc[anchor, 'fourth_moment'] = fourth_moment
+        scores_table.loc[anchor, 'fourth_central_moment'] = fourth_central_moment
 
     # output scores table
     (

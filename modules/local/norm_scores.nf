@@ -13,17 +13,28 @@ process NORM_SCORES {
     val kmer_size
 
     output:
-    path outfile_norm_scores   , emit: norm_scores
+    path ("*tsv")   , emit: norm_scores
 
     script:
-    outfile_norm_scores        = "anchor_norm_scores.tsv"
+    infile_hamming = "anchor_sample_scores_hamming.tsv"
+    outfile_hamming = "anchor_norm_scores_hamming.tsv"
+    infile_jaccard = "anchor_sample_scores_jaccard.tsv"
+    outfile_jaccard = "anchor_norm_scores_jaccard.tsv"
     """
     norm_scores.py \\
-        --anchor_sample_scores ${anchor_sample_scores} \\
+        --anchor_sample_scores ${infile_hamming} \\
         --anchor_target_counts ${anchor_target_counts} \\
         --samplesheet ${samplesheet} \\
         --use_std ${use_std} \\
         --kmer_size ${kmer_size} \\
-        --outfile_norm_scores ${outfile_norm_scores}
+        --outfile_norm_scores ${outfile_hamming}
+
+    norm_scores.py \\
+        --anchor_sample_scores ${infile_jaccard} \\
+        --anchor_target_counts ${anchor_target_counts} \\
+        --samplesheet ${samplesheet} \\
+        --use_std ${use_std} \\
+        --kmer_size ${kmer_size} \\
+        --outfile_norm_scores ${outfile_jaccard}
     """
 }

@@ -164,7 +164,7 @@ workflow ANALYZE_FASTQS {
         params.distance_type
     )
 
-    anchor_sample_scores = ANCHOR_SAMPLE_SCORES.out.anchor_sample_scores.first()
+    anchor_sample_scores = ANCHOR_SAMPLE_SCORES.out.anchor_sample_scores.collect()
     anchor_target_counts = ANCHOR_SAMPLE_SCORES.out.anchor_target_counts.first()
 
     // Step 4
