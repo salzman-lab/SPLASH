@@ -152,8 +152,8 @@ def main():
 
         # initialise
         p = pd.DataFrame()
-        p['i'] = range(0, args.kmer_size+1)
-        p['counts'] = 0
+        p['i'] = distances['i'].unique()
+        p['counts'] = None
 
         for i, df in distances.groupby('i'):
             # get total counts for targets with that distance
