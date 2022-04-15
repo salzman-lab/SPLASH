@@ -26,8 +26,15 @@ def get_distance(seq1, seq2, distance_type):
         distance = 0
         for x,y in zip(seq1, seq2):
             distance = distance + (x != y)
+
     elif distance_type.lower() == 'jaccard':
-        distance = 1 - (nltk.jaccard_distance(set(seq1), set(seq2)))
+
+        # hardcode kmer size for now
+        k = 7
+        set1 = set([seq1[i:i+k] for i in range(len(seq1)-k+1)])
+        set2 = set([seq2[i:i+k] for i in range(len(seq2)-k+1)])
+
+        distance = len(set1.intersection(set2)) / len(set1.union(set2))
 
     return distance
 
