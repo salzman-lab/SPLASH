@@ -98,7 +98,7 @@ workflow ANALYZE_FASTQS {
 
             ch_split_fastqs = SPLIT_FASTQS.out.fastq.collect()
 
-            }
+        }
 
 
         /*
@@ -165,7 +165,7 @@ workflow ANALYZE_FASTQS {
     )
 
     anchor_sample_scores = ANCHOR_SAMPLE_SCORES.out.anchor_sample_scores.collect()
-    anchor_target_counts = ANCHOR_SAMPLE_SCORES.out.anchor_target_counts.first()
+    anchor_target_counts = ANCHOR_SAMPLE_SCORES.out.anchor_target_counts.collect()
 
     // Step 4
     /*
