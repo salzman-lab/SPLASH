@@ -156,7 +156,7 @@ def get_distance_scores(anchor, counts, bound_distance, kmer_size, distance_type
 
     # intialise
     p = pd.DataFrame()
-    p['i'] = range(0, kmer_size+1)
+    p['i'] = counts_distances['distance'].unique()
     p['counts'] = 0
 
     # for each distance, get the the total number of occurrences of that distance
@@ -173,7 +173,7 @@ def get_distance_scores(anchor, counts, bound_distance, kmer_size, distance_type
     p['p_hat'] = p['counts'] / p['counts'].sum()
 
     # get mu
-    mu = (p['i'] * p['p_hat']).sum() / kmer_size
+    mu = (p['i'] * p['p_hat']).sum()
 
     # get sum(n_i * d_i) term
     numerator = (

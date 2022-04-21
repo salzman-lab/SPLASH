@@ -67,7 +67,7 @@ def compute_phase_1_scores(anchor_counts, group_ids_dict, kmer_size, distance_ty
 
     # intialise
     p = pd.DataFrame()
-    p['i'] = range(0, kmer_size+1)
+    p['i'] = anchor_counts['distance'].unique()
     p['counts'] = 0
 
     # for each distance, get the the total number of occurrences of that distance
