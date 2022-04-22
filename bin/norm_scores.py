@@ -141,17 +141,28 @@ def main():
     scores_table['variance_distance'] = None
 
     #### Tavor added
-    scores_table['p-value_cj_v1'] = None
-    scores_table['p-value_cj_vGamma'] = None
-    scores_table['p-value_cj_H'] = None
-    scores_table['p-value_cj_Hv2'] = None
+    # scores_table['p-value_cj_v1'] = None
+    # scores_table['p-value_cj_vGamma'] = None
+    # scores_table['p-value_cj_H'] = None
+    # scores_table['p-value_cj_Hv2'] = None
+    scores_table['l1_norm_Sj'] = None
+    scores_table['l2_norm_Sj'] = None
     scores_table['p-value_cj'] = None
+    scores_table['p-value_noCj'] = None
     test_stat_cj = ( ### regenerate in case use_std is True
             anchor_sample_scores                # df of anchor x S_j
             .mul(pd.Series(group_ids_dict))     # multiply by group_ids
             .mul(sqrt_n_j, axis=1)              # multiply by n_j (square-root of per anchor-sample sums)
             .sum(axis=1)                        # sum over samples, to get a per-anchor score
         )
+
+    #### due to sqrt(n_j) factor off;
+    sj_vals = (
+        anchor_sample_scores                # df of anchor x S_j
+                .mul(sqrt_n_j, axis=1)              # multiply by n_j (square-root of per anchor-sample sums)
+    )
+
+    np.random.seed(0) #### for random choices of cj, fix randomness
 
     # for each anchor, get expectation and variance_distance
     for anchor, df in counts.groupby('anchor'):
@@ -202,16 +213,18 @@ def main():
         scores_table.loc[anchor, 'fourth_moment'] = fourth_moment
         scores_table.loc[anchor, 'fourth_central_moment'] = fourth_central_moment
 
+
+
         ### Tavor p-value addition
         varEst = second_moment-first_moment**2 ### ignoring normalizing issue
         cjs = pd.Series(group_ids_dict).to_numpy()
         njs = n_j.loc[anchor].to_numpy() 
-        sjs = anchor_sample_scores.loc[anchor].to_numpy()[:-1] ### drop the "num_anchor_sample_scores" col
+        # sjs = anchor_sample_scores.loc[anchor].to_numpy()[:-1] ### drop the "num_anchor_sample_scores" col, not normalized by sqrt(nj)
         # s_val = norm_summary_score.loc[anchor] ### value of test statistic
         s_val = test_stat_cj.loc[anchor]
 
         M = njs.sum() ### total number of observations for this anchor
-        D = 8 #### maximum distance value, add as arg
+        D = 8 #### maximum distance value,  ###### todo add as arg
         eps = np.finfo(np.float32).eps ### to prevent division by 0
         nj_invSqrt = 1.0/np.sqrt(njs+eps)
         nj_invSqrt[njs==0]=0 ## set to 0
@@ -224,8 +237,7 @@ def main():
             (16*M*varEst*(cjs*np.sqrt(njs)).sum()**2 + 4/3*s_val*D* np.abs( (cjs*np.sqrt(njs)).sum() )))
         term3 = np.exp(-(M-1)/(4*D**4))
         pvalv1 = min(term1+term2+term3,1)
-
-        scores_table.loc[anchor, 'p-value_cj_v1'] = pvalv1
+        # scores_table.loc[anchor, 'p-value_cj_v1'] = pvalv1
 
 
         ### Bernsteion, coarsely optimizing over gamma, pvalvGamma
@@ -240,8 +252,7 @@ def main():
             (8*M*(varEst+gamma)*(cjs*np.sqrt(njs)).sum()**2 + 4/3*s_val*D* np.abs( (cjs*np.sqrt(njs)).sum() )))
         term3g = np.exp(-(M-1)*gamma**2/(2*D**4*(varEst+gamma)))
         pvalvGamma = min(term1g+term2g+term3g,1)
-
-        scores_table.loc[anchor, 'p-value_cj_vGamma'] = pvalvGamma
+        # scores_table.loc[anchor, 'p-value_cj_vGamma'] = pvalvGamma
 
 
         ### just using Hoeffdings directly with boundedness, p-value_cj_H
@@ -250,7 +261,7 @@ def main():
         term2v2 = 2*np.exp(-M*s_val**2 / 
             (8*D**2*(cjs*np.sqrt(njs)).sum()**2 ))
         pvalH=min(term1v2+term2v2,1)
-        scores_table.loc[anchor, 'p-value_cj_H'] = pvalH
+        # scores_table.loc[anchor, 'p-value_cj_H'] = pvalH
 
 
         ### optimized Hoeffding's bound, p-value_cj_Hv2
@@ -260,12 +271,48 @@ def main():
         term1Ha = 2*np.exp(- 2*(1-a)**2*s_val**2/ (D**2 * (cjs**2).sum()))
         term2Ha = 2*np.exp( - 2*a**2*M*s_val**2 / (D**2 *(cjs*np.sqrt(njs)).sum()**2 ))
         pvalHv2 = min(term1Ha + term2Ha,1)
-
-        scores_table.loc[anchor, 'p-value_cj_Hv2'] = pvalHv2
+        # scores_table.loc[anchor, 'p-value_cj_Hv2'] = pvalHv2
 
 
         ### set overall p-value to be minimum of all candidate pvalues
         scores_table.loc[anchor, 'p-value_cj']=min([pvalv1,pvalH,pvalvGamma,pvalHv2])
+
+
+        #### no c_j
+        numCj = 5
+        cjArr = np.zeros((numCj,len(njs)))
+        for l in range(numCj):
+            cjArr[l] = np.random.choice([-1,1],size=len(njs))
+
+        sjs = sj_vals.loc[anchor].to_numpy()[:-1] ### pull sj values
+        nanLocs = np.isnan(sjs) ### remove nans, zero out both
+        sjs[nanLocs]=0
+        cjArr[:,nanLocs] = 0
+
+        testEvals = cjArr@sjs #### look at the numCj linear statistics
+        testStat = np.abs(testEvals).max()
+
+        pvalArr = np.zeros(numCj)
+        for l in range(numCj):
+            cjs = cjArr[l]
+
+            #### use simple Hoeffding's v2, union bound
+            b= np.sqrt(M*(cjs**2).sum()/ (cjs*np.sqrt(njs)).sum()**2)
+            a = 1.0/(b+1)
+
+            term1HC = 2*np.exp(- 2*(1-a)**2*testStat**2/ (D**2 * (cjs**2).sum()))
+            term2HC = 2*np.exp( - 2*a**2*M*testStat**2 / (D**2 *(cjs*np.sqrt(njs)).sum()**2 ))
+
+            pvalArr[l] = min(term1HC + term2HC,1)
+
+        pvalHC = min(pvalArr.sum(),1)
+        scores_table.loc[anchor, 'p-value_noCj'] = pvalHC
+
+        #### adding in l1 and l2 (centered)
+        sjs = sjs[sjs!=0]
+        scores_table.loc[anchor, 'l1_norm_Sj'] = np.linalg.norm(sjs,ord=1)
+        scores_table.loc[anchor, 'l2_norm_Sj'] = np.linalg.norm(sjs,ord=2)
+
 
     # output scores table
     (
