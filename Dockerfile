@@ -22,11 +22,16 @@ ENV PATH="/bin/python3.9:${PATH}"
 # install bedtools
 RUN apt-get install -y bedtools
 
-# install bowtie
+# install bowtie2
 WORKDIR /bin
 RUN wget https://github.com/BenLangmead/bowtie2/releases/download/v2.4.5/bowtie2-2.4.5-linux-x86_64.zip
 RUN unzip bowtie2-2.4.5-linux-x86_64.zip
 ENV PATH="/bin/bowtie2-2.4.5-linux-x86_64:${PATH}"
 WORKDIR /
 
-
+# install bowtie
+WORKDIR /bin
+RUN wget https://github.com/BenLangmead/bowtie/releases/download/v1.3.1/bowtie-1.3.1-linux-x86_64.zip
+RUN unzip bowtie-1.3.1-linux-x86_64.zip
+ENV PATH="/bin/bowtie-1.3.1-linux-x86_64:${PATH}"
+WORKDIR /

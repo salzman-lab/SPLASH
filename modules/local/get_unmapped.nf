@@ -13,7 +13,8 @@ process GET_UNMAPPED {
 
     script:
     """
-    bowtie2 -x ${index_bowtie} -U ${fastq} --un-gz ${fastq_id}_unmapped.fastq.gz > ${fastq_id}.sam
+    bowtie -n 0 --un ${fastq_id}_unmapped.fastq -x ${index_bowtie} ${fastq} > ${fastq_id}.sam
+    gzip ${fastq_id}_unmapped.fastq
     rm ${fastq_id}.sam
     """
 }
