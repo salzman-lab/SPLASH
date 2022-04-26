@@ -9,8 +9,8 @@ process MERGE_ANNOTATIONS {
     path target_hits_samplesheet
 
     output:
-    path outfile_ann_anchors
-    path outfile_ann_targets
+    path outfile_ann_anchors, emit: annotated_anchors
+    path outfile_ann_targets, emit: annotated_targets
 
     script:
     outfile_ann_anchors     = "annotated_anchors.tsv"

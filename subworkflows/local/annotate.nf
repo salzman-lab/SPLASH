@@ -1,11 +1,13 @@
 include { GET_FASTA             } from '../../modules/local/get_fasta'
 include { BOWTIE2_ANNOTATION    } from '../../modules/local/bowtie2_annotation'
 include { MERGE_ANNOTATIONS     } from '../../modules/local/merge_annotations'
+include { POSTPROCESSING            } from '../../modules/local/postprocessing'
 
 
 workflow ANNOTATE {
     take:
     anchor_target_counts
+    norm_scores
 
     main:
 
@@ -49,11 +51,22 @@ workflow ANNOTATE {
         .set{ target_hits_samplesheet }
 
     /*
-    // Process to merge anchor scores with anchor hits
+    // Process to merge scores with hits
     */
     MERGE_ANNOTATIONS(
         anchor_hits_samplesheet,
         target_hits_samplesheet
+    )
+
+    /*
+    // Process to run postprocessing annotations
+    */
+    POSTPROCESSING(
+        norm_scores,
+        anchor_target_counts,
+        MERGE_ANNOTATIONS.out.annotated_anchors,
+        MERGE_ANNOTATIONS.out.annotated_targets,
+        params.run_blast
     )
 
 }
