@@ -6,6 +6,7 @@ include { PARSE_ANCHORS             } from '../../modules/local/parse_anchors'
 include { ANCHOR_SAMPLE_SCORES      } from '../../modules/local/anchor_sample_scores'
 include { NORM_SCORES               } from '../../modules/local/norm_scores'
 
+
 include { TRIMGALORE                } from '../../modules/nf-core/modules/trimgalore/main'
 
 workflow ANALYZE_FASTQS {
@@ -182,5 +183,6 @@ workflow ANALYZE_FASTQS {
 
     emit:
     anchor_target_counts = anchor_target_counts
+    norm_scores = NORM_SCORES.out.norm_scores.collect()
 
 }
