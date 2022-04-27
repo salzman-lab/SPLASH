@@ -16,6 +16,7 @@ def build_consensus(kmers, consensus_length, direction):
     Computes base composition of the next seq of bases and outputs
     total num per base, and consensus fraction and base
     """
+    print(kmers)
     baseComp = ''   # the most frequent base at the current position
     baseCount = []  # count of most frequent base
     baseFrac = []   # fraction of the most frequence base
