@@ -50,9 +50,12 @@ workflow ANALYZE_FASTQS {
         ch_fastqs
     )
 
+    /*
+    // Check if we are only using unmapped reads
+    */
     if (params.unmapped) {
         /*
-        // only use unmapped reads
+        // Get unmapped reads
         */
         GET_UNMAPPED(
             TRIMGALORE.out.fastq,
