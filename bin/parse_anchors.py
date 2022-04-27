@@ -256,7 +256,8 @@ def main():
 
     # get anchors from file
     anchors = (
-        pd.read_csv(args.anchors_file,sep='\t')['anchor']
+        pd.read_csv(args.anchors_file, sep='\t', header=None)
+        .iloc[:,0]
         .drop_duplicates()
         .tolist()
     )

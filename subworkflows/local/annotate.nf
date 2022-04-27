@@ -7,7 +7,7 @@ include { POSTPROCESSING            } from '../../modules/local/postprocessing'
 workflow ANNOTATE {
     take:
     anchor_target_counts
-    norm_scores
+    anchor_scores
 
     main:
 
@@ -62,7 +62,7 @@ workflow ANNOTATE {
     // Process to run postprocessing annotations
     */
     POSTPROCESSING(
-        norm_scores,
+        anchor_scores,
         anchor_target_counts,
         MERGE_ANNOTATIONS.out.annotated_anchors,
         MERGE_ANNOTATIONS.out.annotated_targets,

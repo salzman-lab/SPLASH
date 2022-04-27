@@ -71,7 +71,7 @@ workflow STRINGSTATS {
         // Annotate anchors and targets
         ANNOTATE(
             ANALYZE_FASTQS.out.anchor_target_counts,
-            ANALYZE_FASTQS.out.norm_scores
+            ANALYZE_FASTQS.out.anchor_scores
         )
     }
 

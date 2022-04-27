@@ -8,14 +8,14 @@ process TRIMGALORE {
         'quay.io/biocontainers/trim-galore:0.6.7--hdfd78af_0' }"
 
     input:
-    tuple val(fastq_id), path(fastq)
+    tuple val(fastq_id), path(fastq), val(group_id)
 
     output:
-    tuple val(fastq_id), path("*trimmed.fq.gz") , emit: fastq
-    tuple val(fastq_id), path("*report.txt")    , emit: log
+    tuple val(fastq_id), path("*trimmed.fq.gz"), val(group_id)  , emit: fastq
+    tuple val(fastq_id), path("*report.txt")                    , emit: log
 
-    tuple val(fastq_id), path("*.html")         , emit: html optional true
-    tuple val(fastq_id), path("*.zip")          , emit: zip optional true
+    tuple val(fastq_id), path("*.html")                         , emit: html optional true
+    tuple val(fastq_id), path("*.zip")                          , emit: zip optional true
 
     when:
     task.ext.when == null || task.ext.when

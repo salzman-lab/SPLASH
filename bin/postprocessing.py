@@ -13,7 +13,7 @@ pd.options.mode.chained_assignment = None  # default='warn'
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--anchor_norm_scores",
+        "--anchor_scores",
         type=str
     )
     parser.add_argument(
@@ -84,13 +84,8 @@ def summarize(ann_table, df, seq_type, run_blast):
         .all(axis=1)
     )
 
-    ann_table = ann_table.merge(
-        df[[seq_type, 'scaled_ord_score']].drop_duplicates(),
-        on=seq_type
-    )
     ann_df = ann_table[ann_table['all_unannotated'] == False]
     unann_df = ann_table[ann_table['all_unannotated'] == True]
-
 
     ann_df[f"{seq_type}_top_ann"] = None
     ann_df[f"{seq_type}_top_ann_hit"] = None
@@ -100,7 +95,7 @@ def summarize(ann_table, df, seq_type, run_blast):
     # get the number of annotations
     ann_df[f"{seq_type}_num_ann"] = (
         ann_df
-        .drop([seq_type, f"{seq_type}_top_ann", 'all_unannotated', 'scaled_ord_score'], axis=1)
+        .drop([seq_type, f"{seq_type}_top_ann", 'all_unannotated'], axis=1)
         .replace('*', np.nan)
         .notnull()
         .astype(int)
@@ -122,7 +117,6 @@ def summarize(ann_table, df, seq_type, run_blast):
         # eventually change this to sorting by top 100 scaled_ord_score
         seqs = (
             unann_df
-            .sort_values('scaled_ord_score', ascending=False)
             .head(100)[seq_type]
             .to_list()
         )
@@ -194,29 +188,20 @@ def summarize(ann_table, df, seq_type, run_blast):
 def main():
     args = get_args()
 
-    scores = pd.read_csv(args.anchor_norm_scores, sep='\t')
+    scores = pd.read_csv(args.anchor_scores, sep='\t')
     anchor_targets_counts = pd.read_csv(args.anchor_target_counts, sep='\t')
     ann_anchors = pd.read_csv(args.annotated_anchors, sep='\t')
     ann_targets = pd.read_csv(args.annotated_targets, sep='\t')
 
-    scores = scores.fillna(0)
-
-    scores['ord_score'] = scores['norm_summary_score']**2 - (scores['second_moment'] - scores['first_moment']**2)
-    scores['scaled_ord_score'] = scores['ord_score'] / scores['total_anchor_counts']
-
-    scores = (
-        scores[['anchor', 'total_anchor_counts', 'ord_score', 'scaled_ord_score', 'l1_norm_Sj', 'l2_norm_Sj', 'p-value_cj', 'p-value_noCj']]
-        .sort_values('ord_score', ascending=False)
-    )
 
     anchor_targets_counts['total_target_counts'] = (
         anchor_targets_counts
-        .drop(['anchor', 'target', 'distance'], axis=1)
+        .drop(['anchor', 'target'], axis=1)
         .sum(axis=1)
     )
 
     df = pd.merge(
-        anchor_targets_counts.drop('distance', axis=1),
+        anchor_targets_counts,
         scores,
         on='anchor'
     )
