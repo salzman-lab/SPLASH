@@ -3,6 +3,7 @@ process BOWTIE2_ANNOTATION {
 
     tag "${index_name}"
     label 'process_low'
+    container 'https://depot.galaxyproject.org/singularity/mulled-v2-ac74a7f02cebcfcc07d8e8d1d750af9c83b4d45a:1744f68fe955578c63054b55309e05b41c37a80d-0'
 
     input:
     path anchor_fasta
