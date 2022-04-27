@@ -3,7 +3,7 @@ include { GET_UNMAPPED              } from '../../modules/local/get_unmapped'
 include { FETCH_ANCHORS             } from '../../modules/local/fetch_anchors'
 include { COUNT_ANCHORS             } from '../../modules/local/count_anchors'
 include { STRATIFY_ANCHORS          } from '../../modules/local/stratify_anchors'
-include { GET_ANCHORS               } from '../../modules/local/get_anchors'
+include { GET_ANCHORS_AND_SCORES    } from '../../modules/local/get_anchors_and_scores'
 include { PARSE_ANCHORS             } from '../../modules/local/parse_anchors'
 include { MERGE_TARGET_COUNTS       } from '../../modules/local/merge_target_counts'
 
@@ -96,7 +96,7 @@ workflow ANALYZE_FASTQS {
     /*
     // Process to get significant anchors and their scores
     */
-    GET_ANCHORS(
+    GET_ANCHORS_AND_SCORES(
         STRATIFY_ANCHORS.out.seqs.flatten(),
         params.distance_type,
         params.max_targets,
@@ -105,14 +105,16 @@ workflow ANALYZE_FASTQS {
         params.pval_threshold
     )
 
-    GET_ANCHORS.out.scores
+    // Merge all scores from all slices and output
+    GET_ANCHORS_AND_SCORES.out.scores
         .collectFile(
             name: 'scores.tsv',
             storeDir: "${params.outdir}"
         )
         .set{ch_scores}
 
-    GET_ANCHORS.out.anchors
+    // Merge all anchors from all slices and output
+    GET_ANCHORS_AND_SCORES.out.anchors
         .collectFile(
             name: 'anchors.tsv',
             storeDir: "${params.outdir}"

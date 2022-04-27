@@ -1,5 +1,5 @@
 
-process GET_ANCHORS {
+process GET_ANCHORS_AND_SCORES {
 
     label 'process_long'
 

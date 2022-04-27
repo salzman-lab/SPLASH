@@ -1,7 +1,7 @@
 include { GET_FASTA             } from '../../modules/local/get_fasta'
 include { BOWTIE2_ANNOTATION    } from '../../modules/local/bowtie2_annotation'
 include { MERGE_ANNOTATIONS     } from '../../modules/local/merge_annotations'
-include { POSTPROCESSING            } from '../../modules/local/postprocessing'
+include { POSTPROCESSING        } from '../../modules/local/postprocessing'
 
 
 workflow ANNOTATE {
