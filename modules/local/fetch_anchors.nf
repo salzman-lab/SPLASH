@@ -6,6 +6,7 @@ process FETCH_ANCHORS {
 
     input:
     tuple val(fastq_id), path(fastq), val(group_id)
+    val run_type
     val num_lines
     val kmer_size
     val lookahead
@@ -20,6 +21,7 @@ process FETCH_ANCHORS {
     """
     fetch_anchors.py \\
         --infile ${fastq} \\
+        --run_type ${run_type} \\
         --fastq_id ${fastq_id} \\
         --num_lines ${num_lines} \\
         --kmer_size ${kmer_size} \\

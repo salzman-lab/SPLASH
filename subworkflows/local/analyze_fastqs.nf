@@ -74,6 +74,7 @@ workflow ANALYZE_FASTQS {
     */
     FETCH_ANCHORS(
         ch_fastqs,
+        params.run_type,
         params.num_lines,
         params.kmer_size,
         lookahead,

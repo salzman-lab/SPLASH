@@ -72,7 +72,7 @@ for (anch in unique(m$anchor)){ ## INEFFICIENT can be done with lapply
 
     ### LOGIC TO EITHER GROW A DATAFRAME OR INITIALIZE IT FOR LATER MERGE
     if ( sum(ls() %like% "tomerge.distances")>0){ tomerge.distances=rbind(tomerge.distances,into)}
-    if ( sum( ls() %like% "tomerge.distances")==0){ tomerge.distances= into}  ## keeps a
+    if ( sum(ls() %like% "tomerge.distances")==0){ tomerge.distances= into}  ## keeps a
 }
 print('done loop')
 

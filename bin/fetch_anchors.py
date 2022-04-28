@@ -11,6 +11,10 @@ def get_args():
         type=str
     )
     parser.add_argument(
+        "--run_type",
+        type=str
+    )
+    parser.add_argument(
         "--fastq_id",
         type=str
     )
@@ -45,7 +49,8 @@ def get_args():
 def main():
     args = get_args()
 
-    sample = args.fastq_id
+    if args.run_type == 'bulk':
+        sample = args.fastq_id
 
     if args.anchor_mode == 'chunk':
         step_size = args.kmer_size
@@ -61,6 +66,12 @@ def main():
                 break
 
             x += 1
+
+            if args.run_type == 'single_cell':
+                if x % 4 == 1:
+                    # example: '@A00111:664:HVFMTDSXY:1:1101:13711:1376 2:N:0:CGAATATTCG+TTGCTTCCAG'
+                    sample = line.split(' ')[1].split(':')[3].split('+')[0]
+
             if x % 4 == 2:
                 read = line.strip()
 
