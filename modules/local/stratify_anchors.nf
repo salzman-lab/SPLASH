@@ -1,7 +1,7 @@
 
 process STRATIFY_ANCHORS {
 
-    label 'process_long'
+    label 'process_high'
     conda (params.enable_conda ? "conda-forge::python=3.9.5" : null)
 
     input:

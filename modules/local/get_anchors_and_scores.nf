@@ -1,7 +1,7 @@
 
 process GET_ANCHORS_AND_SCORES {
 
-    label 'process_long'
+    label 'process_high'
 
     input:
     path counts
