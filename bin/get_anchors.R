@@ -123,7 +123,8 @@ print('done correction')
 # Kaitlin, you could change the pvalue threshold for the purpose of testing
 compute.a = cbind(compute.a, apply(pv,1,min))
 
-anchors = compute.a[V2<pval_threshold]
+# anchors = compute.a[V2<pval_threshold]
+anchors = head(compute.a[order(compute.a$V2, decreasing=T), "anchor"], 1000)
 
 write.table(compute.a, outfile_scores, col.names=T, row.names=F, quote=F, sep='\t')
-write.table(anchors[, "anchor"], outfile_anchors, col.names=F, row.names=F, quote=F, sep='\t')
+write.table(anchors, outfile_anchors, col.names=F, row.names=F, quote=F, sep='\t')
