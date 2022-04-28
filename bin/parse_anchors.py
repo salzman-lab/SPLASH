@@ -260,6 +260,7 @@ def main():
         pd.read_csv(args.anchors_file, sep='\t', header=None)
         .iloc[:,0]
         .drop_duplicates()
+        .head(10000)
         .tolist()
     )
 
