@@ -55,7 +55,7 @@ def main():
     if args.anchor_mode == 'chunk':
         step_size = args.kmer_size
     elif args.anchor_mode == 'tile':
-        step_size = args.window_slie
+        step_size = args.window_slide
 
     x = 0
 
