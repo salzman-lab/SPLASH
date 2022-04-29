@@ -107,7 +107,12 @@ def summarize(ann_table, df, seq_type, run_blast):
     bowtie_df = ann_df[[seq_type, f"{seq_type}_top_ann", f"{seq_type}_top_ann_hit", f"{seq_type}_num_ann", f"{seq_type}_annotation_source"]]
 
     ## unannotated df
-    blast_df = unann_df
+    unann_df = pd.merge(
+        df,
+        unann_df,
+        on=seq_type
+    )
+    blast_df = unann_df[[seq_type, 'V2']]
 
     if run_blast:
         blast_fasta_file = f"blast_{seq_type}.fasta"
@@ -117,7 +122,8 @@ def summarize(ann_table, df, seq_type, run_blast):
         # eventually change this to sorting by top 100 scaled_ord_score
         seqs = (
             unann_df
-            .head(100)[seq_type]
+            .sort_values('V2', ascending=False)
+            .head(1)[seq_type]
             .to_list()
         )
 

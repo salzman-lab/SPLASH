@@ -94,7 +94,8 @@ workflow ANALYZE_FASTQS {
     // Process to stratify counts files by 3mers
     */
     STRATIFY_ANCHORS(
-        COUNT_ANCHORS.out.seqs.collect()
+        COUNT_ANCHORS.out.seqs.collect(),
+        params.stratifiy_level
     )
 
     /*
