@@ -4,7 +4,6 @@ import gzip
 import argparse
 import pandas as pd
 import warnings
-import nltk
 warnings.simplefilter(action='ignore', category=FutureWarning)
 import utils
 

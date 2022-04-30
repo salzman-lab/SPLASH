@@ -10,7 +10,6 @@ import logging
 import numpy as np
 from Bio import SeqIO
 import math
-import nltk
 import time
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
