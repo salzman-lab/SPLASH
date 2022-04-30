@@ -5,6 +5,7 @@ process GET_ANCHORS_AND_SCORES {
 
     input:
     path counts
+    path samplesheet
     val distance_type
     val max_targets
     val max_dist
@@ -23,6 +24,7 @@ process GET_ANCHORS_AND_SCORES {
     """
     get_anchors.R \\
         ${counts} \\
+        ${samplesheet} \\
         ${distance_type} \\
         ${max_targets} \\
         ${max_dist} \\
