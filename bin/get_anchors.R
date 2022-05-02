@@ -3,7 +3,7 @@
 library(data.table)
 library(spgs)
 library(stringdist)
-
+print('yes!')
 return_d<-function(targets, dmethod, MAXD){
 
     # inputs a list of strings in sorted order

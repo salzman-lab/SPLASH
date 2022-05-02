@@ -112,7 +112,7 @@ def summarize(ann_table, df, seq_type, run_blast):
         unann_df,
         on=seq_type
     )
-    blast_df = unann_df[[seq_type, 'V2']]
+    blast_df = unann_df[[seq_type, 'bf.cor.p']]
 
     if run_blast:
         blast_fasta_file = f"blast_{seq_type}.fasta"
@@ -122,7 +122,7 @@ def summarize(ann_table, df, seq_type, run_blast):
         # eventually change this to sorting by top 100 scaled_ord_score
         seqs = (
             unann_df
-            .sort_values('V2', ascending=False)
+            .sort_values('bf.cor.p', ascending=False)
             .head(1)[seq_type]
             .to_list()
         )
@@ -152,41 +152,42 @@ def summarize(ann_table, df, seq_type, run_blast):
         rows = [line.split('\t') for line in output.splitlines()]
         blast_df = pd.DataFrame(rows, columns=['qseqid', 'evalue', 'stitle'])
 
-        # get seqs from seq_ids
-        blast_df[seq_type] = blast_df['qseqid'].str.split('_').str[1]
+        if not blast_df.empty:
+            # get seqs from seq_ids
+            blast_df[seq_type] = blast_df['qseqid'].str.split('_').str[1]
 
-        blast_df = (
-            blast_df
-            .set_index(seq_type)
-            .drop("qseqid", axis=1)
-        )
-
-        # get top annotation with evalue
-        blast_df[f"{seq_type}_top_ann"] = (
-            blast_df
-            .groupby(seq_type)['evalue', 'stitle']
-            .apply(max)['stitle']
-        )
-
-        # get number of annotations
-        blast_df[f"{seq_type}_num_ann"] = (
-            blast_df
-            .groupby(seq_type)['stitle']
-            .apply(
-                lambda x:
-                x.value_counts()[0]
+            blast_df = (
+                blast_df
+                .set_index(seq_type)
+                .drop("qseqid", axis=1)
             )
-        )
 
-        # clean up
-        blast_df = (
-            blast_df
-            .drop(['evalue', 'stitle'], axis=1)
-            .reset_index()
-        )
+            # get top annotation with evalue
+            blast_df[f"{seq_type}_top_ann"] = (
+                blast_df
+                .groupby(seq_type)['evalue', 'stitle']
+                .apply(max)['stitle']
+            )
 
-        blast_df[f"{seq_type}_top_ann_hit"] = np.nan
-        blast_df[f"{seq_type}_annotation_source"] = 'blastn'
+            # get number of annotations
+            blast_df[f"{seq_type}_num_ann"] = (
+                blast_df
+                .groupby(seq_type)['stitle']
+                .apply(
+                    lambda x:
+                    x.value_counts()[0]
+                )
+            )
+
+            # clean up
+            blast_df = (
+                blast_df
+                .drop(['evalue', 'stitle'], axis=1)
+                .reset_index()
+            )
+
+            blast_df[f"{seq_type}_top_ann_hit"] = np.nan
+            blast_df[f"{seq_type}_annotation_source"] = 'blastn'
 
     return pd.concat([bowtie_df, blast_df], axis=0)
 
