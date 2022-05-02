@@ -74,24 +74,24 @@ workflow ANNOTATE {
         params.run_blast
     )
 
-    /*
-    // Process to align targets and anchors to genome
-    */
-    GENOME_ALIGNMENT(
-        anchor_fasta,
-        target_fasta,
-        params.genome_index
-    )
+    // /*
+    // // Process to align targets and anchors to genome
+    // */
+    // GENOME_ALIGNMENT(
+    //     anchor_fasta,
+    //     target_fasta,
+    //     params.genome_index
+    // )
 
-    /*
-    // Process to run gene and exon annotations
-    */
-    GENOME_ANNOTATIONS(
-        GENOME_ALIGNMENT.out.anchor_bam,
-        GENOME_ALIGNMENT.out.target_bam,
-        params.gene_bed,
-        params.exon_starts_bed,
-        params.exon_ends_bed
-    )
+    // /*
+    // // Process to run gene and exon annotations
+    // */
+    // GENOME_ANNOTATIONS(
+    //     GENOME_ALIGNMENT.out.anchor_bam,
+    //     GENOME_ALIGNMENT.out.target_bam,
+    //     params.gene_bed,
+    //     params.exon_starts_bed,
+    //     params.exon_ends_bed
+    // )
 
 }
