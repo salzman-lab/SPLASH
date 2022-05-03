@@ -1,13 +1,15 @@
 include { GET_FASTA             } from '../../modules/local/get_fasta'
 include { BOWTIE2_ANNOTATION    } from '../../modules/local/bowtie2_annotation'
 include { MERGE_ANNOTATIONS     } from '../../modules/local/merge_annotations'
-include { POSTPROCESSING            } from '../../modules/local/postprocessing'
+include { POSTPROCESSING        } from '../../modules/local/postprocessing'
+include { GENOME_ALIGNMENT      } from '../../modules/local/genome_alignment'
+include { GENOME_ANNOTATIONS    } from '../../modules/local/genome_annotations'
 
 
 workflow ANNOTATE {
     take:
     anchor_target_counts
-    norm_scores
+    anchor_scores
 
     main:
 
@@ -27,12 +29,15 @@ workflow ANNOTATE {
         anchor_target_counts
     )
 
+    anchor_fasta = GET_FASTA.out.anchor_fasta
+    target_fasta = GET_FASTA.out.target_fasta
+
     /*
     // Process to align anchors to each bowtie2 index
     */
     BOWTIE2_ANNOTATION(
-        GET_FASTA.out.anchor_fasta,
-        GET_FASTA.out.target_fasta,
+        anchor_fasta,
+        target_fasta,
         ch_indices
     )
 
@@ -62,11 +67,31 @@ workflow ANNOTATE {
     // Process to run postprocessing annotations
     */
     POSTPROCESSING(
-        norm_scores,
+        anchor_scores,
         anchor_target_counts,
         MERGE_ANNOTATIONS.out.annotated_anchors,
         MERGE_ANNOTATIONS.out.annotated_targets,
         params.run_blast
+    )
+
+    /*
+    // Process to align targets and anchors to genome
+    */
+    GENOME_ALIGNMENT(
+        anchor_fasta,
+        target_fasta,
+        params.genome_index
+    )
+
+    /*
+    // Process to run gene and exon annotations
+    */
+    GENOME_ANNOTATIONS(
+        GENOME_ALIGNMENT.out.anchor_bam,
+        GENOME_ALIGNMENT.out.target_bam,
+        params.gene_bed,
+        params.exon_starts_bed,
+        params.exon_ends_bed
     )
 
 }

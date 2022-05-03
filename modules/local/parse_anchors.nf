@@ -6,7 +6,7 @@ process PARSE_ANCHORS {
     conda (params.enable_conda ? "conda-forge::python=3.9.5 pandas=1.4.1" : null)
 
     input:
-    tuple val(fastq_id), path(fastq)
+    tuple val(fastq_id), path(fastq), val(group_id)
     path anchors
     val num_parse_anchors_reads
     val consensus_length
@@ -24,7 +24,7 @@ process PARSE_ANCHORS {
     out_consensus_fasta_file    = "${fastq_id}_${direction}.fasta"
     out_counts_file             = "${fastq_id}_${direction}_counts.tab"
     out_fractions_file          = "${fastq_id}_${direction}_fractions.tab"
-    out_target_file           = "${fastq_id}_target_counts.tsv"
+    out_target_file             = "${fastq_id}_target_counts.tsv"
     """
     parse_anchors.py \\
         --num_parse_anchors_reads ${num_parse_anchors_reads} \\

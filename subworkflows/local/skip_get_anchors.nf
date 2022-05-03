@@ -3,15 +3,15 @@ include { GET_UNMAPPED              } from '../../modules/local/get_unmapped'
 include { FETCH_ANCHORS             } from '../../modules/local/fetch_anchors'
 include { COUNT_ANCHORS             } from '../../modules/local/count_anchors'
 include { STRATIFY_ANCHORS          } from '../../modules/local/stratify_anchors'
-include { GET_ABUNDANT_ANCHORS      } from '../../modules/local/get_abundant_anchors'
-include { MERGE_ABUNDANT_ANCHORS      } from '../../modules/local/merge_abundant_anchors'
 include { GET_ANCHORS_AND_SCORES    } from '../../modules/local/get_anchors_and_scores'
 include { PARSE_ANCHORS             } from '../../modules/local/parse_anchors'
 include { MERGE_TARGET_COUNTS       } from '../../modules/local/merge_target_counts'
+include { GET_FASTA                 } from '../../modules/local/get_fasta'
+include { BOWTIE2_ANNOTATION        } from '../../modules/local/bowtie2_annotation'
+include { MERGE_ANNOTATIONS         } from '../../modules/local/merge_annotations'
+include { POSTPROCESSING            } from '../../modules/local/postprocessing'
 
-include { TRIMGALORE                } from '../../modules/nf-core/modules/trimgalore/main'
-
-workflow ANALYZE_FASTQS {
+workflow SKIP_GET_ANCHORS {
 
     main:
 
@@ -71,87 +71,13 @@ workflow ANALYZE_FASTQS {
 
     // }
 
-    /*
-    // Process to get all candidate anchors and targets
-    */
-    FETCH_ANCHORS(
-        ch_fastqs,
-        params.run_type,
-        params.num_lines,
-        params.kmer_size,
-        lookahead,
-        params.anchor_mode,
-        params.window_slide
-
-    )
-
-    /*
-    // Process to count anchors and targets
-    */
-    COUNT_ANCHORS(
-        FETCH_ANCHORS.out.seqs
-    )
-
-    /*
-    // Process to stratify counts files by 3mers
-    */
-    STRATIFY_ANCHORS(
-        COUNT_ANCHORS.out.seqs.collect(),
-        params.stratifiy_level
-    )
-
-    /*
-    // Process to filter kmer counts for abundant anchors
-    */
-    GET_ABUNDANT_ANCHORS(
-        STRATIFY_ANCHORS.out.seqs.flatten(),
-        params.anchor_count_threshold
-    )
-
-    /*
-    // Process to merge abundant anchors
-    */
-    MERGE_ABUNDANT_ANCHORS(
-        GET_ABUNDANT_ANCHORS.out.seqs.collect()
-    )
-
-    /*
-    // Process to get significant anchors and their scores
-    */
-    GET_ANCHORS_AND_SCORES(
-        MERGE_ABUNDANT_ANCHORS.out.seqs,
-        file(params.input),
-        params.distance_type,
-        params.max_targets,
-        params.max_dist,
-        params.bonfer,
-        params.pval_threshold
-    )
-
-    // Merge all scores from all slices and output
-    GET_ANCHORS_AND_SCORES.out.scores
-        .collectFile(
-            name: 'scores.tsv',
-            storeDir: "${params.outdir}"
-        )
-        .set{ch_scores}
-
-    // Merge all anchors from all slices and output
-    GET_ANCHORS_AND_SCORES.out.anchors
-        .collectFile(
-            name: 'anchors.tsv',
-            storeDir: "${params.outdir}"
-        )
-        .set{ch_anchors}
-
-    ch_anchors = ch_anchors.first().filter{ it.size() >0 }
 
     /*
     // Process to get consensus sequences and target counts for annchors
     */
     PARSE_ANCHORS(
         ch_fastqs,
-        ch_anchors,
+        file(params.anchors_file),
         params.num_parse_anchors_reads,
         params.consensus_length,
         params.kmer_size,
@@ -173,8 +99,52 @@ workflow ANALYZE_FASTQS {
         targets_samplesheet
     )
 
-    emit:
-    anchor_target_counts = MERGE_TARGET_COUNTS.out.anchor_target_counts.first()
-    anchor_scores        = ch_scores.first()
+    // create samplesheet of bowtie2 indices
+    ch_indices = Channel.fromPath(params.bowtie2_samplesheet)
+        .splitCsv(
+            header: false
+        )
+        .map{ row ->
+            row[0]
+        }
+
+    /*
+    // Process to get anchor and target fastas
+    */
+    GET_FASTA(
+        MERGE_TARGET_COUNTS.out.anchor_target_counts.first()
+    )
+
+    /*
+    // Process to align anchors to each bowtie2 index
+    */
+    BOWTIE2_ANNOTATION(
+        GET_FASTA.out.anchor_fasta,
+        GET_FASTA.out.target_fasta,
+        ch_indices
+    )
+
+    // create samplesheet of the anchor hits files
+    BOWTIE2_ANNOTATION.out.anchor_hits
+        .collectFile(name: "anchor_samplesheet.txt") { file ->
+            def X=file; X.toString() + '\n'
+        }
+        .set{ anchor_hits_samplesheet }
+
+    // create samplesheet of the target hits files
+    BOWTIE2_ANNOTATION.out.target_hits
+        .collectFile(name: "target_samplesheet.txt") { file ->
+            def X=file; X.toString() + '\n'
+        }
+        .set{ target_hits_samplesheet }
+
+    /*
+    // Process to merge scores with hits
+    */
+    MERGE_ANNOTATIONS(
+        anchor_hits_samplesheet,
+        target_hits_samplesheet
+    )
+
 
 }
