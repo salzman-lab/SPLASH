@@ -14,8 +14,9 @@ max_targets <- as.integer(args[4])
 max_distance <- as.integer(args[5])
 bonfer <- as.integer(args[6])
 pval_threshold <- as.numeric(args[7])
-outfile_scores <- args[8]
-outfile_anchors <- args[9]
+run_type <- args[8] ## "bulk" or "single-cell"
+outfile_scores <- args[9]
+outfile_anchors <- args[10]
 
 # infile="/oak/stanford/groups/horence/kaitlin/results_stringstats/SS2_test/merged_abundant_anchor_counts.tsv.gz"
 # samplesheet="/scratch/groups/horence/kaitlin/running_stringstats/samplesheets/samplesheet_SS2_test.csv"

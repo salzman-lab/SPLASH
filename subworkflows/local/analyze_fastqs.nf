@@ -125,7 +125,8 @@ workflow ANALYZE_FASTQS {
         params.max_targets,
         params.max_dist,
         params.bonfer,
-        params.pval_threshold
+        params.pval_threshold,
+        params.run_type
     )
 
     ch_anchors  = GET_ANCHORS_AND_SCORES.out.anchors.filter{ it.size() > 0 }

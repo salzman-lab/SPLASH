@@ -11,6 +11,7 @@ process GET_ANCHORS_AND_SCORES {
     val max_dist
     val bonfer
     val pval_threshold
+    val run_type
 
     output:
     path outfile_scores , emit: scores
@@ -28,6 +29,7 @@ process GET_ANCHORS_AND_SCORES {
         ${max_dist} \\
         ${bonfer} \\
         ${pval_threshold} \\
+        ${run_type}
         ${outfile_scores} \\
         ${outfile_anchors}
     """
