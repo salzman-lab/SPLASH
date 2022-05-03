@@ -14,7 +14,7 @@ max_targets <- as.integer(args[4])
 max_distance <- as.integer(args[5])
 bonfer <- as.integer(args[6])
 pval_threshold <- as.numeric(args[7])
-run_type <- args[8] ## "bulk" or "single-cell"
+run_type <- args[8]
 outfile_scores <- args[9]
 outfile_anchors <- args[10]
 
@@ -233,6 +233,7 @@ compute.a[ ,l1 := sum(abs(score_per_sample)), by=anchor]
 ## units of variance * num samples -- like "sds"
 compute.a[ ,l1.sdlike.units := l1 / (anchor.var*num.sample)]
 compute.a = (compute.a[anchor.var>.5][mu>1][order(-l1.sdlike.units)])
+write.table(compute.a, 'temp.txt', col.names=T, row.names=F, quote=F, sep='\t')
 
 ## write out anchor scores
 summary.file = unique(compute.a[order(-l1.sdlike.units)])
