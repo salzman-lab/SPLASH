@@ -15,17 +15,16 @@ process GENOME_ALIGNMENT {
     path "target_*bam"  , emit: target_bam
 
     script:
-    index_name          = file(index).baseName
     anchor_bam          = "anchor_genome.bam"
     target_bam          = "target_genome.bam"
     """
 
     bowtie2 -f -x ${index} -U ${anchor_fasta} -k 1 --quiet \\
-        | samtools view -bS -
-        >> ${anchor_bam}
+        | samtools view -bS - \\
+        > ${anchor_bam}
 
     bowtie2 -f -x ${index} -U ${target_fasta} -k 1 --quiet \\
-        | samtools view -bS -
-        >> ${target_bam}
+        | samtools view -bS - \\
+        > ${target_bam}
     """
 }

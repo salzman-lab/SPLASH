@@ -3,6 +3,8 @@ include { GET_UNMAPPED              } from '../../modules/local/get_unmapped'
 include { FETCH_ANCHORS             } from '../../modules/local/fetch_anchors'
 include { COUNT_ANCHORS             } from '../../modules/local/count_anchors'
 include { STRATIFY_ANCHORS          } from '../../modules/local/stratify_anchors'
+include { GET_ABUNDANT_ANCHORS      } from '../../modules/local/get_abundant_anchors'
+include { MERGE_ABUNDANT_ANCHORS      } from '../../modules/local/merge_abundant_anchors'
 include { GET_ANCHORS_AND_SCORES    } from '../../modules/local/get_anchors_and_scores'
 include { PARSE_ANCHORS             } from '../../modules/local/parse_anchors'
 include { MERGE_TARGET_COUNTS       } from '../../modules/local/merge_target_counts'
@@ -99,10 +101,25 @@ workflow ANALYZE_FASTQS {
     )
 
     /*
+    // Process to filter kmer counts for abundant anchors
+    */
+    GET_ABUNDANT_ANCHORS(
+        STRATIFY_ANCHORS.out.seqs.flatten(),
+        params.anchor_count_threshold
+    )
+
+    /*
+    // Process to merge abundant anchors
+    */
+    MERGE_ABUNDANT_ANCHORS(
+        GET_ABUNDANT_ANCHORS.out.seqs.collect()
+    )
+
+    /*
     // Process to get significant anchors and their scores
     */
     GET_ANCHORS_AND_SCORES(
-        STRATIFY_ANCHORS.out.seqs.flatten(),
+        MERGE_ABUNDANT_ANCHORS.out.seqs,
         file(params.input),
         params.distance_type,
         params.max_targets,
@@ -127,13 +144,14 @@ workflow ANALYZE_FASTQS {
         )
         .set{ch_anchors}
 
+    ch_anchors = ch_anchors.first().filter{ it.size() >0 }
 
     /*
     // Process to get consensus sequences and target counts for annchors
     */
     PARSE_ANCHORS(
         ch_fastqs,
-        ch_anchors.first(),
+        ch_anchors,
         params.num_parse_anchors_reads,
         params.consensus_length,
         params.kmer_size,
