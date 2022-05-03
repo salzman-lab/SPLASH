@@ -29,7 +29,7 @@ process GET_ANCHORS_AND_SCORES {
         ${max_dist} \\
         ${bonfer} \\
         ${pval_threshold} \\
-        ${run_type}
+        ${run_type} \\
         ${outfile_scores} \\
         ${outfile_anchors}
     """
