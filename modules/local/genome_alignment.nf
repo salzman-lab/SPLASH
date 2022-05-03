@@ -8,23 +8,35 @@ process GENOME_ALIGNMENT {
     input:
     path anchor_fasta
     path target_fasta
-    val index
+    val genome_index
+    val transcriptome_index
 
     output:
-    path "anchor_*bam"  , emit: anchor_bam
-    path "target_*bam"  , emit: target_bam
+    path anchor_genome_bam  , emit: anchor_genome_bam
+    path target_genome_bam  , emit: target_genome_bam
+    path anchor_trans_bam   , emit: anchor_trans_bam
+    path target_trans_bam   , emit: target_trans_bam
 
     script:
-    anchor_bam          = "anchor_genome.bam"
-    target_bam          = "target_genome.bam"
+    anchor_genome_bam       = "anchors_genome.bam"
+    target_genome_bam       = "targets_genome.bam"
+    anchor_trans_bam        = "anchors_transciptome.bam"
+    target_trans_bam        = "targets_transcriptome.bam"
     """
-
-    bowtie2 -f -x ${index} -U ${anchor_fasta} -k 1 --quiet \\
+    bowtie2 -f -x ${genome_index} -U ${anchor_fasta} -k 1 --quiet \\
         | samtools view -bS - \\
-        > ${anchor_bam}
+        > ${anchor_genome_bam}
 
-    bowtie2 -f -x ${index} -U ${target_fasta} -k 1 --quiet \\
+    bowtie2 -f -x ${genome_index} -U ${target_fasta} -k 1 --quiet \\
         | samtools view -bS - \\
-        > ${target_bam}
+        > ${target_genome_bam}
+
+    bowtie2 -f -x ${transcriptome_index} -U ${anchor_fasta} -k 1 --quiet \\
+        | samtools view -bS - \\
+        > ${anchor_trans_bam}
+
+    bowtie2 -f -x ${transcriptome_index} -U ${target_fasta} -k 1 --quiet \\
+        | samtools view -bS - \\
+        > ${target_trans_bam}
     """
 }

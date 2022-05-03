@@ -17,10 +17,8 @@ process GET_ANCHORS_AND_SCORES {
     path outfile_anchors, emit: anchors
 
     script:
-    slice_name          = counts.simpleName.toString().replace("stratified_", "")
-
-    outfile_scores      = "scores_${slice_name}.tsv"
-    outfile_anchors     = "anchors_${slice_name}.tsv"
+    outfile_scores      = "scores.tsv"
+    outfile_anchors     = "anchors.tsv"
     """
     get_anchors.R \\
         ${counts} \\

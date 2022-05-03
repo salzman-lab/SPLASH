@@ -80,15 +80,20 @@ workflow ANNOTATE {
     GENOME_ALIGNMENT(
         anchor_fasta,
         target_fasta,
-        params.genome_index
+        params.genome_index,
+        params.transcriptome_index
     )
 
     /*
     // Process to run gene and exon annotations
     */
     GENOME_ANNOTATIONS(
-        GENOME_ALIGNMENT.out.anchor_bam,
-        GENOME_ALIGNMENT.out.target_bam,
+        GENOME_ALIGNMENT.out.anchor_genome_bam,
+        GENOME_ALIGNMENT.out.target_genome_bam,
+        GENOME_ALIGNMENT.out.anchor_trans_bam,
+        GENOME_ALIGNMENT.out.target_trans_bam,
+        GET_FASTA.out.anchors,
+        GET_FASTA.out.targets,
         params.gene_bed,
         params.exon_starts_bed,
         params.exon_ends_bed

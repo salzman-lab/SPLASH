@@ -128,23 +128,8 @@ workflow ANALYZE_FASTQS {
         params.pval_threshold
     )
 
-    // Merge all scores from all slices and output
-    GET_ANCHORS_AND_SCORES.out.scores
-        .collectFile(
-            name: 'scores.tsv',
-            storeDir: "${params.outdir}"
-        )
-        .set{ch_scores}
-
-    // Merge all anchors from all slices and output
-    GET_ANCHORS_AND_SCORES.out.anchors
-        .collectFile(
-            name: 'anchors.tsv',
-            storeDir: "${params.outdir}"
-        )
-        .set{ch_anchors}
-
-    ch_anchors = ch_anchors.first().filter{ it.size() >0 }
+    ch_anchors  = GET_ANCHORS_AND_SCORES.out.anchors.filter{ it.size() > 0 }
+    ch_scores   = GET_ANCHORS_AND_SCORES.out.scores
 
     /*
     // Process to get consensus sequences and target counts for annchors
@@ -175,6 +160,6 @@ workflow ANALYZE_FASTQS {
 
     emit:
     anchor_target_counts = MERGE_TARGET_COUNTS.out.anchor_target_counts.first()
-    anchor_scores        = ch_scores.first()
+    anchor_scores        = ch_scores
 
 }
