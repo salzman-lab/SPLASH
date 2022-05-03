@@ -214,6 +214,8 @@ def summarize(ann_table, df, seq_type, run_blast):
     else:
         blast_df = unann_df
 
+    blast_df = blast_df.drop_duplicates()
+
     bowtie_df.to_csv(f'bowtie_{seq_type}.csv', index=False, sep='\t')
     blast_df.to_csv(f'blast_{seq_type}.csv', index=False, sep='\t')
 
