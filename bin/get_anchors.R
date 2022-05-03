@@ -1,0 +1,217 @@
+#!/usr/bin/env Rscript
+
+library(data.table)
+library(spgs)
+library(stringdist)
+library(R.utils)
+
+## Function to return the minimum distances in an ordered list of strings
+get_distances <- function(targets, distance_type, max_distance, samplesheet, chunk_size){
+    n.tot = length(targets)
+
+    ds= c(0, rep(max_distance, n.tot-1))
+
+    for (i in 2:(n.tot)){ ## run through all needed to be computed
+        j=1
+        if (distance_type == "hamming"){
+            ds[i] = min(max_distance, min ( ds[i], floor ( stringdist(  targets[i],targets[j],method="hamming") / chunk_size)))
+            ds[i] = floor(ds[i]/4) ## require "1" to be "4" away
+        }
+        if (distance_type == "lev"){
+
+            ds[i] = min(
+                max_distance,
+                min(ds[i], stringdist(targets[i], targets[j], method="lv"))
+            )
+        }
+    }
+    ## Return distances
+    ds
+}
+
+## Function to return ____
+get_cs <- function(use_c, in_matrix, dimensions, samplesheet) {
+    if (use_c == FALSE) {
+        ## repeat this dimensions times or take the first dimensions vectors of U; if cs are userdef, dimensions=1
+        nsubs = min(dim(in_matrix)[1], 20000)
+        myinds =sample(dim(in_matrix)[1], nsubs)
+        inp = in_matrix[order(-anchor.var)][myinds]
+        x = reshape(in_matrix[myinds, list(anchor, sample, score_per_sample)], timevar="anchor", idvar="sample", direction="wide")
+
+        ## remove the first row whish is samples, remove missing values, take the svd
+        sample = x[,1]
+        x=x[,-1]
+        x[is.na(x)] = 0
+
+        ## IDEALLY WILL ENFORCE SOMETHING such as CS are +/- a constant or 0.
+        xsvd = svd(x)$u
+        dimensions = min(dimensions,dim(xsvd)[2])
+
+        cs = xsvd[,1:dimensions]
+        out = cbind(sample,cs)
+
+    } else {
+        out = merge(in_matrix, samplesheet, by="sample", all.x=T)
+
+    }
+
+    ## return matrix with column ofcs
+    out
+}
+
+args <- commandArgs(TRUE)
+infile <- args[1]
+samplesheet <- args[2]
+distance_type <- args[3]
+max_targets <- as.integer(args[4])
+max_distance <- as.integer(args[5])
+bonfer <- as.integer(args[6])
+pval_threshold <- as.numeric(args[7])
+outfile_scores <- args[8]
+outfile_anchors <- args[9]
+
+chunk_size = 4
+
+samplesheet <- fread(samplesheet, header=F)
+
+if (ncol(samplesheet) == 1) {
+    ## if there is only one column of files, use_c is set to false
+    use_c = FALSE
+    samplesheet = data.table()
+
+} else if (ncol(samplesheet) == 2) {
+    ## if there is a second column, use_c is set to true
+    use_c = TRUE
+
+    colnames(samplesheet) <- c('sample', 'cs')
+    ## create sample column for joining later
+    samplesheet[, sample := sub('.fastq.gz', '', basename(sample))]
+}
+use_c = FALSE
+
+m = fread(infile, fill=T, header=F)
+names(m) = c("counts", "seq", "sample")
+
+m[ ,anchor := substr(seq,1,27)]
+m[ ,target := substr(seq,28,54)]
+
+## Only continue computation for anchors with more than one target
+m[ ,n.targ := length(unique(target)),by=anchor]
+m = m[n.targ>1]
+m[,M:=sum(counts),by=anchor]
+
+## gives the count per target for each anchor
+m[ ,target.count := sum(counts), by=anchor]
+if (dim(m)[1]>0){
+    ## gives the count per target for each anchor
+    m[ ,target.count := sum(counts), by=anchor]
+
+    for (anch in unique(m$anchor)){
+        ## gives the total number of targets
+        ll = length(unique(m[anchor== anch][order(-counts)]$target))
+
+        ## generates list of top targets for targets
+        tlist= unique(m[anchor== anch][order(-counts)]$target)[1: min(ll, max_targets)]
+        ## gets list of distances from unique list of targets
+        target.d = get_distances(tlist, distance_type, max_distance, samplesheet, chunk_size)
+
+        ## CREATE A NEW DATAFRAME AND ADD ANCHOR ID
+        into = data.table(cbind (tlist,as.numeric(target.d)))
+        names(into) = c("target", "target.d")
+        into[,anchor := anch]
+
+    ## LOGIC TO EITHER GROW A DATAFRAME m with its TARGET DISTANCES OR INITIALIZE IT FOR LATER MERGE
+    if ( sum(ls() %like% "tomerge.distances")>0){ tomerge.distances=rbind(tomerge.distances,into)}
+    if ( sum(ls() %like% "tomerge.distances")==0){ tomerge.distances= into}
+    }
+
+    ## CREATE THE KEY TO MERGE TARGET DISTANCES ON ON
+    tomerge.distances[ ,seq := paste(tomerge.distances$anchor,tomerge.distances$target,sep="")]
+    ## MERGES ON DISTANCE  JUST ADD THE 2 fields IN THE LIST, MATCHED ON SEQ
+    new = merge(m, tomerge.distances[,list(seq,target.d)], by = "seq")
+
+    ## Computing linear statistics
+    ## counts up all the targets for this anchor,sample
+    new[ ,n_j :=sum(counts), by=list(anchor, sample)]
+    new[ ,mu := sum(counts * as.numeric(target.d)) / sum(counts), by="anchor"]
+    new[ ,anchor.var := sum(counts * (as.numeric(target.d)^2))/sum(counts)-mu^2, by="anchor"]
+    new[ ,target.d :=  as.numeric(target.d)]
+
+    ## compute the per sample score, and number of samples
+    new[ ,score_per_sample := sum((counts*(target.d-mu))/sqrt(n_j)) , by=list(sample,anchor) ]
+    new[ ,num.sample:= length(unique(sample)), by=anchor]
+
+    ## all is the variable with all the statistical information
+    if(sum(ls() %like% "all")>0){ all=rbind(all,new)}
+    if(sum(ls() %like% "all")==0){ all= new}
+
+    all = unique(all)
+    ## reduces the matrix to unique anchor, samples with associated
+
+    compute.a = unique( all[ ,list(anchor,sample, M, mu, score_per_sample, num.sample, n_j, anchor.var)])
+
+}
+
+## add column of cs
+c.mx = get_cs(use_c, compute.a, bonfer, samplesheet)
+
+## in case we ask for more tests than dimensions of the mx, set ot the min
+bonfer = min(bonfer, (dim(c.mx)[2]-1))
+
+## matrix of pvalues
+pv = matrix(nrow=dim(compute.a)[1], ncol=bonfer)
+
+## start bonferroni correction
+for (j in 1:bonfer){ # bonfer is number of projections of cs
+    ## merge in new cs
+    newc = data.table(data.frame(c.mx)[,c(1,(j+1))])
+    ## creates a temp matrix of sample, col1, and Jth c vector
+    names(newc)[1]="sample"
+    names(newc)[2]="cs"
+
+    ## if a col of cs exists, remove
+    if (sum(names(compute.a) == "cs")>0){compute.a[,cs:=NULL]}
+
+    compute.a = merge(unique(compute.a), unique(newc), by="sample") ## MERGES THIS C into the
+
+    compute.a = compute.a[cs!=0]
+    compute.a[ ,M:=sum(n_j), by=anchor] ## new
+    compute.a[ ,num.sample := length(unique(sample)), by=anchor]
+    compute.a[ ,anchor_score := sum(cs*(score_per_sample)),by=anchor]
+
+    ## constants needed for pvalue calculation
+    compute.a[ ,a:= 1/(1+sqrt(M*sum(cs^2) /(sum(cs*sqrt(n_j))^2 ))), by=anchor]
+    compute.a[ ,sumcsq:=sum(cs^2), by=anchor]
+    compute.a[ ,sumc_sqrtnj := sum(cs*sqrt(n_j)), by=anchor]
+
+    ## since anchorscore is squared, no need for abs value
+    compute.a[, pterm1:= 2*(exp(-(2*(1-a)^2*anchor_score^2/(max_distance^2*sumcsq))))]
+    compute.a[, pterm2:= 2*(exp(-((2*a^2*anchor_score^2*M)/(max_distance^2 *sumc_sqrtnj^2))))]
+
+    pv[ ,j] = bonfer * (compute.a$pterm1+compute.a$pterm2)
+
+}
+## take the min across the 5 already BH-corrected values
+bf.cor.p = apply(pv,1,min)
+compute.a = cbind(compute.a, bf.cor.p)
+
+## L1 is ballpark calculation for reference for now, likely will be removed.
+compute.a[ ,l1 := sum(abs(score_per_sample)), by=anchor]
+
+## add significance
+compute.a[ ,l1 := sum(abs(score_per_sample)), by=anchor]
+
+## units of variance * num samples -- like "sds"
+compute.a[ ,l1.sdlike.units := l1 / (anchor.var*num.sample)]
+compute.a = (compute.a[anchor.var>.5][mu>1][order(-l1.sdlike.units)])
+
+## write out anchor scores
+summary.file = unique(compute.a[order(-l1.sdlike.units)])
+write.table(summary.file, outfile_scores, col.names=T, row.names=F, quote=F, sep='\t')
+
+print(head(summary.file))
+
+## write out significant anchors
+anchors = summary.file[bf.cor.p < pval_threshold]
+write.table(anchors, outfile_anchors, col.names=F, row.names=F, quote=F, sep='\t')
+

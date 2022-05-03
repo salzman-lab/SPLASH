@@ -16,6 +16,7 @@ def build_consensus(kmers, consensus_length, direction):
     Computes base composition of the next seq of bases and outputs
     total num per base, and consensus fraction and base
     """
+    print(kmers)
     baseComp = ''   # the most frequent base at the current position
     baseCount = []  # count of most frequent base
     baseFrac = []   # fraction of the most frequence base
@@ -256,8 +257,10 @@ def main():
 
     # get anchors from file
     anchors = (
-        pd.read_csv(args.anchors_file,sep='\t')['anchor']
+        pd.read_csv(args.anchors_file, sep='\t', header=None)
+        .iloc[:,0]
         .drop_duplicates()
+        .head(10000)
         .tolist()
     )
 
