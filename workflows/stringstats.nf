@@ -36,6 +36,8 @@ include { GET_SOFTWARE_VERSIONS } from '../modules/local/get_software_versions' 
 //
 include { ANALYZE_FASTQS    } from '../subworkflows/local/analyze_fastqs'
 include { ANNOTATE          } from '../subworkflows/local/annotate'
+include { SKIP_GET_ANCHORS  } from '../subworkflows/local/skip_get_anchors'
+
 
 
 /*
@@ -58,23 +60,30 @@ include { ANNOTATE          } from '../subworkflows/local/annotate'
 
 workflow STRINGSTATS {
 
-    if (params.reannotate) {
-        // Re-annotate anchors and targets
-        ANNOTATE(
-            params.anchor_target_counts
-        )
+    if (params.anchors_file) {
+
+        SKIP_GET_ANCHORS()
 
     } else {
-        // Perform analysis on anchors and targets
-        ANALYZE_FASTQS()
 
-        // Annotate anchors and targets
-        ANNOTATE(
-            ANALYZE_FASTQS.out.anchor_target_counts,
-            ANALYZE_FASTQS.out.norm_scores
-        )
+        if (params.reannotate) {
+            // Re-annotate anchors and targets
+            ANNOTATE(
+                params.anchor_target_counts
+            )
+
+        } else {
+            // Perform analysis on anchors and targets
+            ANALYZE_FASTQS()
+
+            // Annotate anchors and targets
+            ANNOTATE(
+                ANALYZE_FASTQS.out.anchor_target_counts,
+                ANALYZE_FASTQS.out.anchor_scores
+            )
+        }
+
     }
-
 }
 
 /*

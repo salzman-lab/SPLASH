@@ -1,7 +1,7 @@
 process GET_READ_LENGTH {
 
     input:
-    tuple val(fastq_id), path(fastq)
+    tuple val(fastq_id), path(fastq), val(group_id)
 
     output:
     env read_length, emit: read_length

@@ -4,11 +4,11 @@ process GET_UNMAPPED {
     label 'process_medium'
 
     input:
-    tuple val(fastq_id), path(fastq)
+    tuple val(fastq_id), path(fastq), val(group_id)
     val index_bowtie
 
     output:
-    tuple val(fastq_id), path("*unmapped.fastq.gz")        , emit: fastq
+    tuple val(fastq_id), path("*unmapped.fastq.gz"), val(group_id) , emit: fastq
 
 
     script:
