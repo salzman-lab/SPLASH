@@ -87,7 +87,6 @@ if (ncol(samplesheet) == 1) {
     ## create sample column for joining later
     samplesheet[, sample := sub('.fastq.gz', '', basename(sample))]
 }
-use_c = FALSE
 
 m = fread(infile, fill=T, header=F)
 names(m) = c("counts", "seq", "sample")
@@ -212,6 +211,8 @@ write.table(summary.file, outfile_scores, col.names=T, row.names=F, quote=F, sep
 print(head(summary.file))
 
 ## write out significant anchors
-anchors = summary.file[bf.cor.p < pval_threshold]
+# anchors = summary.file[bf.cor.p < pval_threshold]
+anchors = head(summary.file,[order(summary.file,$bf.cor.p, decreasing=T), "anchor"], 1000)
+
 write.table(anchors, outfile_anchors, col.names=F, row.names=F, quote=F, sep='\t')
 
