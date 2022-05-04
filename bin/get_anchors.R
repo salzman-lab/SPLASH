@@ -200,7 +200,10 @@ for (j in 1:bonfer){ # bonfer is number of projections of cs
     ## if a col of cs exists, remove
     if (sum(names(compute.a) == "cs")>0){compute.a[,cs:=NULL]}
 
-    compute.a = merge(unique(compute.a), unique(newc), by="sample") ## MERGES THIS C into the
+    compute.a = merge(unique(compute.a), unique(newc), all.x=T, by="sample") ## MERGES THIS C into the
+    # 2 added lines in case cs are not present
+    compute.a[is.na(cs),cs:=0]
+    compute.a[cs==0, n_j:=0]
 
     compute.a = compute.a[cs!=0]
     compute.a[ ,M:=sum(n_j), by=anchor] ## new
