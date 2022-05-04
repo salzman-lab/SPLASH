@@ -152,7 +152,7 @@ def get_ann(row, seq_type):
     return row
 
 
-def summarize(ann_table, df, seq_type, run_blast):
+def add_summary(ann_table, df, seq_type, run_blast):
 
     c_list = [c for c in ann_table.columns if 'hits_pos' not in c]
 
@@ -194,14 +194,14 @@ def summarize(ann_table, df, seq_type, run_blast):
     bowtie_df = ann_df[[seq_type, f"{seq_type}_top_ann", f"{seq_type}_top_ann_hit", f"{seq_type}_num_ann", f"{seq_type}_annotation_source"]]
 
     ## unannotated df
-    unann_df = (
-        pd.merge(
-            df,
-            unann_df,
-            on=seq_type
-        )
-        [[seq_type, 'bf.cor.p']]
-    )
+    # unann_df = (
+    #     pd.merge(
+    #         df,
+    #         unann_df,
+    #         on=seq_type
+    #     )
+    #     [[seq_type, 'bf.cor.p']]
+    # )
 
     unann_df[f"{seq_type}_top_ann"] = None
     unann_df[f"{seq_type}_top_ann_hit"] = None
@@ -214,14 +214,17 @@ def summarize(ann_table, df, seq_type, run_blast):
     else:
         blast_df = unann_df
 
-    blast_df = blast_df.drop_duplicates()
-
     bowtie_df.to_csv(f'bowtie_{seq_type}.csv', index=False, sep='\t')
     blast_df.to_csv(f'blast_{seq_type}.csv', index=False, sep='\t')
+    print(seq_type)
+    print(len(df))
+    df = pd.merge(df, bowtie_df, on=seq_type, how='left')
+    print(len(df))
+    df = pd.merge(df, blast_df, on=seq_type, how='left')
+    print(len(df))
 
-    summarized_df = pd.concat([bowtie_df, blast_df], axis=0)
 
-    return summarized_df
+    return df
 
 
 def main():
@@ -269,13 +272,8 @@ def main():
     df['anchor_matches_rcTarget'] = df['rcTarget'].isin(df['anchor'])
     df['rcAnchor_matches_target'] = df['rcAnchor'].isin(df['target'])
 
-    summarized_anchors = summarize(ann_anchors, df, 'anchor', args.run_blast)
-    summarized_targets = summarize(ann_targets, df, 'target', args.run_blast)
-    print(len(df))
-    df = pd.merge(df, summarized_anchors, on='anchor', how='left')
-    print(len(df))
-    df = pd.merge(df, summarized_targets, on='target', how='left')
-    print(len(df))
+    df = add_summary(ann_anchors, df, 'anchor', args.run_blast)
+    df = add_summary(ann_targets, df, 'target', args.run_blast)
 
     df.drop_duplicates().to_csv(args.outfile, sep='\t', index=False)
 
