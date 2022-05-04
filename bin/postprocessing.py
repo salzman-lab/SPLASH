@@ -271,14 +271,11 @@ def main():
 
     summarized_anchors = summarize(ann_anchors, df, 'anchor', args.run_blast)
     summarized_targets = summarize(ann_targets, df, 'target', args.run_blast)
-
-    # df.to_csv('df.csv', index=False, sep='\t')
-
+    print(len(df))
     df = pd.merge(df, summarized_anchors, on='anchor', how='left')
-    # df.to_csv('summarized_anchors.csv', index=False, sep='\t')
-
+    print(len(df))
     df = pd.merge(df, summarized_targets, on='target', how='left')
-    # df.to_csv('summarized_targets.csv', index=False, sep='\t')
+    print(len(df))
 
     df.drop_duplicates().to_csv(args.outfile, sep='\t', index=False)
 
