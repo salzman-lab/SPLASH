@@ -243,7 +243,7 @@ print(head(summary.file))
 
 ## write out significant anchors
 #  anchors = summary.file[bf.cor.p < pval_threshold]
-anchors = head(unique(summary.file[order(bf.cor.p, decreasing=T), "anchor"]), 1000)
+anchors = head(unique(summary.file[order(bf.cor.p, decreasing=FALSE), "anchor"]), 5000)
 
 write.table(anchors, outfile_anchors, col.names=F, row.names=F, quote=F, sep='\t')
 
