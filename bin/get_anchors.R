@@ -89,6 +89,62 @@ get_cs <- function(use_c, in_matrix, dimensions, samplesheet) {
 
 chunk_size = 4
 
+## Function to return the minimum distances in an ordered list of strings
+get_distances <- function(targets, distance_type, max_distance, chunk_size){
+    n.tot = length(targets)
+    ds= c(0, rep(max_distance, n.tot-1))
+    for (i in 2:(n.tot)){ ## run through all needed to be computed
+        j=1
+        if (distance_type == "hamming"){
+            ds[i] = min(max_distance, min ( ds[i], floor ( stringdist(  targets[i],targets[j],method="hamming") / chunk_size)))
+
+        }
+        if (distance_type == "lev"){
+	           ds[i] = min(
+                max_distance,
+                min(ds[i], stringdist(targets[i], targets[j], method="lv"))
+            )
+        }
+    }
+    ## Return distances
+    ds
+}
+
+## Function to return ____
+get_cs <- function(use_c, in_matrix, dimensions, samplesheet) {
+    if (use_c == FALSE) {
+        ## repeat this dimensions times or take the first dimensions vectors of U; if cs are userdef, dimensions=1
+        nsubs = min(dim(in_matrix)[1], 20000)
+        myinds =sample(dim(in_matrix)[1], nsubs)
+        inp = in_matrix[order(-anchor.var)][myinds]
+        print("starting reshape")
+        x = reshape(in_matrix[myinds, list(anchor, sample, score_per_sample)], timevar="anchor", idvar="sample", direction="wide")
+
+        ## remove the first row whish is samples, remove missing values, take the svd
+        print ("STARTING SVD")
+        sample = x[,1]
+        x=x[,-1]
+        x[is.na(x)] = 0
+
+        ## IDEALLY WILL ENFORCE SOMETHING such as CS are +/- a constant or 0.
+        xsvd = svd(x)$u/abs(svd(x)$u)
+        dimensions = min(dimensions,dim(xsvd)[2])
+
+        cs = xsvd[,1:dimensions]
+        out = cbind(sample,cs)
+
+    } else {
+      out = samplesheet#  merge(in_matrix, samplesheet, by="sample", all.x=T)
+
+    }
+
+    ## return matrix with column ofcs
+    out
+}
+
+
+chunk_size = 4
+
 samplesheet <- fread(samplesheet, header=F)
 
 if (ncol(samplesheet) == 1) {
@@ -117,38 +173,35 @@ m[ ,n.targ := length(unique(target)),by=anchor]
 m = m[n.targ>1]
 m[,M:=sum(counts),by=anchor]
 # if impatient m=m[M>100]
-
 ## gives the count per target for each anchor
 m[ ,target.count := sum(counts), by=anchor]
 if (dim(m)[1]>0){
     ## gives the count per target for each anchor
     m[ ,target.count := sum(counts), by=anchor]
-
     ## get per target counts
     m[ ,pertarget.counts := sum(counts), by=list(target,anchor)]
-
     print("STARTING GET DISTANCES");
-
     for (anch in unique(m$anchor)){
         ## gives the total number of targets
         ll = length(unique(m[anchor== anch][order(-counts)]$target))
 
         ## generates list of top targets for targets
+	    ## changed
         tlist= unique(m[anchor== anch][order(-pertarget.counts)]$target)[1: min(ll, max_targets)]
         ## gets list of distances from unique list of targets
 
         target.d = get_distances(tlist, distance_type, max_distance,  chunk_size)
-        print(anch)
-
+ if (anch %like% "GGG"){print(anch)}
         ## CREATE A NEW DATAFRAME AND ADD ANCHOR ID
         into = data.table(cbind (tlist,as.numeric(target.d)))
         names(into) = c("target", "target.d")
         into[,anchor := anch]
 
-        ## LOGIC TO EITHER GROW A DATAFRAME m with its TARGET DISTANCES OR INITIALIZE IT FOR LATER MERGE
-        into[ ,seq := paste(into$anchor,into$target,sep="")]
-        if ( sum(ls() %like% "tomerge.distances")>0){ tomerge.distances=rbind(tomerge.distances,into)}
-        if ( sum(ls() %like% "tomerge.distances")==0){ tomerge.distances= into}
+    ## LOGIC TO EITHER GROW A DATAFRAME m with its TARGET DISTANCES OR INITIALIZE IT FOR LATER MERGE
+
+    into[ ,seq := paste(into$anchor,into$target,sep="")]
+    if ( sum(ls() %like% "tomerge.distances")>0){ tomerge.distances=rbind(tomerge.distances,into)}
+    if ( sum(ls() %like% "tomerge.distances")==0){ tomerge.distances= into}
     }
 
 
@@ -191,9 +244,7 @@ pv = matrix(nrow=dim(compute.a)[1], ncol=bonfer)
 
 ## start bonferroni correction
 for (j in 1:bonfer){ # bonfer is number of projections of cs
-
     print(paste("starting ",j,"th bonfer"))
-
     ## merge in new cs
     newc = data.table(data.frame(c.mx)[,c(1,(j+1))])
     ## creates a temp matrix of sample, col1, and Jth c vector
@@ -202,13 +253,11 @@ for (j in 1:bonfer){ # bonfer is number of projections of cs
 
     ## if a col of cs exists, remove
     if (sum(names(compute.a) == "cs")>0){compute.a[,cs:=NULL]}
-
-    compute.a = merge(unique(compute.a), unique(newc), all.x=T, by="sample") ## MERGES THIS C into the
-    # 2 added lines in case cs are not present
+    ## added all.x=T
+    compute.a = merge(unique(compute.a), unique(newc),all.x=T, by="sample") ## MERGES THIS C into the
+    # 2 added lines in case cs are not presen
     compute.a[is.na(cs),cs:=0]
     compute.a[cs==0, n_j:=0]
-
-    compute.a = compute.a[cs!=0]
     compute.a[ ,M:=sum(n_j), by=anchor] ## new
     compute.a[ ,num.sample := length(unique(sample)), by=anchor]
     compute.a[ ,anchor_score := sum(cs*(score_per_sample)),by=anchor]
@@ -239,7 +288,6 @@ compute.a[ ,l1 := sum(abs(score_per_sample)), by=anchor]
 ## units of variance * num samples -- like "sds"
 compute.a[ ,l1.sdlike.units := l1 / (anchor.var*num.sample)]
 compute.a = (compute.a[anchor.var>.5][mu>1][order(-l1.sdlike.units)])
-write.table(compute.a, 'temp.txt', col.names=T, row.names=F, quote=F, sep='\t')
 
 ## write out anchor scores
 summary.file = unique(compute.a[order(-l1.sdlike.units)])
@@ -248,9 +296,10 @@ write.table(summary.file, outfile_scores, col.names=T, row.names=F, quote=F, sep
 print(head(summary.file))
 
 ## write out significant anchors
-#  anchors = summary.file[bf.cor.p < pval_threshold]
-anchors = head(unique(summary.file[order(bf.cor.p, decreasing=FALSE), "anchor"]), 5000)
+anchors = summary.file[bf.cor.p < pval_threshold]
+anchors = head(unique(summary.file[order(bf.cor.p, decreasing=T), "anchor"]), 1000)
 
 write.table(anchors, outfile_anchors, col.names=F, row.names=F, quote=F, sep='\t')
+write.table(file=paste("cmx_",outfile_anchors,sep=""), c.mx, col.names=F, row.names=F, quote=F, sep='\t')
 
 write.table(file=paste("cmx_",outfile_anchors,sep=""), c.mx, col.names=F, row.names=F, quote=F, sep='\t')
