@@ -70,7 +70,7 @@ get_cs <- function(use_c, in_matrix, dimensions, samplesheet) {
         x[is.na(x)] = 0
 
         ## IDEALLY WILL ENFORCE SOMETHING such as CS are +/- a constant or 0.
-        xsvd = svd(x)$u
+        xsvd = svd(x)$u/abs(svd(x)$u)
         dimensions = min(dimensions,dim(xsvd)[2])
 
         cs = xsvd[,1:dimensions]
@@ -124,6 +124,9 @@ if (dim(m)[1]>0){
     ## gives the count per target for each anchor
     m[ ,target.count := sum(counts), by=anchor]
 
+    ## get per target counts
+    m[ ,pertarget.counts := sum(counts), by=list(target,anchor)]
+
     print("STARTING GET DISTANCES");
 
     for (anch in unique(m$anchor)){
@@ -131,7 +134,7 @@ if (dim(m)[1]>0){
         ll = length(unique(m[anchor== anch][order(-counts)]$target))
 
         ## generates list of top targets for targets
-        tlist= unique(m[anchor== anch][order(-counts)]$target)[1: min(ll, max_targets)]
+        tlist= unique(m[anchor== anch][order(-pertarget.counts)]$target)[1: min(ll, max_targets)]
         ## gets list of distances from unique list of targets
 
         target.d = get_distances(tlist, distance_type, max_distance,  chunk_size)
@@ -250,3 +253,4 @@ anchors = head(unique(summary.file[order(bf.cor.p, decreasing=FALSE), "anchor"])
 
 write.table(anchors, outfile_anchors, col.names=F, row.names=F, quote=F, sep='\t')
 
+write.table(file=paste("cmx_",outfile_anchors,sep=""), c.mx, col.names=F, row.names=F, quote=F, sep='\t')

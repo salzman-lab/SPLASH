@@ -45,31 +45,31 @@ workflow ANALYZE_FASTQS {
         lookahead = params.lookahead
     }
 
-    // /*
-    // // Trim fastqs
-    // */
-    // TRIMGALORE(
-    //     ch_fastqs
-    // )
+    /*
+    // Trim fastqs
+    */
+    TRIMGALORE(
+        ch_fastqs
+    )
 
-    // /*
-    // // Check if we are only using unmapped reads
-    // */
-    // if (params.unmapped) {
-    //     /*
-    //     // Get unmapped reads
-    //     */
-    //     GET_UNMAPPED(
-    //         TRIMGALORE.out.fastq,
-    //         params.index_bowtie
-    //     )
+    /*
+    // Check if we are only using unmapped reads
+    */
+    if (params.unmapped) {
+        /*
+        // Get unmapped reads
+        */
+        GET_UNMAPPED(
+            TRIMGALORE.out.fastq,
+            params.index_bowtie
+        )
 
-    //     ch_fastqs = GET_UNMAPPED.out.fastq
+        ch_fastqs = GET_UNMAPPED.out.fastq
 
-    // } else {
-    //     ch_fastqs = TRIMGALORE.out.fastq
+    } else {
+        ch_fastqs = TRIMGALORE.out.fastq
 
-    // }
+    }
 
     /*
     // Process to get all candidate anchors and targets

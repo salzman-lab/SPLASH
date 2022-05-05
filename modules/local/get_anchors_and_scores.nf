@@ -16,6 +16,7 @@ process GET_ANCHORS_AND_SCORES {
     output:
     path outfile_scores , emit: scores
     path outfile_anchors, emit: anchors
+    path "cmx*"          , emit: cmx
 
     script:
     outfile_scores      = "scores.tsv"

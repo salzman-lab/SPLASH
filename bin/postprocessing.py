@@ -39,26 +39,14 @@ def get_args():
     args = parser.parse_args()
     return args
 
-def get_blast_df(unann_df, seq_type):
-    """
-    Function to run blast on the top n sequences without bowtie2 annotations
-    """
-    # only run blast on top n sequences, as ranked by pvalues
-    seqs = (
-        unann_df
-        .sort_values('bf.cor.p', ascending=False)
-        .head(2)[seq_type]
-        .to_list()
-    )
 
-    # write out anchors without annotations to a fasta file
+def get_blast_df(seqs, seq_type):
     blast_fasta_file = f"blast_{seq_type}.fasta"
     outfile = open(blast_fasta_file, 'w')
     for i in range(len(seqs)):
         outfile.write(f'>seq{i}_{seqs[i]}_NN\n{seqs[i]}\n')
     outfile.close()
 
-    # run blastn
     cline = NcbiblastnCommandline(
         outfmt="6 qseqid evalue stitle",
         query=blast_fasta_file,
@@ -80,49 +68,42 @@ def get_blast_df(unann_df, seq_type):
 
     blast_df = pd.DataFrame(rows, columns=['qseqid', 'evalue', 'stitle'])
 
-    # reformat columns if there are blast results
-    if not blast_df.empty:
-        # get seqs from seq_ids
-        blast_df[seq_type] = blast_df['qseqid'].str.split('_').str[1]
+    blast_df[seq_type] = blast_df['qseqid'].str.split('_').str[1]
 
-        blast_df = (
-            blast_df
-            .set_index(seq_type)
-            .drop("qseqid", axis=1)
+    blast_df = (
+        blast_df
+        .set_index(seq_type)
+        .drop("qseqid", axis=1)
+    )
+
+    # get top annotation with evalue
+    blast_df[f"{seq_type}_top_ann"] = (
+        blast_df
+        .groupby(seq_type)['evalue', 'stitle']
+        .apply(max)['stitle']
+    )
+
+    # get number of annotations
+    blast_df[f"{seq_type}_num_ann"] = (
+        blast_df
+        .groupby(seq_type)['stitle']
+        .apply(
+            lambda x:
+            x.value_counts()[0]
         )
+    )
 
-        # get top annotation with evalue
-        blast_df[f"{seq_type}_top_ann"] = (
-            blast_df
-            .groupby(seq_type)['evalue', 'stitle']
-            .apply(max)['stitle']
-        )
+    # clean up
+    blast_df = (
+        blast_df
+        .drop(['evalue', 'stitle'], axis=1)
+        .reset_index()
+        .drop_duplicates()
+    )
 
-        # get number of annotations
-        blast_df[f"{seq_type}_num_ann"] = (
-            blast_df
-            .groupby(seq_type)['stitle']
-            .apply(
-                lambda x:
-                x.value_counts()[0]
-            )
-        )
+    blast_df[f"{seq_type}_annotation_source"] = 'blastn'
 
-        # clean up
-        blast_df = (
-            blast_df
-            .drop(['evalue', 'stitle'], axis=1)
-            .reset_index()
-        )
-
-        blast_df[f"{seq_type}_top_ann_hit"] = np.nan
-        blast_df[f"{seq_type}_annotation_source"] = 'blastn'
-
-        blast_df = blast_df.drop_duplicates()
-
-        return blast_df
-    else:
-        return unann_df
+    return blast_df
 
 
 def get_ann(row, seq_type):
@@ -152,16 +133,10 @@ def get_ann(row, seq_type):
     return row
 
 
-def add_summary(ann_table, df, seq_type, run_blast):
-
+def add_summary(df, ann_table, seq_type, run_blast, top_anchors):
     c_list = [c for c in ann_table.columns if 'hits_pos' not in c]
 
-    # ann_table = ann_table[c_list]
 
-    # try:
-    #     ann_table = ann_table.drop([f'{seq_type}_hits_concat_sherlock_fastas', axis=1)
-    # except:
-    #     pass
     ann_table['all_unannotated'] = (
         ann_table[c_list]
         .drop(seq_type, axis=1)
@@ -170,71 +145,88 @@ def add_summary(ann_table, df, seq_type, run_blast):
         .all(axis=1)
     )
 
+    # df with bowtie2 ann
     ann_df = ann_table[ann_table['all_unannotated'] == False]
-    unann_df = ann_table[ann_table['all_unannotated'] == True]
 
     ann_df[f"{seq_type}_top_ann"] = None
     ann_df[f"{seq_type}_top_ann_hit"] = None
     ann_df[f"{seq_type}_top_ann_hit_pos"] = None
 
-    ann_df = ann_df.apply(lambda row: get_ann(row, seq_type), axis=1)
-
-    # get the number of annotations
-    ann_df[f"{seq_type}_num_ann"] = (
-        ann_df[c_list]
-        .drop(seq_type, axis=1)
-        .replace('*', np.nan)
-        .notnull()
-        .astype(int)
-        .sum(axis=1)
+    ann_df = ann_df.apply(
+        lambda row:
+        get_ann(row, seq_type), axis=1
     )
+
+    ann_df[f"{seq_type}_num_ann"] = (
+            ann_df[c_list]
+            .drop(seq_type, axis=1)
+            .replace('*', np.nan)
+            .notnull()
+            .astype(int)
+            .sum(axis=1)
+        )
+
     ann_df[f"{seq_type}_annotation_source"] = "bowtie2"
-
-    # subset
-    bowtie_df = ann_df[[seq_type, f"{seq_type}_top_ann", f"{seq_type}_top_ann_hit", f"{seq_type}_num_ann", f"{seq_type}_annotation_source"]]
-
-    ## unannotated df
-    # unann_df = (
-    #     pd.merge(
-    #         df,
-    #         unann_df,
-    #         on=seq_type
-    #     )
-    #     [[seq_type, 'bf.cor.p']]
-    # )
-
-    unann_df[f"{seq_type}_top_ann"] = None
-    unann_df[f"{seq_type}_top_ann_hit"] = None
-    unann_df[f"{seq_type}_num_ann"] = None
-    unann_df[f"{seq_type}_annotation_source"] = None
-    unann_df[f"{seq_type}_top_ann_hit_pos"] = None
+    bowtie_df = ann_df[[seq_type, f"{seq_type}_top_ann", f"{seq_type}_top_ann_hit", f"{seq_type}_top_ann_hit_pos", f"{seq_type}_num_ann", f"{seq_type}_annotation_source"]]
 
     if run_blast:
-        blast_df = get_blast_df(unann_df, seq_type)
+        # df without any bowtie2 ann
+        unann_df = ann_table[ann_table['all_unannotated'] == True]
+
+        if seq_type == 'anchor':
+            seqs = (
+                pd.merge(
+                    unann_df[['anchor']].drop_duplicates(),
+                    df[['anchor', 'bf.cor.p']].drop_duplicates()
+                )
+                .sort_values('bf.cor.p', ascending=False)
+                .head(2)['anchor']
+                .to_list()
+            )
+            print('here')
+
+        elif seq_type == 'target':
+            seqs = (
+                df[df['anchor'].isin(top_anchors)]
+                .groupby(['anchor'])
+                .apply(
+                    lambda x:
+                    x.sort_values(['total_target_counts'], ascending = False)
+                )
+                .reset_index(drop=True)
+                .groupby('anchor')
+                .head(1)['target']
+                .to_list()
+            )
+
+        blast_df = get_blast_df(seqs, seq_type)
+
+        addition = pd.concat([blast_df, bowtie_df], axis=0)
+
     else:
-        blast_df = unann_df
-
-    bowtie_df.to_csv(f'bowtie_{seq_type}.csv', index=False, sep='\t')
-    blast_df.to_csv(f'blast_{seq_type}.csv', index=False, sep='\t')
-    print(seq_type)
-    print(len(df))
-    df = pd.merge(df, bowtie_df, on=seq_type, how='left')
-    print(len(df))
-    df = pd.merge(df, blast_df, on=seq_type, how='left')
-    print(len(df))
+        addition = bowtie_df
 
 
-    return df
+    if run_blast:
+        if seq_type == 'anchor':
+            return addition, seqs
+        else:
+            return addition, None
+    else:
+        return addition, None
 
 
 def main():
     args = get_args()
 
-    scores = pd.read_csv(args.anchor_scores, sep='\t')
+    scores = (
+        pd.read_csv(args.anchor_scores, sep='\t')
+        [['anchor', 'M', 'mu', 'anchor.var', 'anchor_score', 'bf.cor.p', 'num.sample', 'l1.sdlike.units']]
+        .drop_duplicates()
+    )
     anchor_targets_counts = pd.read_csv(args.anchor_target_counts, sep='\t')
     ann_anchors = pd.read_csv(args.annotated_anchors, sep='\t')
     ann_targets = pd.read_csv(args.annotated_targets, sep='\t')
-
 
     anchor_targets_counts['total_target_counts'] = (
         anchor_targets_counts
@@ -242,11 +234,9 @@ def main():
         .sum(axis=1)
     )
 
-    df = pd.merge(
-        anchor_targets_counts,
-        scores,
-        on='anchor'
-    )
+    anchor_targets_counts = anchor_targets_counts[['anchor', 'target', 'total_target_counts']]
+
+    df = pd.merge(anchor_targets_counts, scores, on='anchor')
 
     df['rank_target_counts'] = (
         df
@@ -272,10 +262,13 @@ def main():
     df['anchor_matches_rcTarget'] = df['rcTarget'].isin(df['anchor'])
     df['rcAnchor_matches_target'] = df['rcAnchor'].isin(df['target'])
 
-    df = add_summary(ann_anchors, df, 'anchor', args.run_blast)
-    df = add_summary(ann_targets, df, 'target', args.run_blast)
+    summarized_anchors, top_anchors = add_summary(df, ann_anchors, 'anchor', args.run_blast, None)
+    summarized_targets, _ = add_summary(df, ann_targets, 'target', args.run_blast, top_anchors)
 
-    df.drop_duplicates().to_csv(args.outfile, sep='\t', index=False)
+    df = pd.merge(df, summarized_anchors, on='anchor', how='left')
+    df = pd.merge(df, summarized_targets, on='target', how='left')
+
+    df.to_csv(args.outfile, sep='\t', index=False)
 
 
 main()
