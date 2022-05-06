@@ -9,8 +9,8 @@ process GENOME_ANNOTATIONS {
     path target_genome_bam
     path anchor_trans_bam
     path target_trans_bam
-    path anchors
-    path targets
+    path anchor
+    path target
     path gene_bed
     path exon_starts_bed
     path exon_ends_bed
@@ -20,10 +20,10 @@ process GENOME_ANNOTATIONS {
     path target_hits
 
     script:
-    anchor_hits         = "genome_annotations_anchors.tsv"
-    target_hits         = "genome_annotations_targets.tsv"
+    anchor_hits         = "genome_annotations_anchor.tsv"
+    target_hits         = "genome_annotations_target.tsv"
     """
-    seq_types="anchors targets"
+    seq_types="anchor target"
 
     for seq_type in \${seq_types}
     do
@@ -44,7 +44,7 @@ process GENOME_ANNOTATIONS {
             cut -f4,6 \${seq_type}_genome.bed \\
                 | sort \\
                 > \${seq_type}_genome_strand.txt
-            cut -f4,6 \${seq_type}_genome.bed \\
+            cut -f4,5 \${seq_type}_genome.bed \\
                 | sort \\
                 > \${seq_type}_genome_mapq.txt
             bedtools intersect -a \${seq_type}_genome.bed -b ${gene_bed} -wb \\

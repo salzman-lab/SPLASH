@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import os
 
-for seq_type in ["anchors", "targets"]:
+for seq_type in ["anchor", "target"]:
     df = pd.read_csv(f"{seq_type}.txt", header=None, names=[seq_type])
 
     ann_tuples = [

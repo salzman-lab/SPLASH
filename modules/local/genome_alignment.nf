@@ -18,10 +18,10 @@ process GENOME_ALIGNMENT {
     path target_trans_bam   , emit: target_trans_bam
 
     script:
-    anchor_genome_bam       = "anchors_genome.bam"
-    target_genome_bam       = "targets_genome.bam"
-    anchor_trans_bam        = "anchors_transcriptome.bam"
-    target_trans_bam        = "targets_transcriptome.bam"
+    anchor_genome_bam       = "anchor_genome.bam"
+    target_genome_bam       = "target_genome.bam"
+    anchor_trans_bam        = "anchor_transcriptome.bam"
+    target_trans_bam        = "target_transcriptome.bam"
     """
     bowtie2 -f -x ${genome_index} -U ${anchor_fasta} -k 1 --quiet \\
         | samtools view -bS - \\
