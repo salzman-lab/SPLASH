@@ -7,10 +7,10 @@ process GET_FASTA {
     path anchor_target_counts
 
     output:
-    path "anchors.fasta"  , emit: anchor_fasta
-    path "targets.fasta"  , emit: target_fasta
-    path "anchors.txt"    , emit: anchors
-    path "targets.txt"    , emit: targets
+    path "anchor.fasta"  , emit: anchor_fasta
+    path "target.fasta"  , emit: target_fasta
+    path "anchor.txt"    , emit: anchors
+    path "target.txt"    , emit: targets
 
     script:
     """
@@ -18,17 +18,17 @@ process GET_FASTA {
         | tail -n +2 \
         | sort \
         | uniq \
-        > anchors.txt
-    awk '{print ">"\$0"\\n"\$0}' anchors.txt \
-        > anchors.fasta
+        > anchor.txt
+    awk '{print ">"\$0"\\n"\$0}' anchor.txt \
+        > anchor.fasta
 
     cut -f2 ${anchor_target_counts} \
         | tail -n +2 \
         | sort \
         | uniq \
-        > targets.txt
+        > target.txt
 
-    awk '{print ">"\$0"\\n"\$0}' targets.txt \
-        > targets.fasta
+    awk '{print ">"\$0"\\n"\$0}' target.txt \
+        > target.fasta
     """
 }
