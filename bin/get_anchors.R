@@ -289,17 +289,17 @@ compute.a[ ,l1 := sum(abs(score_per_sample)), by=anchor]
 compute.a[ ,l1.sdlike.units := l1 / (anchor.var*num.sample)]
 compute.a = (compute.a[anchor.var>.5][mu>1][order(-l1.sdlike.units)])
 
+## delete columns
+compute.a[ , sample := NULL]
+compute.a[ , score_per_sample := NULL]
+
 ## write out anchor scores
 summary.file = unique(compute.a[order(-l1.sdlike.units)])
 write.table(summary.file, outfile_scores, col.names=T, row.names=F, quote=F, sep='\t')
 
-print(head(summary.file))
-
 ## write out significant anchors
 anchors = summary.file[bf.cor.p < pval_threshold]
-anchors = head(unique(summary.file[order(bf.cor.p, decreasing=T), "anchor"]), 1000)
+anchors = head(unique(summary.file[order(bf.cor.p, decreasing=T), "anchor"]), 5000)
 
 write.table(anchors, outfile_anchors, col.names=F, row.names=F, quote=F, sep='\t')
-write.table(file=paste("cmx_",outfile_anchors,sep=""), c.mx, col.names=F, row.names=F, quote=F, sep='\t')
-
 write.table(file=paste("cmx_",outfile_anchors,sep=""), c.mx, col.names=F, row.names=F, quote=F, sep='\t')
