@@ -53,14 +53,22 @@ process GENOME_ANNOTATIONS {
                 | cut -f4,6 \\
                 | sort \\
                 > \${seq_type}_genome_genes.txt
-            bedtools closest -a \${seq_type}_genome.bed -b ${exon_starts_bed} -D ref -t first \\
+            bedtools closest -a \${seq_type}_genome.bed -b ${exon_starts_bed} -D ref -id -t first \\
                 | cut -f4,13 \\
                 | sort \\
-                > \${seq_type}_genome_exon_starts_distances.txt
-            bedtools closest -a \${seq_type}_genome.bed -b ${exon_ends_bed} -D ref -t first \\
+                > \${seq_type}_genome_upstream_exon_starts.txt
+            bedtools closest -a \${seq_type}_genome.bed -b ${exon_ends_bed} -D ref -id -t first \\
                 | cut -f4,13 \\
                 | sort \\
-                > \${seq_type}_genome_exon_ends_distances.txt
+                > \${seq_type}_genome_upstream_exon_ends.txt
+            bedtools closest -a \${seq_type}_genome.bed -b ${exon_starts_bed} -D ref -iu -t first \\
+                | cut -f4,13 \\
+                | sort \\
+                > \${seq_type}_genome_downstream_exon_starts.txt
+            bedtools closest -a \${seq_type}_genome.bed -b ${exon_ends_bed} -D ref -iu -t first \\
+                | cut -f4,13 \\
+                | sort \\
+                > \${seq_type}_genome_downstream_exon_ends.txt
         fi
     done
 

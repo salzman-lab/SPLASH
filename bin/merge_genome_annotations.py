@@ -11,8 +11,10 @@ for seq_type in ["anchor", "target"]:
         ["strand", f"{seq_type}_genome_strand.txt"],
         ["gene", f"{seq_type}_genome_genes.txt"],
         ["gene_MAPQ", f"{seq_type}_genome_mapq.txt"],
-        ["distance_exon_start", f"{seq_type}_genome_exon_starts_distances.txt"],
-        ["distance_exon_end", f"{seq_type}_genome_exon_ends_distances.txt"],
+        ["distance_upstream_exon_start", f"{seq_type}_genome_upstream_exon_starts.txt"],
+        ["distance_upstream_exon_end", f"{seq_type}_genome_upstream_exon_ends.txt"],
+        ["distance_downstream_exon_start", f"{seq_type}_genome_downstream_exon_starts.txt"],
+        ["distance_downstream_exon_end", f"{seq_type}_genome_downstream_exon_ends.txt"],
         ["transcript", f"{seq_type}_transcriptome_hit.txt"],
         ["transcriptome_MAPQ", f"{seq_type}_transcriptome_mapq.txt"],
     ]
