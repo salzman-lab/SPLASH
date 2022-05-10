@@ -234,7 +234,7 @@ if (dim(m)[1]>0){
 }
 
 ## add column of cs
-c.mx = get_cs(  use_c=0, compute.a, bonfer, samplesheet)
+c.mx = get_cs(use_c, compute.a, bonfer, samplesheet)
 
 ## in case we ask for more tests than dimensions of the mx, set ot the min
 bonfer = min(bonfer, (dim(c.mx)[2]-1))
@@ -292,6 +292,7 @@ compute.a = (compute.a[anchor.var>.5][mu>1][order(-l1.sdlike.units)])
 ## delete columns
 compute.a[ , sample := NULL]
 compute.a[ , score_per_sample := NULL]
+compute.a[ , nj := NULL]
 
 ## write out anchor scores
 summary.file = unique(compute.a[order(-l1.sdlike.units)])
