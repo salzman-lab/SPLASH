@@ -62,8 +62,9 @@ def main():
     file = gzip.open(args.outfile, 'wb')
     with gzip.open(args.infile, 'rt') as infile:
         for line in infile:
-            if x > args.num_lines:
-                break
+            if args.num_lines != 0:
+                if x > args.num_lines:
+                    break
 
             x += 1
 

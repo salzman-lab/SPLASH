@@ -300,7 +300,7 @@ write.table(summary.file, outfile_scores, col.names=T, row.names=F, quote=F, sep
 
 ## write out significant anchors
 anchors = summary.file[bf.cor.p < pval_threshold]
-anchors = head(unique(summary.file[order(bf.cor.p, decreasing=T), "anchor"]), 5000)
+anchors = unique(summary.file[order(bf.cor.p, decreasing=T), c('anchor', 'bf.cor.p')])
 
 write.table(anchors, outfile_anchors, col.names=F, row.names=F, quote=F, sep='\t')
 write.table(file=paste("cmx_",outfile_anchors,sep=""), c.mx, col.names=F, row.names=F, quote=F, sep='\t')

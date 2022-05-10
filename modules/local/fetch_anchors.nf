@@ -17,7 +17,9 @@ process FETCH_ANCHORS {
     tuple val(fastq_id), path(outfile), val(group_id), emit: seqs
 
     script:
-    outfile = "sequences_${fastq_id}.txt"
+    def num_lines   = num_lines ? num_lines : 0
+
+    outfile         = "sequences_${fastq_id}.txt"
     """
     fetch_anchors.py \\
         --infile ${fastq} \\
