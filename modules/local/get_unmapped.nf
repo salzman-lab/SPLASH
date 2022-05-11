@@ -2,6 +2,7 @@ process GET_UNMAPPED {
 
     tag "${fastq_id}"
     label 'process_medium'
+    label 'error_ignore'
 
     input:
     tuple val(fastq_id), path(fastq), val(group_id)
