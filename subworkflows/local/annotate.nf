@@ -10,6 +10,7 @@ workflow ANNOTATE {
     take:
     anchor_target_counts
     anchor_scores
+    ch_consensus_fastas
 
     main:
 
@@ -29,16 +30,27 @@ workflow ANNOTATE {
         anchor_target_counts
     )
 
-    anchor_fasta = GET_FASTA.out.anchor_fasta
-    target_fasta = GET_FASTA.out.target_fasta
+    ch_anchor_target_fastas = GET_FASTA.out.fasta
+
+    /*
+    // Make one channel containing anchor, target, and consensus fastas
+    */
+    ch_anchor_target_fastas
+        .mix(ch_consensus_fasta)
+        .set{ch_fastas}
+
+    /*
+    // Cartesian join of anchor+target fastas and all bowtie2 indices
+    */
+    ch_anchor_target_fastas
+        .combine(ch_indices)
+        .set{ch_anchor_target_indices}
 
     /*
     // Process to align anchors to each bowtie2 index
     */
     BOWTIE2_ANNOTATION(
-        anchor_fasta,
-        target_fasta,
-        ch_indices
+        ch_anchor_target_indices
     )
 
     // create samplesheet of the anchor hits files
@@ -78,8 +90,7 @@ workflow ANNOTATE {
     // Process to align targets and anchors to genome
     */
     GENOME_ALIGNMENT(
-        anchor_fasta,
-        target_fasta,
+        ch_fastas,
         params.genome_index,
         params.transcriptome_index
     )
@@ -88,15 +99,26 @@ workflow ANNOTATE {
     // Process to run gene and exon annotations
     */
     GENOME_ANNOTATIONS(
-        GENOME_ALIGNMENT.out.anchor_genome_bam,
-        GENOME_ALIGNMENT.out.target_genome_bam,
-        GENOME_ALIGNMENT.out.anchor_trans_bam,
-        GENOME_ALIGNMENT.out.target_trans_bam,
-        GET_FASTA.out.anchors,
-        GET_FASTA.out.targets,
+        GENOME_ALIGNMENT.out.bam_tuple,
         params.gene_bed,
         params.exon_starts_bed,
         params.exon_ends_bed
     )
 
+    /*
+    // Process to run STAR alignments
+    */
+    STAR_MAP(
+        ch_consensus_fastas
+    )
+
+    /*
+    // Process to annotate splice junctions
+    */
+    ANN_SPLICES(
+        STAR_MAP.out.sj_out,
+        params.exon_pickle,
+        params.spice_pickle
+    )
+    
 }

@@ -131,7 +131,7 @@ workflow ANALYZE_FASTQS {
             keepHeader: true,
             skip: 1
         )
-        .set{scores}
+        .set{anchor_scores}
 
     // Merge all anchors from all slices and output
     GET_ANCHORS_AND_SCORES.out.anchors
@@ -177,7 +177,8 @@ workflow ANALYZE_FASTQS {
     )
 
     emit:
-    anchor_target_counts = MERGE_TARGET_COUNTS.out.anchor_target_counts.first()
-    anchor_scores        = scores
+    anchor_target_counts    = MERGE_TARGET_COUNTS.out.anchor_target_counts.first()
+    anchor_scores           = anchor_scores
+    ch_consensus_fasta      = PARSE_ANCHORS.out.consensus_fastas
 
 }
