@@ -4,14 +4,21 @@ process MERGE_ANCHOR_SCORES {
     label 'process_low'
 
     input:
-    path anchors
+    path all_anchors
 
     output:
-    path outfile    , emit: seqs
+    path anchors        , emit: anchors
+    path anchors_pvals  , emit: anchors_pvals
 
     script:
-    outfile         = "anchors.tsv"
+    anchors             = "anchors.tsv"
+    anchors_pvals       = "anchors_pvals.tsv"
     """
-    sort -k2n ${anchors} | head -n 5000 - | awk '{print \$1}' > ${outfile}
+    sort -k2n ${all_anchors} \
+        | head -n 5000 - \
+        > ${anchors_pvals}
+
+    awk '{print \$1}' ${anchors_pvals} \
+        > ${anchors}
     """
 }

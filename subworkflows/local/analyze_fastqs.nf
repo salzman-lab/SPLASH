@@ -154,7 +154,7 @@ workflow ANALYZE_FASTQS {
     */
     PARSE_ANCHORS(
         ch_fastqs,
-        MERGE_ANCHOR_SCORES.out.seqs,
+        MERGE_ANCHOR_SCORES.out.anchors,
         params.num_parse_anchors_reads,
         params.consensus_length,
         params.kmer_size,
