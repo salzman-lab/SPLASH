@@ -46,12 +46,15 @@ workflow ANALYZE_FASTQS {
         lookahead = params.lookahead
     }
 
-    /*
-    // Trim fastqs
-    */
-    TRIMGALORE(
-        ch_fastqs
-    )
+    if (! params.skip_trimming) {
+        /*
+        // Trim fastqs
+        */
+        TRIMGALORE(
+            ch_fastqs
+        )
+        ch_fastqs = TRIMGALORE.out.fastq
+    }
 
     /*
     // Check if we are only using unmapped reads
@@ -61,14 +64,11 @@ workflow ANALYZE_FASTQS {
         // Get unmapped reads
         */
         GET_UNMAPPED(
-            TRIMGALORE.out.fastq,
+            ch_fastqs,
             params.index_bowtie
         )
 
         ch_fastqs = GET_UNMAPPED.out.fastq
-
-    } else {
-        ch_fastqs = TRIMGALORE.out.fastq
 
     }
 
