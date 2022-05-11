@@ -98,7 +98,7 @@ workflow ANALYZE_FASTQS {
     */
     STRATIFY_ANCHORS(
         COUNT_ANCHORS.out.seqs.collect(),
-        params.stratifiy_level
+        params.stratify_level
     )
 
     /*

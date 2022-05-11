@@ -6,7 +6,7 @@ process STRATIFY_ANCHORS {
 
     input:
     path counts
-    val stratifiy_level
+    val stratify_level
 
     output:
     path("stratified_*"), emit: seqs
@@ -17,7 +17,7 @@ process STRATIFY_ANCHORS {
     do
         stratify_anchors.py \\
             --infile \${file} \\
-            --stratifiy_level ${stratifiy_level}
+            --stratify_level ${stratify_level}
     done
     """
 }

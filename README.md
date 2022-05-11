@@ -82,20 +82,6 @@ nextflow run kaitlinchaung/stringstats \
     -latest
 ```
 
-### *`--reannotate`*
-
-This option allows users to reannotate previous stringstats results with fastas from a different `--bowtie2_samplesheet`. This requires the paths to the previous stringstats results files. If a `--bowtie2_samplesheet` is not provided, it will default to the set of references that is available to Sherlock users.
-
-An example run command with this optional input:
-```
-nextflow run kaitlinchaung/stringstats \
-    --input samplesheet.csv \
-    --reannotate true \
-    --anchor_target_counts /results/anchor_targets_counts.tsv \
-    --anchor_scores /results/anchor_scores/tsv \
-    -r main \
-    -latest
-```
 
 ## Parameters
 
@@ -107,46 +93,43 @@ nextflow run kaitlinchaung/stringstats \
     --input input.txt \
     -r main \
     -latest \
-    --n_itrations 200 \
-    --chunk_size 50000
+    --num_lines 2000
 ```
 
 | Argument              | Description       | Default  |
 | --------------------- | ----------------- |--------- |
-| --kmer_size | Length of sequences for anchors and targets | 27 |
+| --use_read_length | Boolean value to indicate if the distance between anchor and target is a function of read length, options: `true`, `false` | `true` |
+| --lookahead | The distance between anchor and target if `--use_read_length true` | 0 |
 | --unmapped | Boolean value to indicate if all reads should be used as input, or only the unmapped reads (based on bowtie2 mapping against provided `--bowtie2_index`). If `--unmapped false`, all reads will be used in this run; if `--unmapped true`, only the unmapped reads will be used in this run; options: `true`, `false`   | `false` |
 | --bowtie2_index | Index used for mapping the fastq reads using bowtie2 and extracting the unmapped reads if `--unmapped true` is set | `NA` |
 
-`get_anchors`
+`fetch_anchors`
 
 | Argument              | Description       | Default  |
 | --------------------- | ----------------- |--------- |
-| --n_iterations        | Number of chunks of reads to process        | 100 |
-| --chunk_size          | Number of reads per chunk to process        | 10000 |
-| --target_counts_threshold | Number of unique targets per anchor to initialise phase 1 | 3 |
-| --anchor_counts_threshold | Number of total anchor counts to initialise phase 1 | 5 |
-| --anchor_freeze_threshold | Maximum number of candidate anchors to store and calculate at a time | 100000 |
-| --anchor_score_threshold  | Minimum number of candidate anchors with scores required to calculate anchor significance scores | 1000000 |
-| --anchor_mode | Mode of fetching candidate anchors from reads, options: `chunk`, `tile` | `tile` |
-| --window_slide | If `--anchor_mode tile`, the number of bases to slide across the read to fetch the candidate anchors. If `--window_slide 5`, candidate anchors will start at positions [0,4,9,...] | 5 |
-| --use_std | Boolean value if the anchor significance scores should be computed with standard deviation, options: `true`, `false` | `false` |
-| --compute_target_distance | Boolean value if the target distance should be computed upon the encounter of a target. If `--compute_target_distance false`, the target distance of a new target will be assigned a conservative estimate of 1, options: `true`, `false` | `true` |
-| --bound_distance | Boolean value if the target distances should be bound by `--max_distance`. If `--bound_distance true`, the maximum target distance will be `--max_distance`, options: `true`, `false` | `true` |
-| --max_distance | Integer value of the maximum target distance allowed | 10 |
-| --distance_type | options: `hamming`, `jaccard` | `hamming` |
-| --score_type | options: `fast`, `slow` | `fast` |
+| --num_lines | Maximum number of reads to fetch anchors and targets from | no maximum aka 0 |
+| --kmer_size | Length of sequences for anchors and targets | 27 |
+| --anchor_mode | Mode by which to fetch anchors and target sequences, options: `chunk`, `tile`| `tile` |
+| --window_slide | Size of sliding window to fetch anchors, when in `tile` mode | 5 |
 
+`get_anchors_and_scores`
+| Argument              | Description       | Default  |
+| --------------------- | ----------------- |--------- |
+| --anchor_count_threshold | Minimum number of total counts required to calculate a score for an anchor | 50 |
+| --distance_type | options: `hamming`, `lev` | `lev` |
+| --max_targets | Maximum number of targets per anchor for score calculation | 50 |
+| --max_dist | Maximum distance allowed between targets in score calculation | 10 |
+| --bonfer | Number of corrections | 10 |
+| --pval_threshold | Pvalue threshold to call a significant anchor | 0.1 |
 
 
 `parse_anchors`
 
 | Argument              | Description       | Default  |
 | --------------------- | ----------------- |----------|
+| --num_parse_anchors_reads | Maximum length of candidate consensus sequences used to build the final consensus sequence | 4000000 |
 | --consensus_length | Maximum length of candidate consensus sequences used to build the final consensus sequence | 200 |
 | --direction | The relative direction to search for candidate consensus sequences and targets, options: `up`, `down` | `down` |
-| --use_read_length | Boolean value if the looklength should be calculated as a function of read length, options: `true`, `false` | `true` |
-| --looklength | If `--use_read_length false`, this is the distance to look for candidate consensus sequences and targets | 0 |
-| --num_keep_anchors | Maxiumum number of fastq reads to parse | 20000 |
 
 
 # Outputs

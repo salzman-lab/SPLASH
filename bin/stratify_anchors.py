@@ -11,7 +11,7 @@ def get_args():
         type=str
     )
     parser.add_argument(
-        "--stratifiy_level",
+        "--stratify_level",
         type=int
     )
     args = parser.parse_args()
@@ -29,7 +29,7 @@ def main():
         for line in infile:
             try:
                 count, kmer, sample = tuple(line.strip().split(" "))
-                substr = kmer[0:args.stratifiy_level]
+                substr = kmer[0:args.stratify_level]
 
                 # this is the first 3mer, open the file and write out
                 if not current_substr:
