@@ -270,7 +270,7 @@ for (j in 1:bonfer){ # bonfer is number of projections of cs
     ## since anchorscore is squared, no need for abs value
     compute.a[, pterm1:= 2*(exp(-(2*(1-a)^2*anchor_score^2/(max_distance^2*sumcsq))))]
     compute.a[, pterm2:= 2*(exp(-((2*a^2*anchor_score^2*M)/(max_distance^2 *sumc_sqrtnj^2))))]
-
+    compute.a[is.na(pterm2), pterm2:=0]
     pv[ ,j] = bonfer * (compute.a$pterm1+compute.a$pterm2)
 
 }
