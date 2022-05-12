@@ -1,77 +1,125 @@
 
 process GENOME_ANNOTATIONS {
 
-    tag "${index_name}"
+    tag "${fasta_name}"
     label 'process_low'
 
     input:
-    path anchor_genome_bam
-    path target_genome_bam
-    path anchor_trans_bam
-    path target_trans_bam
-    path anchor
-    path target
+    tuple path(fasta), path(end_to_end_genome_bam), path(end_to_end_transcriptome_bam), path(local_genome_bam), path(local_transcriptome_bam)
     path gene_bed
     path exon_starts_bed
     path exon_ends_bed
 
     output:
-    path anchor_hits
-    path target_hits
+    path "*tsv"
 
     script:
+    fasta_name          = fasta.baseName
     anchor_hits         = "genome_annotations_anchor.tsv"
     target_hits         = "genome_annotations_target.tsv"
     """
-    seq_types="anchor target"
+    ##
+    ## really messy for now for diagnostic purposes
+    ##
 
-    for seq_type in \${seq_types}
-    do
-        samtools view \${seq_type}_transcriptome.bam \\
-            | cut -f1,3 \\
-            > \${seq_type}_transcriptome_hit.txt
 
-        samtools view \${seq_type}_transcriptome.bam \\
-            | cut -f1,5 \\
-            > \${seq_type}_transcriptome_mapq.txt
+    ##
+    ## local
+    ##
+    mkdir -p local
+    samtools view ${local_transcriptome_bam} \\
+        | cut -f1,3 \\
+        > local/${fasta_name}_transcriptome_hit.txt
 
-        bedtools bamtobed -i \${seq_type}_genome.bam \\
-            | sort -k1,1 -k2,2n \\
-            > \${seq_type}_genome.bed
+    samtools view ${local_transcriptome_bam} \\
+        | cut -f1,5 \\
+        > local/${fasta_name}_transcriptome_mapq.txt
 
-        if [[ \$(wc -l \${seq_type}_genome.bed | awk '{print \$1}') -gt 0 ]]
-        then
-            cut -f4,6 \${seq_type}_genome.bed \\
-                | sort \\
-                > \${seq_type}_genome_strand.txt
-            cut -f4,5 \${seq_type}_genome.bed \\
-                | sort \\
-                > \${seq_type}_genome_mapq.txt
-            bedtools intersect -a \${seq_type}_genome.bed -b ${gene_bed} -wb \\
-                | cut -f1-4,10,6 \\
-                | bedtools groupby -i - -g 1,2,3,4,5 -c 6 -o collapse \\
-                | cut -f4,6 \\
-                | sort \\
-                > \${seq_type}_genome_genes.txt
-            bedtools closest -a \${seq_type}_genome.bed -b ${exon_starts_bed} -D ref -id -t first \\
-                | cut -f4,13 \\
-                | sort \\
-                > \${seq_type}_genome_upstream_exon_starts.txt
-            bedtools closest -a \${seq_type}_genome.bed -b ${exon_ends_bed} -D ref -id -t first \\
-                | cut -f4,13 \\
-                | sort \\
-                > \${seq_type}_genome_upstream_exon_ends.txt
-            bedtools closest -a \${seq_type}_genome.bed -b ${exon_starts_bed} -D ref -iu -t first \\
-                | cut -f4,13 \\
-                | sort \\
-                > \${seq_type}_genome_downstream_exon_starts.txt
-            bedtools closest -a \${seq_type}_genome.bed -b ${exon_ends_bed} -D ref -iu -t first \\
-                | cut -f4,13 \\
-                | sort \\
-                > \${seq_type}_genome_downstream_exon_ends.txt
-        fi
-    done
+    bedtools bamtobed -i ${local_genome_bam} \\
+        | sort -k1,1 -k2,2n \\
+        > local/${fasta_name}_genome.bed
 
-    merge_genome_annotations.py
+    if [[ \$(wc -l local/${fasta_name}_genome.bed | awk '{print \$1}') -gt 0 ]]
+    then
+        cut -f4,6 local/${fasta_name}_genome.bed \\
+            | sort \\
+            > local/${fasta_name}_genome_strand.txt
+        cut -f4,5 local/${fasta_name}_genome.bed \\
+            | sort \\
+            > local/${fasta_name}_genome_mapq.txt
+        bedtools intersect -a local/${fasta_name}_genome.bed -b ${gene_bed} -wb \\
+            | cut -f1-4,10,6 \\
+            | bedtools groupby -i - -g 1,2,3,4,5 -c 6 -o collapse \\
+            | cut -f4,6 \\
+            | sort \\
+            > local/${fasta_name}_genome_genes.txt
+        bedtools closest -a local/${fasta_name}_genome.bed -b ${exon_starts_bed} -D ref -id -t first \\
+            | cut -f4,13 \\
+            | sort \\
+            > local/${fasta_name}_genome_upstream_exon_starts.txt
+        bedtools closest -a local/${fasta_name}_genome.bed -b ${exon_ends_bed} -D ref -id -t first \\
+            | cut -f4,13 \\
+            | sort \\
+            > local/${fasta_name}_genome_upstream_exon_ends.txt
+        bedtools closest -a local/${fasta_name}_genome.bed -b ${exon_starts_bed} -D ref -iu -t first \\
+            | cut -f4,13 \\
+            | sort \\
+            > local/${fasta_name}_genome_downstream_exon_starts.txt
+        bedtools closest -a local/${fasta_name}_genome.bed -b ${exon_ends_bed} -D ref -iu -t first \\
+            | cut -f4,13 \\
+            | sort \\
+            > local/${fasta_name}_genome_downstream_exon_ends.txt
+    fi
+
+    ##
+    ## end_to_end
+    ##
+    mkdir -p end_to_end
+    samtools view ${end_to_end_transcriptome_bam} \\
+        | cut -f1,3 \\
+        > end_to_end/${fasta_name}_transcriptome_hit.txt
+
+    samtools view ${end_to_end_transcriptome_bam} \\
+        | cut -f1,5 \\
+        >  end_to_end/${fasta_name}_transcriptome_mapq.txt
+
+    bedtools bamtobed -i ${end_to_end_genome_bam} \\
+        | sort -k1,1 -k2,2n \\
+        >  end_to_end/${fasta_name}_genome.bed
+
+    if [[ \$(wc -l  end_to_end/${fasta_name}_genome.bed | awk '{print \$1}') -gt 0 ]]
+    then
+        cut -f4,6  end_to_end/${fasta_name}_genome.bed \\
+            | sort \\
+            >  end_to_end/${fasta_name}_genome_strand.txt
+        cut -f4,5 end_to_end/${fasta_name}_genome.bed \\
+            | sort \\
+            >  end_to_end/${fasta_name}_genome_mapq.txt
+        bedtools intersect -a  end_to_end/${fasta_name}_genome.bed -b ${gene_bed} -wb \\
+            | cut -f1-4,10,6 \\
+            | bedtools groupby -i - -g 1,2,3,4,5 -c 6 -o collapse \\
+            | cut -f4,6 \\
+            | sort \\
+            >  end_to_end/${fasta_name}_genome_genes.txt
+        bedtools closest -a end_to_end/${fasta_name}_genome.bed -b ${exon_starts_bed} -D ref -id -t first \\
+            | cut -f4,13 \\
+            | sort \\
+            >  end_to_end/${fasta_name}_genome_upstream_exon_starts.txt
+        bedtools closest -a end_to_end/${fasta_name}_genome.bed -b ${exon_ends_bed} -D ref -id -t first \\
+            | cut -f4,13 \\
+            | sort \\
+            >  end_to_end/${fasta_name}_genome_upstream_exon_ends.txt
+        bedtools closest -a end_to_end/${fasta_name}_genome.bed -b ${exon_starts_bed} -D ref -iu -t first \\
+            | cut -f4,13 \\
+            | sort \\
+            >  end_to_end/${fasta_name}_genome_downstream_exon_starts.txt
+        bedtools closest -a end_to_end/${fasta_name}_genome.bed -b ${exon_ends_bed} -D ref -iu -t first \\
+            | cut -f4,13 \\
+            | sort \\
+            >  end_to_end/${fasta_name}_genome_downstream_exon_ends.txt
+    fi
+
+    merge_genome_annotations.py \\
+        --fasta_name ${fasta_name}
     """
 }

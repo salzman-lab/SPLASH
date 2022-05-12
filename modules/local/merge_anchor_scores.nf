@@ -17,7 +17,6 @@ process MERGE_ANCHOR_SCORES {
     sort -k2n ${all_anchors} \
         | head -n 5000 - \
         > ${anchors_pvals} || true
-
     awk '{print \$1}' ${anchors_pvals} \
         > ${anchors} || true
     """
