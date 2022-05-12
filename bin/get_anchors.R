@@ -161,7 +161,6 @@ if (ncol(samplesheet) == 1) {
     samplesheet[, sample := sub('.fastq.gz', '', basename(sample))]
     samplesheet[, sample := sub('.fq.gz', '', sample)]
 }
-}
 
 m = fread(infile, fill=T, header=F)
 print("READ IN")
