@@ -33,18 +33,11 @@ workflow ANNOTATE {
     ch_anchor_target_fastas = GET_FASTA.out.fasta
 
     /*
-    // Make one channel containing anchor, target, and consensus fastas
-    */
-    ch_anchor_target_fastas
-        .mix(ch_consensus_fasta)
-        .set{ch_fastas}
-
-    /*
     // Cartesian join of anchor+target fastas and all bowtie2 indices
     */
-    ch_anchor_target_fastas
+    ch_anchor_target_indices = ch_anchor_target_fastas
+        .flatten()
         .combine(ch_indices)
-        .set{ch_anchor_target_indices}
 
     /*
     // Process to align anchors to each bowtie2 index
@@ -87,6 +80,15 @@ workflow ANNOTATE {
     )
 
     /*
+    // Make one channel containing anchor, target, and consensus fastas
+    */
+    ch_anchor_target_fastas
+        .flatten()
+        .mix(ch_consensus_fastas)
+        .flatten()
+        .set{ch_fastas}
+
+    /*
     // Process to align targets and anchors to genome
     */
     GENOME_ALIGNMENT(
@@ -105,20 +107,4 @@ workflow ANNOTATE {
         params.exon_ends_bed
     )
 
-    /*
-    // Process to run STAR alignments
-    */
-    STAR_MAP(
-        ch_consensus_fastas
-    )
-
-    /*
-    // Process to annotate splice junctions
-    */
-    ANN_SPLICES(
-        STAR_MAP.out.sj_out,
-        params.exon_pickle,
-        params.spice_pickle
-    )
-    
 }

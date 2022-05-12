@@ -154,7 +154,7 @@ workflow ANALYZE_FASTQS {
     */
     PARSE_ANCHORS(
         ch_fastqs,
-        MERGE_ANCHOR_SCORES.out.seqs,
+        MERGE_ANCHOR_SCORES.out.anchors.first(),
         params.num_parse_anchors_reads,
         params.consensus_length,
         params.kmer_size,
@@ -179,6 +179,6 @@ workflow ANALYZE_FASTQS {
     emit:
     anchor_target_counts    = MERGE_TARGET_COUNTS.out.anchor_target_counts.first()
     anchor_scores           = anchor_scores
-    ch_consensus_fasta      = PARSE_ANCHORS.out.consensus_fastas
+    ch_consensus_fasta      = PARSE_ANCHORS.out.consensus_fasta.collect()
 
 }

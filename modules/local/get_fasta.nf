@@ -15,14 +15,14 @@ process GET_FASTA {
         | tail -n +2 \
         | sort \
         | uniq \
-        | awk '{print ">"\$0"\\n"\$0}' anchor.txt \
+        | awk '{print ">"\$0"\\n"\$0}' \
         > anchor.fasta
 
     cut -f2 ${anchor_target_counts} \
         | tail -n +2 \
         | sort \
         | uniq \
-        | awk '{print ">"\$0"\\n"\$0}' target.txt \
+        | awk '{print ">"\$0"\\n"\$0}' \
         > target.fasta
     """
 }

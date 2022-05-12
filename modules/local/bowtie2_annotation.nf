@@ -1,7 +1,7 @@
 
 process BOWTIE2_ANNOTATION {
 
-    tag "${index_name}"
+    tag "${fasta_name}, ${index_name}"
     label 'process_low'
     conda (params.enable_conda ? 'bioconda::bowtie2=2.4.4 bioconda::samtools=1.15.1 conda-forge::pigz=2.6' : null)
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -12,8 +12,8 @@ process BOWTIE2_ANNOTATION {
     tuple path(fasta), val(index)
 
     output:
-    path "*anchor*"     , emit: anchor_hits
-    path "*target*"     , emit: target_hits
+    path "*anchor*"     , emit: anchor_hits,    optional: true
+    path "*target*"     , emit: target_hits,    optional: true
 
     script:
     fasta_name          = fasta.baseName
