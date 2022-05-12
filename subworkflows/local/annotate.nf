@@ -4,6 +4,8 @@ include { MERGE_ANNOTATIONS     } from '../../modules/local/merge_annotations'
 include { POSTPROCESSING        } from '../../modules/local/postprocessing'
 include { GENOME_ALIGNMENT      } from '../../modules/local/genome_alignment'
 include { GENOME_ANNOTATIONS    } from '../../modules/local/genome_annotations'
+include { STAR_ALIGN            } from '../../modules/local/star_align'
+include { ANNOTATE_SPLICES      } from '../../modules/local/annotate_splices'
 
 
 workflow ANNOTATE {
@@ -107,4 +109,21 @@ workflow ANNOTATE {
         params.exon_ends_bed
     )
 
+    /*
+    // Process to get splice junctions with STAR
+    */
+    STAR_ALIGN(
+        ch_consensus_fastas.flatten(),
+        params.star_index,
+        params.gtf
+    )
+
+    // /*
+    // // Process to annotate splice junctions
+    // */
+    // ANNOTATE_SPLICES(
+    //     STAR_ALIGN.out.junctions,
+    //     params.exon_pickle,
+    //     params.splice_pickle
+    // )
 }
