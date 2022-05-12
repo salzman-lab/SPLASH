@@ -159,6 +159,8 @@ if (ncol(samplesheet) == 1) {
     colnames(samplesheet) <- c('sample', 'cs')
     ## create sample column for joining later
     samplesheet[, sample := sub('.fastq.gz', '', basename(sample))]
+    samplesheet[, sample := sub('.fq.gz', '', sample)]
+}
 }
 
 m = fread(infile, fill=T, header=F)
