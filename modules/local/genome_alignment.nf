@@ -1,42 +1,39 @@
 
 process GENOME_ALIGNMENT {
 
-    tag "${index_name}"
+    tag "${fasta_name}"
     label 'process_low'
     conda (params.enable_conda ? 'bioconda::bowtie2=2.4.4 bioconda::samtools=1.15.1 conda-forge::pigz=2.6' : null)
 
     input:
-    path anchor_fasta
-    path target_fasta
+    path fasta
     val genome_index
     val transcriptome_index
 
     output:
-    path anchor_genome_bam  , emit: anchor_genome_bam
-    path target_genome_bam  , emit: target_genome_bam
-    path anchor_trans_bam   , emit: anchor_trans_bam
-    path target_trans_bam   , emit: target_trans_bam
+    tuple path(fasta), path(end_to_end_genome_bam), path(end_to_end_transcriptome_bam), path(local_genome_bam), path(local_transcriptome_bam), emit: bam_tuple
 
     script:
-    anchor_genome_bam       = "anchor_genome.bam"
-    target_genome_bam       = "target_genome.bam"
-    anchor_trans_bam        = "anchor_transcriptome.bam"
-    target_trans_bam        = "target_transcriptome.bam"
+    fasta_name                      = fasta.baseName
+    end_to_end_genome_bam           = "${fasta_name}_end_to_end_genome.bam"
+    end_to_end_transcriptome_bam    = "${fasta_name}_end_to_end_transcriptome.bam"
+    local_genome_bam                = "${fasta_name}_local_genome.bam"
+    local_transcriptome_bam         = "${fasta_name}_local_transcriptome.bam"
     """
-    bowtie2 -f -x ${genome_index} -U ${anchor_fasta} -k 1 --quiet \\
+    bowtie2 -f -x ${genome_index} -U ${fasta} -k 1 --quiet \\
         | samtools view -bS - \\
-        > ${anchor_genome_bam}
+        > ${end_to_end_genome_bam}
 
-    bowtie2 -f -x ${genome_index} -U ${target_fasta} -k 1 --quiet \\
+    bowtie2 -f -x ${genome_index} -U ${fasta} -k 1 --quiet \\
         | samtools view -bS - \\
-        > ${target_genome_bam}
+        > ${end_to_end_transcriptome_bam}
 
-    bowtie2 -f -x ${transcriptome_index} -U ${anchor_fasta} -k 1 --quiet \\
+    bowtie2 -f -x ${genome_index} -U ${fasta} -k 1 --local --quiet \\
         | samtools view -bS - \\
-        > ${anchor_trans_bam}
+        > ${local_genome_bam}
 
-    bowtie2 -f -x ${transcriptome_index} -U ${target_fasta} -k 1 --quiet \\
+    bowtie2 -f -x ${genome_index} -U ${fasta} -k 1 --local --quiet \\
         | samtools view -bS - \\
-        > ${target_trans_bam}
+        > ${local_transcriptome_bam}
     """
 }
