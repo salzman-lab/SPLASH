@@ -1,7 +1,7 @@
 
 process GET_ANCHORS_AND_SCORES {
 
-    label 'process_high_memory'
+    label 'process_medium'
 
     input:
     path counts
