@@ -118,6 +118,14 @@ workflow ANNOTATE {
         params.gtf
     )
 
+    // Only pubish one version of sjdbList.fromGTF.out.tab, since they are all the same
+    STAR_ALIGN.out.gtf_junctions
+        .collectFile(
+            name:       "sjdbList.fromGTF.out.tab",
+            storeDir:   "${params.outdir}/STAR_junctions/gtf_junctions"
+        )
+        .set{gtf_junctions}
+
     // /*
     // // Process to annotate splice junctions
     // */

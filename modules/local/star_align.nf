@@ -13,8 +13,8 @@ process STAR_ALIGN {
     path gtf
 
     output:
-    tuple val(fasta_name), path("*SJ.out.tab"), emit: junctions
-    path "*STARgenome*"
+    tuple val(fasta_name), path("*SJ.out.tab")                  , emit: junctions
+    path "${fasta_name}__STARgenome/sjdbList.fromGTF.out.tab"   , emit: gtf_junctions
 
     script:
     def cores = 1
@@ -50,6 +50,7 @@ process STAR_ALIGN {
     rm -rf ${fasta_name}__STARgenome/exon*
     rm -rf ${fasta_name}__STARgenome/gene*
     rm -rf ${fasta_name}__STARgenome/transcript*
+    rm -rf ${fasta_name}__STARgenome/sjdbList.out.tab
     rm -rf ${fasta_name}__STARpass1
     """
 }
