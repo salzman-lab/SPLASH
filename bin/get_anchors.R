@@ -276,7 +276,7 @@ for (j in 1:bonfer){ # bonfer is number of projections of cs
 }
 
 ## take the min across the 5 already BH-corrected values
-bf.cor.p = apply(pv,1,min)
+bf.cor.p = apply(pv,1,min,na.rm=T)
 compute.a = cbind(compute.a, bf.cor.p)
 
 ## L1 is ballpark calculation for reference for now, likely will be removed.
