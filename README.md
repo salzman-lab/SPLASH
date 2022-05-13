@@ -103,7 +103,7 @@ nextflow run kaitlinchaung/stringstats \
 | --unmapped | Boolean value to indicate if all reads should be used as input, or only the unmapped reads (based on bowtie2 mapping against provided `--bowtie2_index`). If `--unmapped false`, all reads will be used in this run; if `--unmapped true`, only the unmapped reads will be used in this run; options: `true`, `false`   | `false` |
 | --bowtie2_index | Index used for mapping the fastq reads using bowtie2 and extracting the unmapped reads if `--unmapped true` is set | `NA` |
 
-`fetch_anchors`
+*`fetch_anchors`*
 
 | Argument              | Description       | Default  |
 | --------------------- | ----------------- |--------- |
@@ -112,7 +112,7 @@ nextflow run kaitlinchaung/stringstats \
 | --anchor_mode | Mode by which to fetch anchors and target sequences, options: `chunk`, `tile`| `tile` |
 | --window_slide | Size of sliding window to fetch anchors, when in `tile` mode | 5 |
 
-`get_anchors_and_scores`
+*`get_anchors_and_scores`*
 | Argument              | Description       | Default  |
 | --------------------- | ----------------- |--------- |
 | --anchor_count_threshold | Minimum number of total counts required to calculate a score for an anchor | 50 |
@@ -123,7 +123,7 @@ nextflow run kaitlinchaung/stringstats \
 | --pval_threshold | Pvalue threshold to call a significant anchor | 0.1 |
 
 
-`parse_anchors`
+*`parse_anchors`*
 
 | Argument              | Description       | Default  |
 | --------------------- | ----------------- |----------|
@@ -131,40 +131,16 @@ nextflow run kaitlinchaung/stringstats \
 | --consensus_length | Maximum length of candidate consensus sequences used to build the final consensus sequence | 200 |
 | --direction | The relative direction to search for candidate consensus sequences and targets, options: `up`, `down` | `down` |
 
-
-# Outputs
-
-`get_anchors`
-1. `anchors.tsv`
-    * List of significant anchor sequences
-
-
-`parse_anchors`
-1. `consensus_anchors/`
-    1. `*.fasta`
-        * Fasta file of the consensus sequences of each significant anchor sequence
-    2. `*_counts.tab`
-        * For each consensus sequence, the frequency count of the consensus base at each position
-    3. `*_fractions.tab`
-        * For each consensus sequence, the fraction of occurrence of the consensus base at each position
-2. `target_counts/`
-    * For each fastq file, a counts file for each significant anchor and all of their valid targets
-
-
-`compute_anchor_scores`
-1. `anchor_target_counts.tsv`
-    * A table of anchor-target counts per fastq file, with targets sorted by decreasing abundance per anchor
-    * For each anchor-target, the minimum Hamming distnace of each target with its previus targets is reported
-
-
-`bowtie2_annotations`
-1. `anchor_scores.tsv`
-    * Anchor sample scores for each fastq file
-    * Anchor summary scores, consisting of the standard deviation of all anchor sample scores
-    * For each anchor, it's alignment to each reference in `--bowtie2_samplesheet`
-2. `target_annotations.tsv`
-    * For each target, it's alignment to each reference in `--bowtie2_samplesheet`
-
+*Annotation-related parameters*
+| Argument              | Description       |
+| --------------------- | ----------------- |
+| --genome_index | bowtie2 genome index used in `genome_annotations_*` files |
+| --transcriptome_index | bowtie2 transcriptome index used in `genome_annotations_*` files |
+| --gene_bed | BED file of annotated genes used in `genome_annotations_*` files |
+| --exon_starts_bed | BED file of annotated exon start sites used in `genome_annotations_*` files |
+| --exon_ends_bed | BED file of annotated exon end sites used in `genome_annotations_*` files |
+| --star_index | STAR genome index used in splice junction annotations |
+| --star_index | GTF file used in splice junction annotations |
 
 
 ## Citations
