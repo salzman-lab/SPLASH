@@ -140,7 +140,7 @@ nextflow run kaitlinchaung/stringstats \
 | --exon_starts_bed | BED file of annotated exon start sites used in `genome_annotations_*` files |
 | --exon_ends_bed | BED file of annotated exon end sites used in `genome_annotations_*` files |
 | --star_index | STAR genome index used in splice junction annotations |
-| --star_index | GTF file used in splice junction annotations |
+| --gtf | GTF file used in splice junction annotations |
 
 
 ## Citations
