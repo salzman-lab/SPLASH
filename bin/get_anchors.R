@@ -280,6 +280,10 @@ for (j in 1:bonfer){ # bonfer is number of projections of cs
 bf.cor.p = apply(pv,1,min,na.rm=T)
 compute.a = cbind(compute.a, bf.cor.p)
 
+## TELL WHICH OF THE C.MX COLUMNS PRODUCED THIS MIN:
+whichc.min = apply(pv,1,which.min)
+compute.a= cbind(compute.a, whichc.min)
+
 ## L1 is ballpark calculation for reference for now, likely will be removed.
 compute.a[ ,l1 := sum(abs(score_per_sample)), by=anchor]
 
@@ -305,3 +309,4 @@ anchors = unique(summary.file[order(bf.cor.p, decreasing=T), c('anchor', 'bf.cor
 
 write.table(anchors, outfile_anchors, col.names=F, row.names=F, quote=F, sep='\t')
 write.table(file=paste("cmx_",outfile_anchors,sep=""), c.mx, col.names=F, row.names=F, quote=F, sep='\t')
+write.table(file=paste("which.cmx_",outputfile_anchors,sep=""),      unique(summary.file[order(bf.cor.p, decreasing=T), c('anchor', 'bf.cor.p','whichc.min')])             , col.names=F, row.names=F, quote=F, sep='\t')
