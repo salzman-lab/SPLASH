@@ -192,7 +192,8 @@ if (dim(m)[1]>0){
         ## gets list of distances from unique list of targets
 
         target.d = get_distances(tlist, distance_type, max_distance,  chunk_size)
- if (anch %like% "GGG"){print(anch)}
+ if (anch %like% "GGG"){print(anch)}# just prints subset of anchors for log file, ggg is arbitrary
+        
         ## CREATE A NEW DATAFRAME AND ADD ANCHOR ID
         into = data.table(cbind (tlist,as.numeric(target.d)))
         names(into) = c("target", "target.d")
@@ -246,6 +247,8 @@ pv = matrix(nrow=dim(compute.a)[1], ncol=bonfer)
 ## start bonferroni correction
 for (j in 1:bonfer){ # bonfer is number of projections of cs
     print(paste("starting ",j,"th bonfer"))
+    ### normalize so the j+1st column of c.mx has mean 0
+    c.mx[,(j+1)]= c.mx[,(j+1)]- mean(c.mx[,(j+1)])
     ## merge in new cs
     newc = data.table(data.frame(c.mx)[,c(1,(j+1))])
     ## creates a temp matrix of sample, col1, and Jth c vector
