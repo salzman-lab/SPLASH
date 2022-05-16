@@ -248,7 +248,7 @@ pv = matrix(nrow=dim(compute.a)[1], ncol=bonfer)
 for (j in 1:bonfer){ # bonfer is number of projections of cs
     print(paste("starting ",j,"th bonfer"))
     ### normalize so the j+1st column of c.mx has mean 0
-    c.mx[,(j+1)]= c.mx[,(j+1)]- mean(c.mx[,(j+1)])
+   # c.mx[,(j+1)]= c.mx[,(j+1)]- mean(c.mx[,(j+1)])
     ## merge in new cs
     newc = data.table(data.frame(c.mx)[,c(1,(j+1))])
     ## creates a temp matrix of sample, col1, and Jth c vector
