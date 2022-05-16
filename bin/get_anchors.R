@@ -300,7 +300,7 @@ compute.a = (compute.a[anchor.var>.5][mu>1][order(-l1.sdlike.units)])
 ## delete columns
 compute.a[ , sample := NULL]
 compute.a[ , score_per_sample := NULL]
-compute.a[ , nj := NULL]
+compute.a[ , n_j := NULL]
 
 ## write out anchor scores
 summary.file = unique(compute.a[order(-l1.sdlike.units)])
@@ -312,4 +312,4 @@ anchors = unique(summary.file[order(bf.cor.p, decreasing=T), c('anchor', 'bf.cor
 
 write.table(anchors, outfile_anchors, col.names=F, row.names=F, quote=F, sep='\t')
 write.table(file=paste("cmx_",outfile_anchors,sep=""), c.mx, col.names=F, row.names=F, quote=F, sep='\t')
-write.table(file=paste("which.cmx_",outputfile_anchors,sep=""),      unique(summary.file[order(bf.cor.p, decreasing=T), c('anchor', 'bf.cor.p','whichc.min')])             , col.names=F, row.names=F, quote=F, sep='\t')
+write.table(file=paste("which.cmx_",outfile_anchors,sep=""),      unique(summary.file[order(bf.cor.p, decreasing=T), c('anchor', 'bf.cor.p','whichc.min')])             , col.names=F, row.names=F, quote=F, sep='\t')
