@@ -14,7 +14,7 @@ process MERGE_ANCHOR_SCORES {
     anchors             = "anchors.tsv"
     anchors_pvals       = "anchors_pvals.tsv"
     """
-    sort -k2n ${all_anchors} \
+    sort -k2g ${all_anchors} \
         | head -n 5000 - \
         > ${anchors_pvals} || true
     awk '{print \$1}' ${anchors_pvals} \
