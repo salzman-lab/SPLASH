@@ -22,7 +22,7 @@ If is not available, you can either:
     2. `curl -s https://get.nextflow.io | bash`
 3. Make the binary executable
     1. `chmod +x nextflow`
-4. Optional: make the nextflow file accessible, by adding either of these to your `~/.bashrc` or `~/.bash_profile`, depending on setup. Be sure to sourcethe file so that changes take effect, with `source ~/.bashrc`.
+4. Optional: make the nextflow file accessible, by adding either of these to your `~/.bashrc` or `~/.bash_profile`, depending on setup. Be sure to source the file so that changes take effect, with `source ~/.bashrc`.
     1. Add file to $PATH
         1. `export PATH="$PATH:/home/users/kaitlin3/nextflow"`
     2. Set up alias
@@ -110,7 +110,7 @@ nextflow run kaitlinchaung/stringstats \
 
 Here is an example of an sbatch script that runs a real dataset, with all default parameters (see: README):
 
-**NOTE** Pipeline parameters (detailed in README) always get a double hyphen, while pipeline run settings get a single hyphen. If no pipelie parameters are passed, default parameters are used (detailed in README and `nextflow.config`).
+**NOTE** Pipeline parameters (detailed in README) always get a double hyphen, while pipeline run settings get a single hyphen. If no pipeline parameters are passed, default parameters are used (detailed in README and `nextflow.config`).
 
 ```
 #!/bin/bash
@@ -185,7 +185,7 @@ nextflow run kaitlinchaung/stringstats \
 According to nextflow docs:
 >When you launch a script execution with Nextflow, it will look for a file with the pipeline name you’ve specified. If that file does not exist, it will look for a public repository with the same name on GitHub (unless otherwise specified). If it is found, the repository is automatically downloaded to your computer and executed. This repository is stored in the Nextflow home directory, that is by default the $HOME/.nextflow path, and thus will be reused for any further executions.
 
-Sometimes, there can be issues with commits not being up to date in the local repo. This can happen when you are getting errors that are not in synch with the version of the pipeline you are running (ie your version seems to be a commit behind the remote version), or if you get error like this:
+Sometimes, there can be issues with commits not being up to date in the local repo. This can happen when you are getting errors that are not in sync with the version of the pipeline you are running (ie your version seems to be a commit behind the remote version), or if you get an error like this:
 ```
 Unknown error accessing project `kaitlinchaung/stringstats` -- Repository may be corrupted: /home/users/kaitlin3/.nextflow/assets/kaitlincha
 ung/stringstats

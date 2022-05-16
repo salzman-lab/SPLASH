@@ -192,7 +192,8 @@ if (dim(m)[1]>0){
         ## gets list of distances from unique list of targets
 
         target.d = get_distances(tlist, distance_type, max_distance,  chunk_size)
- if (anch %like% "GGG"){print(anch)}
+ if (anch %like% "GGG"){print(anch)}# just prints subset of anchors for log file, ggg is arbitrary
+        
         ## CREATE A NEW DATAFRAME AND ADD ANCHOR ID
         into = data.table(cbind (tlist,as.numeric(target.d)))
         names(into) = c("target", "target.d")
@@ -246,6 +247,8 @@ pv = matrix(nrow=dim(compute.a)[1], ncol=bonfer)
 ## start bonferroni correction
 for (j in 1:bonfer){ # bonfer is number of projections of cs
     print(paste("starting ",j,"th bonfer"))
+    ### normalize so the j+1st column of c.mx has mean 0
+    c.mx[,(j+1)]= c.mx[,(j+1)]- mean(c.mx[,(j+1)])
     ## merge in new cs
     newc = data.table(data.frame(c.mx)[,c(1,(j+1))])
     ## creates a temp matrix of sample, col1, and Jth c vector
@@ -280,6 +283,10 @@ for (j in 1:bonfer){ # bonfer is number of projections of cs
 bf.cor.p = apply(pv,1,min,na.rm=T)
 compute.a = cbind(compute.a, bf.cor.p)
 
+## TELL WHICH OF THE C.MX COLUMNS PRODUCED THIS MIN:
+whichc.min = apply(pv,1,which.min)
+compute.a= cbind(compute.a, whichc.min)
+
 ## L1 is ballpark calculation for reference for now, likely will be removed.
 compute.a[ ,l1 := sum(abs(score_per_sample)), by=anchor]
 
@@ -305,3 +312,4 @@ anchors = unique(summary.file[order(bf.cor.p, decreasing=T), c('anchor', 'bf.cor
 
 write.table(anchors, outfile_anchors, col.names=F, row.names=F, quote=F, sep='\t')
 write.table(file=paste("cmx_",outfile_anchors,sep=""), c.mx, col.names=F, row.names=F, quote=F, sep='\t')
+write.table(file=paste("which.cmx_",outputfile_anchors,sep=""),      unique(summary.file[order(bf.cor.p, decreasing=T), c('anchor', 'bf.cor.p','whichc.min')])             , col.names=F, row.names=F, quote=F, sep='\t')
