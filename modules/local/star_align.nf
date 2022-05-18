@@ -2,6 +2,7 @@
 process STAR_ALIGN {
 
     label 'process_high_memory'
+    label 'error_retry'
     conda (params.enable_conda ? 'bioconda::star=2.7.9a' : null)
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/star:2.7.5a--0' :
@@ -15,6 +16,7 @@ process STAR_ALIGN {
     output:
     tuple val(fasta_name), path("*SJ.out.tab")                  , emit: junctions
     path "${fasta_name}__STARgenome/sjdbList.fromGTF.out.tab"   , emit: gtf_junctions
+    path "*.bam"                                                , emit: bam
 
     script:
     def cores = 1
