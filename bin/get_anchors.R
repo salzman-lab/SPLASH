@@ -228,7 +228,7 @@ pv = matrix(nrow=dim(compute.a)[1], ncol=bonfer)
 for (j in 1:bonfer){ # bonfer is number of projections of cs
     print(paste("starting ",j,"th bonfer"))
     ### normalize so the j+1st column of c.mx has mean 0
-    c.mx[,(j+1)]= c.mx[,(j+1)]- mean(c.mx[,(j+1)])
+   # c.mx[,(j+1)]= c.mx[,(j+1)]- mean(c.mx[,(j+1)])
     ## merge in new cs
     newc = data.table(data.frame(c.mx)[,c(1,(j+1))])
     ## creates a temp matrix of sample, col1, and Jth c vector
@@ -280,7 +280,7 @@ compute.a = (compute.a[anchor.var>.5][mu>1][order(-l1.sdlike.units)])
 ## delete columns
 compute.a[ , sample := NULL]
 compute.a[ , score_per_sample := NULL]
-compute.a[ , nj := NULL]
+compute.a[ , n_j := NULL]
 
 ## write out anchor scores
 summary.file = unique(compute.a[order(-l1.sdlike.units)])
@@ -292,4 +292,4 @@ anchors = unique(summary.file[order(bf.cor.p, decreasing=T), c('anchor', 'bf.cor
 
 write.table(anchors, outfile_anchors, col.names=F, row.names=F, quote=F, sep='\t')
 write.table(file=paste("cmx_",outfile_anchors,sep=""), c.mx, col.names=F, row.names=F, quote=F, sep='\t')
-write.table(file=paste("which.cmx_",outputfile_anchors,sep=""),      unique(summary.file[order(bf.cor.p, decreasing=T), c('anchor', 'bf.cor.p','whichc.min')])             , col.names=F, row.names=F, quote=F, sep='\t')
+write.table(file=paste("which.cmx_",outfile_anchors,sep=""),      unique(summary.file[order(bf.cor.p, decreasing=T), c('anchor', 'bf.cor.p','whichc.min')])             , col.names=F, row.names=F, quote=F, sep='\t')
