@@ -89,26 +89,6 @@ get_cs <- function(use_c, in_matrix, dimensions, samplesheet) {
 
 chunk_size = 4
 
-## Function to return the minimum distances in an ordered list of strings
-get_distances <- function(targets, distance_type, max_distance, chunk_size){
-    n.tot = length(targets)
-    ds= c(0, rep(max_distance, n.tot-1))
-    for (i in 2:(n.tot)){ ## run through all needed to be computed
-        j=1
-        if (distance_type == "hamming"){
-            ds[i] = min(max_distance, min ( ds[i], floor ( stringdist(  targets[i],targets[j],method="hamming") / chunk_size)))
-
-        }
-        if (distance_type == "lev"){
-	           ds[i] = min(
-                max_distance,
-                min(ds[i], stringdist(targets[i], targets[j], method="lv"))
-            )
-        }
-    }
-    ## Return distances
-    ds
-}
 
 ## Function to return ____
 get_cs <- function(use_c, in_matrix, dimensions, samplesheet) {
@@ -193,7 +173,7 @@ if (dim(m)[1]>0){
 
         target.d = get_distances(tlist, distance_type, max_distance,  chunk_size)
  if (anch %like% "GGG"){print(anch)}# just prints subset of anchors for log file, ggg is arbitrary
-        
+
         ## CREATE A NEW DATAFRAME AND ADD ANCHOR ID
         into = data.table(cbind (tlist,as.numeric(target.d)))
         names(into) = c("target", "target.d")
@@ -284,7 +264,7 @@ bf.cor.p = apply(pv,1,min,na.rm=T)
 compute.a = cbind(compute.a, bf.cor.p)
 
 ## TELL WHICH OF THE C.MX COLUMNS PRODUCED THIS MIN:
-whichc.min = apply(pv,1,which.min)
+whichc.min = unlist(apply(pv,1,which.min))
 compute.a= cbind(compute.a, whichc.min)
 
 ## L1 is ballpark calculation for reference for now, likely will be removed.
