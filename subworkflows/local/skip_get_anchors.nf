@@ -1,15 +1,13 @@
 include { GET_READ_LENGTH           } from '../../modules/local/get_read_length'
-include { GET_UNMAPPED              } from '../../modules/local/get_unmapped'
-include { FETCH_ANCHORS             } from '../../modules/local/fetch_anchors'
-include { COUNT_ANCHORS             } from '../../modules/local/count_anchors'
-include { STRATIFY_ANCHORS          } from '../../modules/local/stratify_anchors'
-include { GET_ANCHORS_AND_SCORES    } from '../../modules/local/get_anchors_and_scores'
 include { PARSE_ANCHORS             } from '../../modules/local/parse_anchors'
 include { MERGE_TARGET_COUNTS       } from '../../modules/local/merge_target_counts'
 include { GET_FASTA                 } from '../../modules/local/get_fasta'
 include { BOWTIE2_ANNOTATION        } from '../../modules/local/bowtie2_annotation'
 include { MERGE_ANNOTATIONS         } from '../../modules/local/merge_annotations'
-include { POSTPROCESSING            } from '../../modules/local/postprocessing'
+include { GENOME_ALIGNMENT      } from '../../modules/local/genome_alignment'
+include { GENOME_ANNOTATIONS    } from '../../modules/local/genome_annotations'
+include { STAR_ALIGN            } from '../../modules/local/star_align'
+include { ANNOTATE_SPLICES      } from '../../modules/local/annotate_splices'
 
 workflow SKIP_GET_ANCHORS {
 
@@ -45,33 +43,6 @@ workflow SKIP_GET_ANCHORS {
         lookahead = params.lookahead
     }
 
-    // /*
-    // // Trim fastqs
-    // */
-    // TRIMGALORE(
-    //     ch_fastqs
-    // )
-
-    // /*
-    // // Check if we are only using unmapped reads
-    // */
-    // if (params.unmapped) {
-    //     /*
-    //     // Get unmapped reads
-    //     */
-    //     GET_UNMAPPED(
-    //         TRIMGALORE.out.fastq,
-    //         params.index_bowtie
-    //     )
-
-    //     ch_fastqs = GET_UNMAPPED.out.fastq
-
-    // } else {
-    //     ch_fastqs = TRIMGALORE.out.fastq
-
-    // }
-
-
     /*
     // Process to get consensus sequences and target counts for annchors
     */
@@ -91,6 +62,8 @@ workflow SKIP_GET_ANCHORS {
             def X=file; X.toString() + '\n'
         }
         .set{ targets_samplesheet }
+
+    ch_consensus_fastas = PARSE_ANCHORS.out.consensus_fasta
 
     /*
     // Process to get anchor scores and anchor-target counts
@@ -115,13 +88,20 @@ workflow SKIP_GET_ANCHORS {
         MERGE_TARGET_COUNTS.out.anchor_target_counts.first()
     )
 
+    ch_anchor_target_fastas = GET_FASTA.out.fasta
+
+    /*
+    // Cartesian join of anchor+target fastas and all bowtie2 indices
+    */
+    ch_anchor_target_indices = ch_anchor_target_fastas
+        .flatten()
+        .combine(ch_indices)
+
     /*
     // Process to align anchors to each bowtie2 index
     */
     BOWTIE2_ANNOTATION(
-        GET_FASTA.out.anchor_fasta,
-        GET_FASTA.out.target_fasta,
-        ch_indices
+        ch_anchor_target_indices
     )
 
     // create samplesheet of the anchor hits files
@@ -146,5 +126,32 @@ workflow SKIP_GET_ANCHORS {
         target_hits_samplesheet
     )
 
+    /*
+    // Make one channel containing anchor, target, and consensus fastas
+    */
+    ch_anchor_target_fastas
+        .flatten()
+        .mix(ch_consensus_fastas)
+        .flatten()
+        .set{ch_fastas}
+
+    /*
+    // Process to align targets and anchors to genome
+    */
+    GENOME_ALIGNMENT(
+        ch_fastas,
+        params.genome_index,
+        params.transcriptome_index
+    )
+
+    /*
+    // Process to run gene and exon annotations
+    */
+    GENOME_ANNOTATIONS(
+        GENOME_ALIGNMENT.out.bam_tuple,
+        params.gene_bed,
+        params.exon_starts_bed,
+        params.exon_ends_bed
+    )
 
 }
