@@ -49,18 +49,16 @@ workflow ANNOTATE {
     )
 
     // create samplesheet of the anchor hits files
-    BOWTIE2_ANNOTATION.out.anchor_hits
+    anchor_hits_samplesheet= BOWTIE2_ANNOTATION.out.anchor_hits
         .collectFile(name: "anchor_samplesheet.txt") { file ->
             def X=file; X.toString() + '\n'
         }
-        .set{ anchor_hits_samplesheet }
 
     // create samplesheet of the target hits files
-    BOWTIE2_ANNOTATION.out.target_hits
+    target_hits_samplesheet = BOWTIE2_ANNOTATION.out.target_hits
         .collectFile(name: "target_samplesheet.txt") { file ->
             def X=file; X.toString() + '\n'
         }
-        .set{ target_hits_samplesheet }
 
     /*
     // Process to merge scores with hits
@@ -84,11 +82,10 @@ workflow ANNOTATE {
     /*
     // Make one channel containing anchor, target, and consensus fastas
     */
-    ch_anchor_target_fastas
+    ch_fastas = ch_anchor_target_fastas
         .flatten()
         .mix(ch_consensus_fastas)
         .flatten()
-        .set{ch_fastas}
 
     /*
     // Process to align targets and anchors to genome
@@ -119,12 +116,11 @@ workflow ANNOTATE {
     )
 
     // Only pubish one version of sjdbList.fromGTF.out.tab, since they are all the same
-    STAR_ALIGN.out.gtf_junctions
+    gtf_junctions = STAR_ALIGN.out.gtf_junctions
         .collectFile(
             name:       "sjdbList.fromGTF.out.tab",
             storeDir:   "${params.outdir}/STAR_junctions/gtf_junctions"
         )
-        .set{gtf_junctions}
 
     // /*
     // // Process to annotate splice junctions
