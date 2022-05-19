@@ -24,15 +24,15 @@ process GENOME_ALIGNMENT {
         | samtools view -bS - \\
         > ${end_to_end_genome_bam}
 
-    bowtie2 -f -x ${genome_index} -U ${fasta} -k 1 --quiet \\
-        | samtools view -bS - \\
-        > ${end_to_end_transcriptome_bam}
-
     bowtie2 -f -x ${genome_index} -U ${fasta} -k 1 --local --quiet \\
         | samtools view -bS - \\
         > ${local_genome_bam}
 
-    bowtie2 -f -x ${genome_index} -U ${fasta} -k 1 --local --quiet \\
+    bowtie2 -f -x ${transcriptome_index} -U ${fasta} -k 1 --quiet \\
+        | samtools view -bS - \\
+        > ${end_to_end_transcriptome_bam}
+
+    bowtie2 -f -x ${transcriptome_index} -U ${fasta} -k 1 --local --quiet \\
         | samtools view -bS - \\
         > ${local_transcriptome_bam}
     """
