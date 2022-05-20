@@ -1,10 +1,8 @@
-test
 
 ## Introduction
 
 The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It uses Docker/Singularity containers making installation trivial and results highly reproducible. The [Nextflow DSL2](https://www.nextflow.io/docs/latest/dsl2.html) implementation of this pipeline uses one container per process which makes it much easier to maintain and update software dependencies. Where possible, these processes have been submitted to and installed from [nf-core/modules](https://github.com/nf-core/modules) in order to make them available to all nf-core pipelines, and to everyone within the Nextflow community!
 
-test
 # stringstats
 Motivation
 
@@ -98,10 +96,13 @@ nextflow run kaitlinchaung/stringstats \
 
 | Argument              | Description       | Default  |
 | --------------------- | ----------------- |--------- |
+| --skip_trimming | Boolean value to indicate if adaptor trimming should be skipped, options: `true`, `false` | `true` |
 | --use_read_length | Boolean value to indicate if the distance between anchor and target is a function of read length, options: `true`, `false` | `true` |
 | --lookahead | The distance between anchor and target if `--use_read_length true` | 0 |
 | --unmapped | Boolean value to indicate if all reads should be used as input, or only the unmapped reads (based on bowtie2 mapping against provided `--bowtie2_index`). If `--unmapped false`, all reads will be used in this run; if `--unmapped true`, only the unmapped reads will be used in this run; options: `true`, `false`   | `false` |
 | --bowtie2_index | Index used for mapping the fastq reads using bowtie2 and extracting the unmapped reads if `--unmapped true` is set | `NA` |
+| --run_blast | Boolean value to run blast on sequences that do not have any element annotation, options: `true`, `false` | `false` |
+
 
 *`fetch_anchors`*
 
