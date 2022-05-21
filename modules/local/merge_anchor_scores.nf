@@ -4,20 +4,21 @@ process MERGE_ANCHOR_SCORES {
     label 'process_low'
 
     input:
-    path all_anchors
+    path samplesheet
+    val pval_threshold
 
     output:
-    path anchors        , emit: anchors
-    path anchors_pvals  , emit: anchors_pvals
+    path outfile_anchors    , emit: anchors
+    path outfile_scores     , emit: scores
 
     script:
-    anchors             = "anchors.tsv"
-    anchors_pvals       = "anchors_pvals.tsv"
+    outfile_anchors         = "anchors.tsv"
+    outfile_scores          = "anchors_pvals.tsv"
     """
-    sort -k2g ${all_anchors} \
-        | head -n 5000 - \
-        > ${anchors_pvals} || true
-    awk '{print \$1}' ${anchors_pvals} \
-        > ${anchors} || true
+    aggregate_pvals.py \\
+        --infile ${samplesheet} \\
+        --pval_threshold ${pval_threshold} \\
+        --outfile_anchors ${outfile_anchors} \\
+        --outfile_scores ${outfile_scores}
     """
 }

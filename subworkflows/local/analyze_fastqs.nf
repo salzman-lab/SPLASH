@@ -114,39 +114,22 @@ workflow ANALYZE_FASTQS {
     */
     GET_ANCHORS_AND_SCORES(
         GET_ABUNDANT_ANCHORS.out.seqs,
-        file(params.input),
-        params.distance_type,
-        params.max_targets,
-        params.max_dist,
-        params.bonfer,
-        params.pval_threshold,
-        params.run_type
+        params.kmer_size
     )
 
-    // Merge all scores from all slices and output
+    // Create samplesheet of anchor pvalue files
     GET_ANCHORS_AND_SCORES.out.scores
-        .collectFile(
-            name: 'scores.tsv',
-            storeDir: "${params.outdir}",
-            keepHeader: true,
-            skip: 1
-        )
-        .set{anchor_scores}
-
-    // Merge all anchors from all slices and output
-    GET_ANCHORS_AND_SCORES.out.anchors
-        .collectFile(
-            name: 'all_anchors.tsv',
-            keepHeader: true,
-            skip: 1
-        )
-        .set{all_anchors}
+        .collectFile() { file ->
+            def X=file; X.toString() + '\n'
+        }
+        .set{ anchor_pval_samplesheet }
 
     /*
     // Process to output top 5000 anchors as sorted by pvalue
     */
     MERGE_ANCHOR_SCORES(
-        all_anchors
+        anchor_pval_samplesheet,
+        params.pval_threshold
     )
 
     /*
@@ -154,7 +137,7 @@ workflow ANALYZE_FASTQS {
     */
     PARSE_ANCHORS(
         ch_fastqs,
-        MERGE_ANCHOR_SCORES.out.anchors.first(),
+        MERGE_ANCHOR_SCORES.out.anchors.first().filter{ it.size()>0 },
         params.num_parse_anchors_reads,
         params.consensus_length,
         params.kmer_size,
@@ -178,7 +161,7 @@ workflow ANALYZE_FASTQS {
 
     emit:
     anchor_target_counts    = MERGE_TARGET_COUNTS.out.anchor_target_counts.first()
-    anchor_scores           = anchor_scores
+    anchor_scores           = MERGE_ANCHOR_SCORES.out.scores.first()
     ch_consensus_fasta      = PARSE_ANCHORS.out.consensus_fasta.collect()
 
 }

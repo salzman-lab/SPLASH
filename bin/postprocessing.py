@@ -177,9 +177,9 @@ def add_summary(df, ann_table, seq_type, run_blast, top_anchors):
             seqs = (
                 pd.merge(
                     unann_df[['anchor']].drop_duplicates(),
-                    df[['anchor', 'bf.cor.p']].drop_duplicates()
+                    df[['anchor', 'pv_Rand']].drop_duplicates()
                 )
-                .sort_values('bf.cor.p', ascending=False)
+                .sort_values('pv_Rand', ascending=False)
                 .head(2)['anchor']
                 .to_list()
             )
@@ -221,7 +221,7 @@ def main():
 
     scores = (
         pd.read_csv(args.anchor_scores, sep='\t')
-        [['anchor', 'M', 'mu', 'anchor.var', 'anchor_score', 'bf.cor.p', 'num.sample', 'l1.sdlike.units']]
+        [['anchor', 'M', 'mu', 'anchor.var', 'anchor_score', 'pv_Rand', 'num.sample', 'l1.sdlike.units']]
         .drop_duplicates()
     )
     anchor_targets_counts = pd.read_csv(args.anchor_target_counts, sep='\t')
