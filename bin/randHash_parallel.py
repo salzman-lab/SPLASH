@@ -58,7 +58,7 @@ def main():
     df['anch_cts'] = df.groupby('anchor').counts.transform('sum')
     df['anch_samples']= df.groupby('anchor')['sample'].transform('nunique')
     df['anchSample_cts'] = df.groupby(['anchor','sample']).counts.transform('sum')
-    df = df[(df.anch_uniqTargs>1) & (df.anch_cts > 10) & (df.anch_samples > 2) & (df.anchSample_cts>4)]
+    df = df[(df.anch_uniqTargs>1) & (df.anch_cts > 10) & (df.anch_samples > 1) & (df.anchSample_cts>4)]
     ### above line filters, can change parameters
 
     df['nj'] = df.groupby(['anchor','sample']).counts.transform('sum')
@@ -111,7 +111,10 @@ def main():
     dfres['pv']=dfres.drop(columns='anchor').min(axis=1)
     dfres['pv_Rand'] = dfres[['pv'+str(k) for k in range(1,K)]].min(axis=1)
 
-    dfall = pd.merge(df,dfres)
+    dfall = pd.DataFrame()
+
+    if not df.empty and not dfres.empty:
+        dfall = pd.merge(df,dfres)
 
     print('writing')
 

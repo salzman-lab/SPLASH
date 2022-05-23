@@ -35,6 +35,7 @@ def main():
 
     dfs = []
     for df_path in df_paths:
+        print(df_path)
         try:
             dfs.append(
                 pd.read_csv(df_path.strip(), sep='\t')
@@ -45,15 +46,17 @@ def main():
 
     df = pd.concat(dfs)
 
-    reject, pvals_corrected,_, _ = sm.stats.multipletests(df.pv_Rand, alpha=.05, method='fdr_by')
+    outdf = pd.DataFrame(columns=['anchor', 'pv_Rand'])
 
-    outdf = df[reject]
-    print(reject)
-    print(outdf)
-    outdf = outdf[outdf['pv_Rand'] < args.pval_threshold].head(5000)
+    if not df.empty:
+        reject, pvals_corrected,_, _ = sm.stats.multipletests(df.pv_Rand, alpha=.05, method='fdr_by')
+
+        outdf = df[reject]
+
+        outdf = outdf[outdf['pv_Rand'] < args.pval_threshold].head(5000)
 
     outdf.to_csv(args.outfile_scores, sep='\t', index=False, header=False)
-    outdf[['anchor']].to_csv(args.outfile_anchors, sep='\t', header=False)
+    outdf[['anchor']].to_csv(args.outfile_anchors, sep='\t', header=False, index=False)
 
 
 main()

@@ -220,8 +220,8 @@ def main():
     args = get_args()
 
     scores = (
-        pd.read_csv(args.anchor_scores, sep='\t')
-        [['anchor', 'M', 'mu', 'anchor.var', 'anchor_score', 'pv_Rand', 'num.sample', 'l1.sdlike.units']]
+        pd.read_csv(args.anchor_scores, sep='\t', names=['anchor', 'pv_Rand'])
+        [['anchor', 'pv_Rand']]
         .drop_duplicates()
     )
     anchor_targets_counts = pd.read_csv(args.anchor_target_counts, sep='\t')
