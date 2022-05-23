@@ -4,8 +4,10 @@ include { MERGE_ANNOTATIONS     } from '../../modules/local/merge_annotations'
 include { POSTPROCESSING        } from '../../modules/local/postprocessing'
 include { GENOME_ALIGNMENT      } from '../../modules/local/genome_alignment'
 include { GENOME_ANNOTATIONS    } from '../../modules/local/genome_annotations'
+include { PREPARE_CONSENSUS     } from '../../modules/local/prepare_consensus'
+include { MERGE_CONSENSUS       } from '../../modules/local/merge_consensus'
 include { STAR_ALIGN            } from '../../modules/local/star_align'
-include { ANNOTATE_SPLICES      } from '../../modules/local/annotate_splices'
+
 
 
 workflow ANNOTATE {
@@ -107,10 +109,23 @@ workflow ANNOTATE {
     )
 
     /*
+    // Process to prepare consensus fastas for one STAR alignment
+    */
+    PREPARE_CONSENSUS(
+        ch_consensus_fastas.flatten()
+    )
+    /*
+    // Process to concatenate consensus fastas for one STAR alignment
+    */
+    MERGE_CONSENSUS(
+        PREPARE_CONSENSUS.out.fasta.collect()
+    )
+
+    /*
     // Process to get splice junctions with STAR
     */
     STAR_ALIGN(
-        ch_consensus_fastas.flatten(),
+        MERGE_CONSENSUS.out.fasta,
         params.star_index,
         params.gtf
     )
@@ -122,12 +137,5 @@ workflow ANNOTATE {
             storeDir:   "${params.outdir}/STAR_junctions/gtf_junctions"
         )
 
-    // /*
-    // // Process to annotate splice junctions
-    // */
-    // ANNOTATE_SPLICES(
-    //     STAR_ALIGN.out.junctions,
-    //     params.exon_pickle,
-    //     params.splice_pickle
-    // )
+
 }
