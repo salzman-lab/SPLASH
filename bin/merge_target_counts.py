@@ -21,29 +21,28 @@ def get_args():
     args = parser.parse_args()
     return args
 
-
 def main():
     args = get_args()
 
     # read in target_counts paths
     with open(args.targets_samplesheet) as file:
         df_paths = file.readlines()
-    # merge all target_counts files
-    counts = pd.read_csv(df_paths[0].strip(), sep='\t')
-    for df_path in df_paths[1:]:
-        try:
-            df = pd.read_csv(df_path.strip(), sep='\t')
-            counts = counts.merge(
-                df,
-                on=['anchor', 'target'],
-                how='outer'
-            )
-            del(df)
-        except pd.errors.EmptyDataError:
-            pass
 
-    # fill NA with 0
-    counts = counts.fillna(0)
+    # append dfs to list, setting indices to merge on later
+    dfs = []
+    for df_path in df_paths:
+        dfs.append(
+            pd.read_csv(df_path.strip(), sep='\t')
+            .set_index(['anchor', 'target'])
+        )
+
+    # perform outer merges, filling NA with 0
+    counts = (
+        dfs[0]
+        .join(dfs[1:])
+        .fillna(0)
+        .reset_index()
+    )
 
     # output anchor targets counts file
     counts.to_csv(args.outfile_counts_distances, sep='\t', index=False)

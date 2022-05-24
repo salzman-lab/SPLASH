@@ -35,7 +35,7 @@ def main():
 
     dfs = []
     for df_path in df_paths:
-        print(df_path)
+
         try:
             dfs.append(
                 pd.read_csv(df_path.strip(), sep='\t')
@@ -53,7 +53,11 @@ def main():
 
         outdf = df[reject]
 
-        outdf = outdf[outdf['pv_Rand'] < args.pval_threshold].head(5000)
+        outdf = (
+            outdf[outdf['pv_Rand'] < args.pval_threshold]
+            .sort_values('pv_Rand')
+            .head(5000)
+        )
 
     outdf.to_csv(args.outfile_scores, sep='\t', index=False, header=False)
     outdf[['anchor']].to_csv(args.outfile_anchors, sep='\t', header=False, index=False)
