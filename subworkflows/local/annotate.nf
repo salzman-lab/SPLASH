@@ -7,7 +7,7 @@ include { GENOME_ANNOTATIONS    } from '../../modules/local/genome_annotations'
 include { PREPARE_CONSENSUS     } from '../../modules/local/prepare_consensus'
 include { MERGE_CONSENSUS       } from '../../modules/local/merge_consensus'
 include { STAR_ALIGN            } from '../../modules/local/star_align'
-
+include { ANNOTATE_CALLED_EXONS } from '../../modules/local/annotate_called_exons'
 
 
 workflow ANNOTATE {
@@ -130,12 +130,13 @@ workflow ANNOTATE {
         params.gtf
     )
 
-    // Only pubish one version of sjdbList.fromGTF.out.tab, since they are all the same
-    gtf_junctions = STAR_ALIGN.out.gtf_junctions
-        .collectFile(
-            name:       "sjdbList.fromGTF.out.tab",
-            storeDir:   "${params.outdir}/STAR_junctions/gtf_junctions"
-        )
+    /*
+    // Process to get called exons from bam file
+    */
+    ANNOTATE_CALLED_EXONS(
+        STAR_ALIGN.out.bam,
+        params.ann_AS_gtf
+    )
 
 
 }

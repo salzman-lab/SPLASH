@@ -14,9 +14,7 @@ process STAR_ALIGN {
     path gtf
 
     output:
-    tuple val(fasta_name), path("*SJ.out.tab")                  , emit: junctions
-    path "${fasta_name}__STARgenome/sjdbList.fromGTF.out.tab"   , emit: gtf_junctions
-    path "*.bam"                                                , emit: bam
+    path "*.bam"    , emit: bam
 
     script:
     def cores = 1
