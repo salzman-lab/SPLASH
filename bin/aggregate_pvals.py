@@ -46,16 +46,16 @@ def main():
 
     df = pd.concat(dfs)
 
-    outdf = pd.DataFrame(columns=['anchor', 'pv_Rand'])
+    outdf = pd.DataFrame()
 
     if not df.empty:
-        reject, pvals_corrected,_, _ = sm.stats.multipletests(df.pv_Rand, alpha=.05, method='fdr_by')
+        reject, pvals_corrected,_, _ = sm.stats.multipletests(df.pv_hash, alpha=.05, method='fdr_by')
 
         outdf = df[reject]
 
         outdf = (
-            outdf[outdf['pv_Rand'] < args.pval_threshold]
-            .sort_values('pv_Rand')
+            outdf[outdf['pv_hash'] < args.pval_threshold]
+            .sort_values('pv_hash')
             .head(5000)
         )
 
@@ -64,4 +64,3 @@ def main():
 
 
 main()
-
