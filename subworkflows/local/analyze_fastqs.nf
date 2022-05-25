@@ -109,59 +109,74 @@ workflow ANALYZE_FASTQS {
         params.anchor_count_threshold
     )
 
-    /*
-    // Process to get significant anchors and their scores
-    */
-    GET_ANCHORS_AND_SCORES(
-        GET_ABUNDANT_ANCHORS.out.seqs,
-        params.kmer_size
-    )
+    if (params.run_decoy) {
+        MERGE_ABUNDANT_ANCHORS(
+            GET_ABUNDANT_ANCHORS.out.anchor_counts.collect()
+        )
 
-    // Create samplesheet of anchor pvalue files
-    GET_ANCHORS_AND_SCORES.out.scores
-        .collectFile() { file ->
-            def X=file; X.toString() + '\n'
-        }
-        .set{ anchor_pval_samplesheet }
+        anchor_target_counts    = Channel.empty()
+        anchor_scores           = Channel.empty()
+        ch_consensus_fasta      = Channel.empty()
 
-    /*
-    // Process to output top 5000 anchors as sorted by pvalue
-    */
-    MERGE_ANCHOR_SCORES(
-        anchor_pval_samplesheet,
-        params.pval_threshold
-    )
+    } else {
+        /*
+        // Process to get significant anchors and their scores
+        */
+        GET_ANCHORS_AND_SCORES(
+            GET_ABUNDANT_ANCHORS.out.seqs,
+            params.kmer_size
+        )
 
-    /*
-    // Process to get consensus sequences and target counts for annchors
-    */
-    PARSE_ANCHORS(
-        ch_fastqs,
-        MERGE_ANCHOR_SCORES.out.anchors.first().filter{ it.size()>0 },
-        params.num_parse_anchors_reads,
-        params.consensus_length,
-        params.kmer_size,
-        params.direction,
-        lookahead
-    )
+        // Create samplesheet of anchor pvalue files
+        GET_ANCHORS_AND_SCORES.out.scores
+            .collectFile() { file ->
+                def X=file; X.toString() + '\n'
+            }
+            .set{ anchor_pval_samplesheet }
 
-    // Create samplesheet of target counts files
-    PARSE_ANCHORS.out.targets
-        .collectFile() { file ->
-            def X=file; X.toString() + '\n'
-        }
-        .set{ targets_samplesheet }
+        /*
+        // Process to output top 5000 anchors as sorted by pvalue
+        */
+        MERGE_ANCHOR_SCORES(
+            anchor_pval_samplesheet,
+            params.pval_threshold
+        )
 
-    /*
-    // Process to get anchor scores and anchor-target counts
-    */
-    MERGE_TARGET_COUNTS(
-        targets_samplesheet
-    )
+        /*
+        // Process to get consensus sequences and target counts for annchors
+        */
+        PARSE_ANCHORS(
+            ch_fastqs,
+            MERGE_ANCHOR_SCORES.out.anchors.first().filter{ it.size()>0 },
+            params.num_parse_anchors_reads,
+            params.consensus_length,
+            params.kmer_size,
+            params.direction,
+            lookahead
+        )
+
+        // Create samplesheet of target counts files
+        PARSE_ANCHORS.out.targets
+            .collectFile() { file ->
+                def X=file; X.toString() + '\n'
+            }
+            .set{ targets_samplesheet }
+
+        /*
+        // Process to get anchor scores and anchor-target counts
+        */
+        MERGE_TARGET_COUNTS(
+            targets_samplesheet
+        )
+
+        anchor_target_counts    = MERGE_TARGET_COUNTS.out.anchor_target_counts.first()
+        anchor_scores           = MERGE_ANCHOR_SCORES.out.scores.first()
+        ch_consensus_fasta      = PARSE_ANCHORS.out.consensus_fasta.collect()
+    }
 
     emit:
-    anchor_target_counts    = MERGE_TARGET_COUNTS.out.anchor_target_counts.first()
-    anchor_scores           = MERGE_ANCHOR_SCORES.out.scores.first()
-    ch_consensus_fasta      = PARSE_ANCHORS.out.consensus_fasta.collect()
+    anchor_target_counts
+    anchor_scores
+    ch_consensus_fasta
 
 }
