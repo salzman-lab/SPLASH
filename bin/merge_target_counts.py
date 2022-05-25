@@ -31,10 +31,13 @@ def main():
     # append dfs to list, setting indices to merge on later
     dfs = []
     for df_path in df_paths:
-        dfs.append(
-            pd.read_csv(df_path.strip(), sep='\t')
-            .set_index(['anchor', 'target'])
-        )
+        df_addition = pd.read_csv(df_path.strip(), sep='\t')
+
+        if not df_addition.empty:
+            dfs.append(
+                df_addition
+                .set_index(['anchor', 'target'])
+            )
 
     # perform outer merges, filling NA with 0
     counts = (
