@@ -10,8 +10,13 @@ process MERGE_ABUNDANT_ANCHORS {
     path outfile    , emit: seqs
 
     script:
-    outfile         = "merged_abundant_anchor_counts.tsv.gz"
+    outfile         = "most_abundant_anchors.tsv"
     """
-    cat abundant*gz > ${outfile}
+    cat counts* \\
+        | sort -k1nr \\
+        | head -n 150 \\
+        | cut -f2 -d" " \\
+        > ${outfile} \\
+        || true
     """
 }

@@ -210,7 +210,7 @@ def add_summary(df, ann_table, seq_type, run_blast, top_anchors):
     if run_blast:
         if seq_type == 'anchor':
             return addition, seqs
-        else:
+        elif seq_type == 'target':
             return addition, None
     else:
         return addition, None
