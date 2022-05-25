@@ -110,6 +110,7 @@ def get_ann(row, seq_type):
     priority_list = [
         f'{seq_type}_hits_UniVec',
         f'{seq_type}_hits_illumina_adapters',
+        f'{seq_type}_hits_RF_all',
         f'{seq_type}_hits_dfam_te_eukaryota',
         f'{seq_type}_hits_tncentral_te_prokaryotes_final',
         f'{seq_type}_hits_mge_aclame_genes_all_0',
@@ -118,7 +119,6 @@ def get_ann(row, seq_type):
         f'{seq_type}_hits_spacers',
         f'{seq_type}_hits_eukaryota_its1_itstonedb',
         f'{seq_type}_hits_eukaryota_its2_biozentrum',
-        f'{seq_type}_hits_RF_all',
         f'{seq_type}_hits_WBcel235',
         f'{seq_type}_hits_TAIR10',
         f'{seq_type}_hits_grch38_1kgmaj'
