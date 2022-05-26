@@ -11,7 +11,7 @@ process GENOME_ANNOTATIONS {
     path exon_ends_bed
 
     output:
-    path "*tsv"
+    path "*tsv"         , emit: annotations
 
     script:
     fasta_name          = fasta.baseName

@@ -177,7 +177,7 @@ def get_args():
         help='max number of fastq reads for input'
     )
     parser.add_argument(
-        "--anchors_file",
+        "--anchors_pvals_file",
         type=str,
         help='input list of all significant anchors'
     )
@@ -250,17 +250,16 @@ def main():
     logging.info(f'consensus_length = {args.consensus_length}')
     logging.info(f'direction        = {args.direction}')
     logging.info(f'kmer_size        = {args.kmer_size}')
-    logging.info(f'lookahead       = {args.lookahead}')
+    logging.info(f'lookahead        = {args.lookahead}')
     logging.info("--------------------------------------Parameters--------------------------------------")
     logging.info('')
     """logging"""
 
     # get anchors from file
     anchors = (
-        pd.read_csv(args.anchors_file, sep='\t', header=None)
+        pd.read_csv(args.anchors_pvals_file, sep='\t', header=None)
         .iloc[:,0]
         .drop_duplicates()
-        .head(10000)
         .tolist()
     )
 

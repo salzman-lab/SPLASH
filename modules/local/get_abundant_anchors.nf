@@ -8,11 +8,10 @@ process GET_ABUNDANT_ANCHORS {
     val anchor_count_threshold
 
     output:
-    path outfile_anchors            , emit: seqs
+    path "*gz"                      , emit: seqs
     path outfile_anchors_counts     , emit: anchor_counts
 
     script:
-    outfile_anchors                 = "abundant_${counts}.gz"
     outfile_anchors_counts          = "counts_abundant_${counts}"
     """
     ## Create third column of the anchor sequence, so that the file = 54mer-sample counts, 54mer, anchor
@@ -36,9 +35,9 @@ process GET_ABUNDANT_ANCHORS {
     ## Output same columns as input file
     join -1 1 -2 4 abundant_anchors.txt with_anchors.txt \\
         | cut -f2-4 -d' ' \\
-        > ${outfile_anchors}
+        > abundant_${counts}
 
-    gzip ${outfile_anchors}
+    gzip -f abundant_${counts}
 
     """
 }

@@ -34,7 +34,7 @@ def convertDijToSj(df,idx):
     mucol = 'mu_'+stridx
     sjcol = 'sj_'+stridx
     sampSumcol = 'sampSum_'+stridx
-    
+
     df[prodcol] = df.counts*df[dijcol] ## for each row entry, compute its count * d_i
     df[sampSumcol] = df.groupby(['anchor','sample'])[prodcol].transform('sum') ## for each sample, compute its sum of D_jk
     ### sampSumCol is essentially "mu of this anchor sample"
@@ -73,7 +73,7 @@ def main():
     df = df[df.anch_cts > 30]
     ### above line filters, can change parameters
     print('done filtering')
-    
+
     ### if no anchors left after filtering, exit
     if df.empty:
         return
@@ -81,10 +81,10 @@ def main():
     df['nj'] = df.groupby(['anchor','sample']).counts.transform('sum')
     df = df.drop(columns='anchSample_cts') ### this is essentially "old" n_j
     df['M'] = df.groupby(['anchor']).counts.transform('sum')
-    
-    
+
+
     #### add in handcrafted dij of distance to most frequent target
-    
+
     ### find most abundant target for every anchor
     df['targ_cts']=df.groupby(['anchor','target']).counts.transform('sum')
     tmpDf = df.sort_values('targ_cts', ascending=False).drop_duplicates(['anchor'])[['anchor','target']].rename(columns={'target':'maxTarget'}) #### keeps only the first anchor occurence
@@ -95,7 +95,7 @@ def main():
     df = mergedDf.drop(columns=['targ_cts','maxTarget'])
     df = convertDijToSj(df,0)
 
-    
+
     #### hash based dij, randomly assign each target to 0 or 1
     for k in range(1,K):
         df['dij_'+str(k)] = (df['target'].apply(lambda x : (mmh3.hash(x,seed=k)>0) ))*1.0
@@ -166,7 +166,7 @@ def main():
     ### should never reach this, due to earlier catch
     if not df.empty and not dfres.empty:
         dfall = pd.merge(df,dfres)
-    
+
     ### add in extra columns to output df
     dfall["mu_hand"] = dfall["mu_0"] ### mean of handcrafted
     ### entropy of target vec averaged across samples
@@ -174,8 +174,8 @@ def main():
          .groupby('anchor').apply(lambda x : stats.entropy(x,base=2))
          .reset_index().rename({'counts':'entropy'},axis=1))
     dfall = dfall.merge(entDf)
-    
-    
+
+
     print('writing')
 
     (dfall[['anchor','pv_hand','pv_hash','effectSize','mu_hand','entropy']]

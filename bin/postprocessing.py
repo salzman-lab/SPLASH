@@ -177,13 +177,12 @@ def add_summary(df, ann_table, seq_type, run_blast, top_anchors):
             seqs = (
                 pd.merge(
                     unann_df[['anchor']].drop_duplicates(),
-                    df[['anchor', 'pv_Rand']].drop_duplicates()
+                    df[['anchor', 'pv_hash']].drop_duplicates()
                 )
-                .sort_values('pv_Rand', ascending=False)
-                .head(2)['anchor']
+                .sort_values('pv_hash', ascending=False)
+                .head(100)['anchor']
                 .to_list()
             )
-            print('here')
 
         elif seq_type == 'target':
             seqs = (
@@ -195,7 +194,7 @@ def add_summary(df, ann_table, seq_type, run_blast, top_anchors):
                 )
                 .reset_index(drop=True)
                 .groupby('anchor')
-                .head(1)['target']
+                .head(5)['target']
                 .to_list()
             )
 
@@ -220,8 +219,7 @@ def main():
     args = get_args()
 
     scores = (
-        pd.read_csv(args.anchor_scores, sep='\t', names=['anchor', 'pv_Rand'])
-        [['anchor', 'pv_Rand']]
+        pd.read_csv(args.anchor_scores, sep='\t', names=['anchor', 'pv_hand', 'pv_hash', 'effectSize', 'mu_hand', 'entropy'])
         .drop_duplicates()
     )
     anchor_targets_counts = pd.read_csv(args.anchor_target_counts, sep='\t')
