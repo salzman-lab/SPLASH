@@ -240,12 +240,6 @@ def main():
     anchor_targets_counts = anchor_targets_counts[['anchor', 'target', 'total_target_counts']]
 
     df = pd.merge(anchor_targets_counts, scores, on='anchor')
-    print('atc')
-    print(anchor_targets_counts.head())
-    print('scores')
-    print(scores.head())
-    print('out')
-    print(df.head())
 
     df['rank_target_counts'] = (
         df
