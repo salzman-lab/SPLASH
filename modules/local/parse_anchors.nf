@@ -7,7 +7,7 @@ process PARSE_ANCHORS {
 
     input:
     tuple val(fastq_id), path(fastq), val(group_id)
-    path anchors
+    path anchors_pvals_file
     val num_parse_anchors_reads
     val consensus_length
     val kmer_size
@@ -28,7 +28,7 @@ process PARSE_ANCHORS {
     """
     parse_anchors.py \\
         --num_parse_anchors_reads ${num_parse_anchors_reads} \\
-        --anchors_file ${anchors} \\
+        --anchors_pvals_file ${anchors_pvals_file} \\
         --fastq_id ${fastq_id} \\
         --fastq_file ${fastq} \\
         --out_consensus_fasta_file ${out_consensus_fasta_file} \\
