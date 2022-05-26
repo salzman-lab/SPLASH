@@ -1,5 +1,5 @@
 
-process MERGE_ANNOTATIONS {
+process ELEMENT_ANNOTATIONS {
 
     label 'process_medium'
     conda (params.enable_conda ? "conda-forge::python=3.9.5 pandas=1.4.1" : null)
@@ -16,7 +16,7 @@ process MERGE_ANNOTATIONS {
     outfile_ann_anchors     = "annotated_anchors.tsv"
     outfile_ann_targets     = "annotated_targets.tsv"
     """
-    merge_annotations.py \\
+    element_annotations.py \\
         --anchor_hits_samplesheet ${anchor_hits_samplesheet} \\
         --target_hits_samplesheet ${target_hits_samplesheet} \\
         --outfile_ann_anchors ${outfile_ann_anchors} \\

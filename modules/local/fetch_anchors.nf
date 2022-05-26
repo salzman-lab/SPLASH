@@ -7,7 +7,7 @@ process FETCH_ANCHORS {
     input:
     tuple val(fastq_id), path(fastq), val(group_id)
     val run_type
-    val num_lines
+    val num_reads_first_pass
     val kmer_size
     val lookahead
     val anchor_mode
@@ -23,7 +23,7 @@ process FETCH_ANCHORS {
         --infile ${fastq} \\
         --run_type ${run_type} \\
         --fastq_id ${fastq_id} \\
-        --num_lines ${num_lines} \\
+        --num_lines ${num_reads_first_pass} \\
         --kmer_size ${kmer_size} \\
         --lookahead ${lookahead} \\
         --anchor_mode ${anchor_mode} \\

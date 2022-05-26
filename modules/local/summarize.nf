@@ -1,5 +1,5 @@
 
-process POSTPROCESSING {
+process SUMMARIZE {
 
     label 'process_medium'
     conda (params.enable_conda ? "conda-forge::python=3.9.5 pandas=1.4.1 numpy=1.22.3 bioconda::blast=2.12.2 bioconda::biopython=1.70" : null)
@@ -21,7 +21,7 @@ process POSTPROCESSING {
     outfile                     = "summary.tsv"
 
     """
-    postprocessing.py \\
+    summarize.py \\
         --anchor_scores ${anchor_scores} \\
         --anchor_target_counts ${anchor_target_counts} \\
         --annotated_anchors ${annotated_anchors} \\

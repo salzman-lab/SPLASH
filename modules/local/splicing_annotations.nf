@@ -1,5 +1,5 @@
 
-process ANNOTATE_CALLED_EXONS {
+process SPLICING_ANNOTATIONS {
 
     label 'process_low'
     conda (params.enable_conda ? "bioconda::bedtools=2.30.0" : null)
@@ -34,7 +34,7 @@ process ANNOTATE_CALLED_EXONS {
         > annotated_positions_called_exons.bed
 
     ## add consensus and anchor gene columns
-    merge_consensus_splice_annotation.py \\
+    splicing_annotations.py \\
         --infile annotated_positions_called_exons.bed \\
         --fasta ${fasta} \\
         --genome_annotations_anchors ${genome_annotations_anchors} \\

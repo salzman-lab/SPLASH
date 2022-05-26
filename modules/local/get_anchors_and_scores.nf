@@ -11,7 +11,7 @@ process GET_ANCHORS_AND_SCORES {
     path outfile_scores     , emit: scores
 
     script:
-    file_id                 = counts.baseName
+    file_id                 = counts.simpleName
     outfile_scores          = "scores_${file_id}.tsv"
     """
     randHash_parallel.py \\

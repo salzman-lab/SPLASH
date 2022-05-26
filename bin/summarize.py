@@ -222,6 +222,11 @@ def main():
         pd.read_csv(args.anchor_scores, sep='\t')
         .drop_duplicates()
     )
+
+    if(len(scores.columns) == 2):
+        scores.columns = ['anchor', 'pv_hash']
+
+
     anchor_targets_counts = pd.read_csv(args.anchor_target_counts, sep='\t')
     ann_anchors = pd.read_csv(args.annotated_anchors, sep='\t')
     ann_targets = pd.read_csv(args.annotated_targets, sep='\t')

@@ -1,19 +1,20 @@
-include { GET_FASTA             } from '../../modules/local/get_fasta'
-include { BOWTIE2_ANNOTATION    } from '../../modules/local/bowtie2_annotation'
-include { MERGE_ANNOTATIONS     } from '../../modules/local/merge_annotations'
-include { POSTPROCESSING        } from '../../modules/local/postprocessing'
-include { GENOME_ALIGNMENT      } from '../../modules/local/genome_alignment'
-include { GENOME_ANNOTATIONS    } from '../../modules/local/genome_annotations'
-include { PREPARE_CONSENSUS     } from '../../modules/local/prepare_consensus'
-include { MERGE_CONSENSUS       } from '../../modules/local/merge_consensus'
-include { STAR_ALIGN            } from '../../modules/local/star_align'
-include { ANNOTATE_CALLED_EXONS } from '../../modules/local/annotate_called_exons'
+include { GET_FASTA                 } from '../../modules/local/get_fasta'
+include { ELEMENT_ALIGNMENT         } from '../../modules/local/element_alignment'
+include { ELEMENT_ANNOTATIONS       } from '../../modules/local/element_annotations'
+include { SUMMARIZE                 } from '../../modules/local/summarize'
+include { GENOME_ALIGNMENT          } from '../../modules/local/genome_alignment'
+include { GENOME_ANNOTATIONS        } from '../../modules/local/genome_annotations'
+include { PREPARE_CONSENSUS         } from '../../modules/local/prepare_consensus'
+include { MERGE_CONSENSUS           } from '../../modules/local/merge_consensus'
+include { CONSENSUS_ALIGNMENT       } from '../../modules/local/consensus_alignment'
+include { SPLICING_ANNOTATIONS      } from '../../modules/local/splicing_annotations'
 
 
 workflow ANNOTATE {
+
     take:
-    anchor_target_counts
     anchor_scores
+    anchor_target_counts
     ch_consensus_fastas
 
     main:
@@ -46,18 +47,18 @@ workflow ANNOTATE {
     /*
     // Process to align anchors to each bowtie2 index
     */
-    BOWTIE2_ANNOTATION(
+    ELEMENT_ALIGNMENT(
         ch_anchor_target_indices
     )
 
     // create samplesheet of the anchor hits files
-    anchor_hits_samplesheet= BOWTIE2_ANNOTATION.out.anchor_hits
+    anchor_hits_samplesheet= ELEMENT_ALIGNMENT.out.anchor_hits
         .collectFile(name: "anchor_samplesheet.txt") { file ->
             def X=file; X.toString() + '\n'
         }
 
     // create samplesheet of the target hits files
-    target_hits_samplesheet = BOWTIE2_ANNOTATION.out.target_hits
+    target_hits_samplesheet = ELEMENT_ALIGNMENT.out.target_hits
         .collectFile(name: "target_samplesheet.txt") { file ->
             def X=file; X.toString() + '\n'
         }
@@ -65,7 +66,7 @@ workflow ANNOTATE {
     /*
     // Process to merge scores with hits
     */
-    MERGE_ANNOTATIONS(
+    ELEMENT_ANNOTATIONS(
         anchor_hits_samplesheet,
         target_hits_samplesheet
     )
@@ -73,11 +74,11 @@ workflow ANNOTATE {
     /*
     // Process to run postprocessing annotations
     */
-    POSTPROCESSING(
+    SUMMARIZE(
         anchor_scores,
         anchor_target_counts,
-        MERGE_ANNOTATIONS.out.annotated_anchors,
-        MERGE_ANNOTATIONS.out.annotated_targets,
+        ELEMENT_ANNOTATIONS.out.annotated_anchors,
+        ELEMENT_ANNOTATIONS.out.annotated_targets,
         params.run_blast
     )
 
@@ -123,31 +124,35 @@ workflow ANNOTATE {
 
     fasta = MERGE_CONSENSUS.out.fasta
 
-    /*
-    // Process to get splice junctions with STAR
-    */
-    STAR_ALIGN(
-        fasta,
-        params.star_index,
-        params.gtf
-    )
+    if (params.run_splicing_annotations) {
+        /*
+        // Process to get splice junctions with STAR
+        */
+        CONSENSUS_ALIGNMENT(
+            fasta,
+            params.star_index,
+            params.gtf
+        )
 
-    GENOME_ANNOTATIONS.out.annotations
-        .filter{
-            file ->
-            file.name.contains('genome_annotations_anchor.tsv')
-        }
-        .set{genome_annotations_anchors}
+        GENOME_ANNOTATIONS.out.annotations
+            .filter{
+                file ->
+                file.name.contains('genome_annotations_anchor.tsv')
+            }
+            .set{genome_annotations_anchors}
 
-    /*
-    // Process to get called exons from bam file
-    */
-    ANNOTATE_CALLED_EXONS(
-        STAR_ALIGN.out.bam,
-        params.ann_AS_gtf,
-        fasta,
-        genome_annotations_anchors
-    )
+        /*
+        // Process to get called exons from bam file
+        */
+        SPLICING_ANNOTATIONS(
+            CONSENSUS_ALIGNMENT.out.bam,
+            params.ann_AS_gtf,
+            fasta,
+            genome_annotations_anchors
+        )
+
+    }
+
 
 
 }
