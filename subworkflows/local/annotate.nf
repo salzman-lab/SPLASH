@@ -121,21 +121,32 @@ workflow ANNOTATE {
         PREPARE_CONSENSUS.out.fasta.collect()
     )
 
+    fasta = MERGE_CONSENSUS.out.fasta
+
     /*
     // Process to get splice junctions with STAR
     */
     STAR_ALIGN(
-        MERGE_CONSENSUS.out.fasta,
+        fasta,
         params.star_index,
         params.gtf
     )
+
+    GENOME_ANNOTATIONS.out.annotations
+        .filter{
+            file ->
+            file.name.contains('genome_annotations_anchor.tsv')
+        }
+        .set{genome_annotations_anchors}
 
     /*
     // Process to get called exons from bam file
     */
     ANNOTATE_CALLED_EXONS(
         STAR_ALIGN.out.bam,
-        params.ann_AS_gtf
+        params.ann_AS_gtf,
+        fasta,
+        genome_annotations_anchors
     )
 
 
