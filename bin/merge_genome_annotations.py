@@ -69,7 +69,7 @@ def main():
             # clean up
             if "MAPQ" in ann_name:
                 ann = ann.replace(0.0, np.nan)
-            print(df.head())
+
             df = pd.merge(df, ann, on=args.fasta_name, how='outer')
         else:
             df[ann_name] = np.nan

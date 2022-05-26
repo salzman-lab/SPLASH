@@ -7,7 +7,6 @@ include { MERGE_ANNOTATIONS         } from '../../modules/local/merge_annotation
 include { GENOME_ALIGNMENT      } from '../../modules/local/genome_alignment'
 include { GENOME_ANNOTATIONS    } from '../../modules/local/genome_annotations'
 include { STAR_ALIGN            } from '../../modules/local/star_align'
-include { ANNOTATE_SPLICES      } from '../../modules/local/annotate_splices'
 
 workflow SKIP_GET_ANCHORS {
 

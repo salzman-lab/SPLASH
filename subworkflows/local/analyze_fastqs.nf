@@ -147,7 +147,7 @@ workflow ANALYZE_FASTQS {
         */
         PARSE_ANCHORS(
             ch_fastqs,
-            MERGE_ANCHOR_SCORES.out.anchors.first().filter{ it.size()>0 },
+            MERGE_ANCHOR_SCORES.out.scores.first().filter{ it.size()>0 },
             params.num_parse_anchors_reads,
             params.consensus_length,
             params.kmer_size,

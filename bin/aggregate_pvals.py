@@ -16,10 +16,6 @@ def get_args():
         type=float
     )
     parser.add_argument(
-        "--outfile_anchors",
-        type=str
-    )
-    parser.add_argument(
         "--outfile_scores",
         type=str
     )
@@ -56,11 +52,9 @@ def main():
         outdf = (
             outdf[outdf['pv_hash'] < args.pval_threshold]
             .sort_values('pv_hash')
-            .head(5000)
         )
 
     outdf.to_csv(args.outfile_scores, sep='\t', index=False, header=False)
-    outdf[['anchor']].to_csv(args.outfile_anchors, sep='\t', header=False, index=False)
 
 
 main()
