@@ -218,16 +218,14 @@ def add_summary(df, ann_table, seq_type, run_blast, top_anchors):
 def main():
     args = get_args()
 
-    try:
-        scores = (
-            pd.read_csv(args.anchor_scores, sep='\t', names=['anchor', 'pv_hash'])
-            .drop_duplicates()
-        )
-    except:
-        scores = (
-            pd.read_csv(args.anchor_scores, sep='\t')
-            .drop_duplicates()
-        )
+    scores = (
+        pd.read_csv(args.anchor_scores, sep='\t')
+        .drop_duplicates()
+    )
+
+    if(len(scores.columns) == 2):
+        scores.columns = ['anchor', 'pv_hash']
+
 
     anchor_targets_counts = pd.read_csv(args.anchor_target_counts, sep='\t')
     ann_anchors = pd.read_csv(args.annotated_anchors, sep='\t')
@@ -242,6 +240,12 @@ def main():
     anchor_targets_counts = anchor_targets_counts[['anchor', 'target', 'total_target_counts']]
 
     df = pd.merge(anchor_targets_counts, scores, on='anchor')
+    print('atc')
+    print(anchor_targets_counts.head())
+    print('scores')
+    print(scores.head())
+    print('out')
+    print(df.head())
 
     df['rank_target_counts'] = (
         df
