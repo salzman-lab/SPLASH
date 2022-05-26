@@ -2,6 +2,7 @@
 
 import argparse
 import pandas as pd
+import numpy as np
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -63,6 +64,8 @@ def main():
 
     df.columns = ['called_exon_chr', 'called_exon_id', 'ann_exon_strand', 'ann_exon_gene', 'ann_exon_AS_start', 'ann_exon_AS_end', 'sample', 'anchor', 'consensus', 'anchor_local_gene', 'anchor_end_to_end_gene', 'called_exon_id_position']
     df = df[['called_exon_chr', 'called_exon_id', 'called_exon_id_position', 'ann_exon_strand', 'ann_exon_gene', 'ann_exon_AS_start', 'ann_exon_AS_end', 'sample', 'anchor', 'consensus', 'anchor_local_gene', 'anchor_end_to_end_gene']]
+
+    df = df.replace(".", np.nan)
 
     df.to_csv(args.outfile, sep='\t', index=False)
 

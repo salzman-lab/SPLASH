@@ -50,7 +50,7 @@ def build_consensus(kmers, consensus_length, direction):
     return baseComp, baseCount, baseFrac
 
 
-def get_targets_consensus_seqs(fastq_file, num_parse_anchors_reads, anchor_dict, consensus_length, kmer_size, lookahead, direction):
+def get_targets_consensus_seqs(fastq_file, num_lines, anchor_dict, consensus_length, kmer_size, lookahead, direction):
     """
     For each read, check if there are any valid targets and/or consensus sequences,
     and append them to their respective dictionaries
@@ -71,7 +71,7 @@ def get_targets_consensus_seqs(fastq_file, num_parse_anchors_reads, anchor_dict,
             num_reads += 1
 
             # only proceed if we have not yet reached read threshold
-            if num_reads < num_parse_anchors_reads:
+            if num_reads < num_lines:
 
                 # tile the read by 1bp and check if tiles exist in the anchor dict
                 # this is more computationally efficient than checking each read for any anchors
@@ -172,7 +172,7 @@ def output_consensus(consensus_dict, consensus_length, direction, out_consensus_
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--num_parse_anchors_reads",
+        "--num_lines",
         type=int,
         help='max number of fastq reads for input'
     )
@@ -271,7 +271,7 @@ def main():
     # get all of the next kmers for the anchors in PREPARATION FOR BUILDING CONCENSUS
     target_dict, consensus_dict = get_targets_consensus_seqs(
         args.fastq_file,
-        args.num_parse_anchors_reads,
+        args.num_lines,
         anchor_dict,
         args.consensus_length,
         args.kmer_size,

@@ -1,5 +1,5 @@
 
-process BOWTIE2_ANNOTATION {
+process ELEMENT_ALIGNMENT {
 
     tag "${fasta_name}, ${index_name}"
     label 'process_low'

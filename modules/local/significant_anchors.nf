@@ -1,5 +1,5 @@
 
-process MERGE_ANCHOR_SCORES {
+process SIGNIFICANT_ANCHORS {
 
     label 'process_low'
 
@@ -13,7 +13,7 @@ process MERGE_ANCHOR_SCORES {
     script:
     outfile_scores          = "anchors_pvals.tsv"
     """
-    aggregate_pvals.py \\
+    significant_anchors.py \\
         --infile ${samplesheet} \\
         --pval_threshold ${pval_threshold} \\
         --outfile_scores ${outfile_scores}

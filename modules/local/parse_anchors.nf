@@ -8,7 +8,7 @@ process PARSE_ANCHORS {
     input:
     tuple val(fastq_id), path(fastq), val(group_id)
     path anchors_pvals_file
-    val num_parse_anchors_reads
+    val num_reads_second_pass
     val consensus_length
     val kmer_size
     val direction
@@ -27,7 +27,7 @@ process PARSE_ANCHORS {
     out_target_file             = "${fastq_id}_target_counts.tsv"
     """
     parse_anchors.py \\
-        --num_parse_anchors_reads ${num_parse_anchors_reads} \\
+        --num_lines ${num_reads_second_pass} \\
         --anchors_pvals_file ${anchors_pvals_file} \\
         --fastq_id ${fastq_id} \\
         --fastq_file ${fastq} \\

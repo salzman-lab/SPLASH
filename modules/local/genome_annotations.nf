@@ -119,7 +119,7 @@ process GENOME_ANNOTATIONS {
             >  end_to_end/${fasta_name}_genome_downstream_exon_ends.txt
     fi
 
-    merge_genome_annotations.py \\
+    genome_annotations.py \\
         --fasta_name ${fasta_name}
     """
 }

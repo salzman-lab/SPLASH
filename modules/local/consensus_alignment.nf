@@ -1,5 +1,5 @@
 
-process STAR_ALIGN {
+process CONSENSUS_ALIGNMENT {
 
     label 'process_high_memory'
     label 'error_retry'

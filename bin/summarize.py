@@ -218,10 +218,17 @@ def add_summary(df, ann_table, seq_type, run_blast, top_anchors):
 def main():
     args = get_args()
 
-    scores = (
-        pd.read_csv(args.anchor_scores, sep='\t')
-        .drop_duplicates()
-    )
+    try:
+        scores = (
+            pd.read_csv(args.anchor_scores, sep='\t', names=['anchor', 'pv_hash'])
+            .drop_duplicates()
+        )
+    except:
+        scores = (
+            pd.read_csv(args.anchor_scores, sep='\t')
+            .drop_duplicates()
+        )
+
     anchor_targets_counts = pd.read_csv(args.anchor_target_counts, sep='\t')
     ann_anchors = pd.read_csv(args.annotated_anchors, sep='\t')
     ann_targets = pd.read_csv(args.annotated_targets, sep='\t')
