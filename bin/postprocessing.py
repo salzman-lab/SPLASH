@@ -180,7 +180,7 @@ def add_summary(df, ann_table, seq_type, run_blast, top_anchors):
                     df[['anchor', 'pv_hash']].drop_duplicates()
                 )
                 .sort_values('pv_hash', ascending=False)
-                .head(100)['anchor']
+                .head(2)['anchor']
                 .to_list()
             )
 
@@ -219,7 +219,7 @@ def main():
     args = get_args()
 
     scores = (
-        pd.read_csv(args.anchor_scores, sep='\t', names=['anchor', 'pv_hand', 'pv_hash', 'effectSize', 'mu_hand', 'entropy'])
+        pd.read_csv(args.anchor_scores, sep='\t')
         .drop_duplicates()
     )
     anchor_targets_counts = pd.read_csv(args.anchor_target_counts, sep='\t')

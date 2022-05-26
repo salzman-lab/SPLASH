@@ -1,13 +1,7 @@
-
-
 #!/usr/bin/env python3
 
-import gzip
 import argparse
 import pandas as pd
-import warnings
-warnings.simplefilter(action='ignore', category=FutureWarning)
-import utils
 
 def get_args():
     parser = argparse.ArgumentParser()

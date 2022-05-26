@@ -54,7 +54,7 @@ def main():
             .sort_values('pv_hash')
         )
 
-    outdf.to_csv(args.outfile_scores, sep='\t', index=False, header=False)
+    outdf.to_csv(args.outfile_scores, sep='\t', index=False, header=True)
 
 
 main()
