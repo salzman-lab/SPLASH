@@ -6,6 +6,7 @@ process SPLICING_ANNOTATIONS {
 
     input:
     path bam
+    path gene_bed
     path ann_AS_gtf
     path fasta
     path genome_annotations_anchors
@@ -20,6 +21,7 @@ process SPLICING_ANNOTATIONS {
     """
     ## get called exons
     bedtools bamtobed -split -i ${bam} \\
+        | sort -k1,1 -k2,2n \\
         > called_exons.bed
 
     ## get called exons start and end positions
@@ -33,11 +35,18 @@ process SPLICING_ANNOTATIONS {
         | bedtools groupby -g 1,2,3,4,5, -c 6,7,8,9 -o distinct,distinct,max,max \\
         > annotated_positions_called_exons.bed
 
+    ## get consensus genes
+    bedtools intersect -a called_exons.bed -b ${gene_bed} -wb -loj -sorted \\
+        | cut -f 4,10 \\
+        | bedtools groupby -g 1 -c 2 -o distinct \\
+        > consensus_genes.txt
+
     ## add consensus and anchor gene columns
     splicing_annotations.py \\
         --infile annotated_positions_called_exons.bed \\
         --fasta ${fasta} \\
         --genome_annotations_anchors ${genome_annotations_anchors} \\
+        --consensus_genes consensus_genes.txt \\
         --outfile ${outfile}
     """
 }

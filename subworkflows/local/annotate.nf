@@ -146,6 +146,7 @@ workflow ANNOTATE {
         */
         SPLICING_ANNOTATIONS(
             CONSENSUS_ALIGNMENT.out.bam,
+            params.gene_bed,
             params.ann_AS_gtf,
             fasta,
             genome_annotations_anchors
