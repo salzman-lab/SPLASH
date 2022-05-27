@@ -21,6 +21,7 @@ process SPLICING_ANNOTATIONS {
     """
     ## get called exons
     bedtools bamtobed -split -i ${bam} \\
+        | sed '/^chr/!d' \\
         | sort -k1,1 -k2,2n \\
         > called_exons.bed
 
