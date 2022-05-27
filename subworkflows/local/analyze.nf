@@ -24,18 +24,11 @@ workflow ANALYZE {
         lookahead
     )
 
-    // Create samplesheet of target counts files
-    PARSE_ANCHORS.out.targets
-        .collectFile() { file ->
-            def X=file; X.toString() + '\n'
-        }
-        .set{ targets_samplesheet }
-
     /*
     // Process to get anchor scores and anchor-target counts
     */
     ANCHOR_TARGET_COUNTS(
-        targets_samplesheet
+        PARSE_ANCHORS.out.targets.collect()
     )
 
 

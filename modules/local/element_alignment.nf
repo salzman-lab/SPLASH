@@ -12,8 +12,7 @@ process ELEMENT_ALIGNMENT {
     tuple path(fasta), val(index)
 
     output:
-    path "*anchor*"     , emit: anchor_hits,    optional: true
-    path "*target*"     , emit: target_hits,    optional: true
+    path "*hits*tsv"    , emit: hits
 
     script:
     fasta_name          = fasta.baseName
