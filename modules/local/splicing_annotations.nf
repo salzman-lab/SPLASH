@@ -30,13 +30,13 @@ process SPLICING_ANNOTATIONS {
         > positions_called_exons.bed
 
     ## annotate called exon start and ends
-    bedtools intersect -a positions_called_exons.bed -b ${ann_AS_gtf} -loj -wb -sorted \\
+    bedtools intersect -a positions_called_exons.bed -b ${ann_AS_gtf} -loj -wb \\
         | cut -f1-5,10-13 \\
         | bedtools groupby -g 1,2,3,4,5, -c 6,7,8,9 -o distinct,distinct,max,max \\
         > annotated_positions_called_exons.bed
 
     ## get consensus genes
-    bedtools intersect -a called_exons.bed -b ${gene_bed} -wb -loj -sorted \\
+    bedtools intersect -a called_exons.bed -b ${gene_bed} -wb -loj \\
         | cut -f 4,10 \\
         | bedtools groupby -g 1 -c 2 -o distinct \\
         > consensus_genes.txt
