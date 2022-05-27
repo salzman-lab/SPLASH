@@ -4,13 +4,10 @@ import pandas as pd
 import statsmodels.api as sm
 import sys
 import argparse
+import glob
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--infile",
-        type=str
-    )
     parser.add_argument(
         "--pval_threshold",
         type=float
@@ -26,8 +23,7 @@ def get_args():
 def main():
     args = get_args()
 
-    with open(args.infile) as file:
-        df_paths = file.readlines()
+    df_paths = glob.glob("scores*.tsv")
 
     dfs = []
     for df_path in df_paths:

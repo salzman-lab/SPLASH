@@ -97,18 +97,11 @@ workflow FETCH {
             params.kmer_size
         )
 
-        // Create samplesheet of anchor pvalue files
-        GET_ANCHORS_AND_SCORES.out.scores
-            .collectFile() { file ->
-                def X=file; X.toString() + '\n'
-            }
-            .set{ anchor_pval_samplesheet }
-
         /*
         // Process to output top 5000 anchors as sorted by pvalue
         */
         SIGNIFICANT_ANCHORS(
-            anchor_pval_samplesheet,
+            GET_ANCHORS_AND_SCORES.out.scores.collect(),
             params.pval_threshold
         )
 

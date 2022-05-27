@@ -2,14 +2,10 @@
 
 import argparse
 import pandas as pd
+import glob
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--targets_samplesheet",
-        type=str,
-        help='input targets_samplesheet'
-    )
     parser.add_argument(
         "--outfile_counts_distances",
         type=str
@@ -22,8 +18,8 @@ def main():
     args = get_args()
 
     # read in target_counts paths
-    with open(args.targets_samplesheet) as file:
-        df_paths = file.readlines()
+    df_paths = glob.glob("*_target_counts.tsv")
+
     # merge all target_counts files
     counts = pd.read_csv(df_paths[0].strip(), sep='\t')
     for df_path in df_paths[1:]:

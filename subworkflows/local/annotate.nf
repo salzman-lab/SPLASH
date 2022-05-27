@@ -51,24 +51,11 @@ workflow ANNOTATE {
         ch_anchor_target_indices
     )
 
-    // create samplesheet of the anchor hits files
-    anchor_hits_samplesheet= ELEMENT_ALIGNMENT.out.anchor_hits
-        .collectFile(name: "anchor_samplesheet.txt") { file ->
-            def X=file; X.toString() + '\n'
-        }
-
-    // create samplesheet of the target hits files
-    target_hits_samplesheet = ELEMENT_ALIGNMENT.out.target_hits
-        .collectFile(name: "target_samplesheet.txt") { file ->
-            def X=file; X.toString() + '\n'
-        }
-
     /*
     // Process to merge scores with hits
     */
     ELEMENT_ANNOTATIONS(
-        anchor_hits_samplesheet,
-        target_hits_samplesheet
+        ELEMENT_ALIGNMENT.out.hits.collect()
     )
 
     /*

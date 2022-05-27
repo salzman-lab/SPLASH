@@ -4,7 +4,7 @@ process SIGNIFICANT_ANCHORS {
     label 'process_low'
 
     input:
-    path samplesheet
+    path anchors
     val pval_threshold
 
     output:
@@ -14,7 +14,6 @@ process SIGNIFICANT_ANCHORS {
     outfile_scores          = "anchors_pvals.tsv"
     """
     significant_anchors.py \\
-        --infile ${samplesheet} \\
         --pval_threshold ${pval_threshold} \\
         --outfile_scores ${outfile_scores}
     """

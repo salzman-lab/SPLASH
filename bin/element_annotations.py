@@ -5,18 +5,11 @@ import gzip
 import argparse
 import pandas as pd
 import os
+import glob
 
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--anchor_hits_samplesheet",
-        type=str
-    )
-    parser.add_argument(
-        "--target_hits_samplesheet",
-        type=str
-    )
     parser.add_argument(
         "--outfile_ann_anchors",
         type=str
@@ -33,8 +26,7 @@ def main():
     args = get_args()
 
     # read in anchor_hits
-    with open(args.anchor_hits_samplesheet) as file:
-        anchor_hits_paths = file.readlines()
+    anchor_hits_paths = glob.glob("anchor_hits*tsv")
 
     anchor_anns = pd.read_csv(anchor_hits_paths[0].strip(), sep='\t')
     # iteratively merge in hits on anchor column
@@ -49,8 +41,7 @@ def main():
     )
 
     # read in target_hits
-    with open(args.target_hits_samplesheet) as file:
-        target_hits_paths = file.readlines()
+    target_hits_paths = glob.glob("target_hits*tsv")
 
     target_anns = pd.read_csv(target_hits_paths[0].strip(), sep='\t')
     # iteratively merge in hits on taret column
