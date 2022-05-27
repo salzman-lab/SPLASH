@@ -35,9 +35,6 @@ def main():
         names=['chr', 'start', 'end', 'sample_anchor', 'id', 'gtf_strand', 'gtf_gene', 'gtf_AS_start', 'gtf_AS_end']
     )
 
-    df[['sample', 'anchor']] = df['sample_anchor'].str.split('____', expand=True)
-
-    df = df.drop('sample_anchor', axis=1)
 
     seqs = {}
     with open(args.fasta, 'r') as fasta:
@@ -45,14 +42,16 @@ def main():
             if line.startswith('>'):
                 seqs[line.strip().strip('>')] = next(fasta).strip()
 
-
     consensus = (
         pd.DataFrame.from_dict(seqs, orient='index')
         .reset_index()
     )
     consensus.columns = ['anchor', 'consensus']
 
-    df = pd.merge(df, consensus, on='anchor', how='left')
+    df = pd.merge(df, consensus, left_on='sample_anchor', right_on='anchor', how='left')
+
+    df[['sample', 'anchor']] = df['sample_anchor'].str.split('____', expand=True)
+    df = df.drop('sample_anchor', axis=1)
 
     anchor_ann = pd.read_csv(args.genome_annotations_anchors, sep='\t', usecols=['anchor', 'local_gene', 'end_to_end_gene'])
 
