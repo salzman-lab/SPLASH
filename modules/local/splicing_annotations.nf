@@ -1,7 +1,7 @@
 
 process SPLICING_ANNOTATIONS {
 
-    label 'process_low'
+    label 'process_medium'
     conda (params.enable_conda ? "bioconda::bedtools=2.30.0" : null)
 
     input:
@@ -15,6 +15,7 @@ process SPLICING_ANNOTATIONS {
     path "*tsv"                 , emit: tsv
     path "called_exons.bed"     , emit: bed
     path fasta                  , emit: fasta
+    path "consensus_genes.txt"  , emit: consenus_genes
 
     script:
     outfile                     = "consensus_called_exons.tsv"
