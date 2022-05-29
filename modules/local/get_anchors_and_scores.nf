@@ -10,6 +10,8 @@ process GET_ANCHORS_AND_SCORES {
     output:
     path outfile_scores     , emit: scores
     path "*extra_info*"     , emit: extra_info
+    path "*pkl"     , emit: pkl
+
 
     script:
     file_id                 = counts.simpleName
