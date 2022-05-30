@@ -1,7 +1,7 @@
 
 process SUMMARIZE {
 
-    label 'process_medium'
+    label 'process_high'
     conda (params.enable_conda ? "conda-forge::python=3.9.5 pandas=1.4.1 numpy=1.22.3 bioconda::blast=2.12.2 bioconda::biopython=1.70" : null)
 
 
