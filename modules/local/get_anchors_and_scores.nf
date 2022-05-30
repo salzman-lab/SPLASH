@@ -6,6 +6,7 @@ process GET_ANCHORS_AND_SCORES {
     input:
     path counts
     val kmer_size
+    path samplesheet
 
     output:
     path outfile_scores     , emit: scores
@@ -20,6 +21,7 @@ process GET_ANCHORS_AND_SCORES {
     randHash_parallel.py \\
         --infile ${counts} \\
         --kmer_size ${kmer_size} \\
+        --samplesheetIDs ${samplesheet} \\
         --outfile ${outfile_scores}
     """
 }

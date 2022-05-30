@@ -94,7 +94,8 @@ workflow FETCH {
         */
         GET_ANCHORS_AND_SCORES(
             GET_ABUNDANT_ANCHORS.out.seqs,
-            params.kmer_size
+            params.kmer_size,
+            file(params.input)
         )
 
         /*
