@@ -63,7 +63,7 @@ def main():
     ]
 
     for ann_name, ann_file in ann_tuples:
-        if os.path.exists(ann_file):
+        try:
             ann = pd.read_csv(ann_file, sep='\t', header=None, names=[args.fasta_name, ann_name])
 
             # clean up
@@ -71,7 +71,7 @@ def main():
                 ann = ann.replace(0.0, np.nan)
 
             df = pd.merge(df, ann, on=args.fasta_name, how='outer')
-        else:
+        except:
             df[ann_name] = np.nan
 
     df = df.replace('*', np.nan)
