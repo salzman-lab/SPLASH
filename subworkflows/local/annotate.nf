@@ -8,6 +8,7 @@ include { PREPARE_CONSENSUS         } from '../../modules/local/prepare_consensu
 include { MERGE_CONSENSUS           } from '../../modules/local/merge_consensus'
 include { CONSENSUS_ALIGNMENT       } from '../../modules/local/consensus_alignment'
 include { SPLICING_ANNOTATIONS      } from '../../modules/local/splicing_annotations'
+include { ADDITIONAL_SUMMARY        } from '../../modules/local/additional_summary'
 
 
 workflow ANNOTATE {
@@ -139,6 +140,13 @@ workflow ANNOTATE {
             genome_annotations_anchors
         )
 
+        /*
+        // Process to make additional summary file
+        */
+        ADDITIONAL_SUMMARY(
+            SPLICING_ANNOTATIONS.out.consenus_genes,
+            SUMMARIZE.out.tsv
+        )
     }
 
 
