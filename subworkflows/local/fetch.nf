@@ -106,7 +106,10 @@ workflow FETCH {
             params.pval_threshold
         )
 
-        anchors_scores = SIGNIFICANT_ANCHORS.out.scores.first()
+        anchors_scores = SIGNIFICANT_ANCHORS.out.scores
+            .first()
+            .filter{ it.size()>0 }
+
     }
 
     emit:
