@@ -1,4 +1,3 @@
-include { GET_FASTA                 } from '../../modules/local/get_fasta'
 include { ELEMENT_ALIGNMENT         } from '../../modules/local/element_alignment'
 include { ELEMENT_ANNOTATIONS       } from '../../modules/local/element_annotations'
 include { SUMMARIZE                 } from '../../modules/local/summarize'
@@ -15,8 +14,9 @@ workflow ANNOTATE {
 
     take:
     anchor_scores
-    anchor_target_counts
+    anchors_targets
     ch_consensus_fastas
+    ch_anchor_target_fastas
 
     main:
 
@@ -29,14 +29,6 @@ workflow ANNOTATE {
             row[0]
         }
 
-    /*
-    // Process to get anchor and target fastas
-    */
-    GET_FASTA(
-        anchor_target_counts
-    )
-
-    ch_anchor_target_fastas = GET_FASTA.out.fasta
 
     /*
     // Cartesian join of anchor+target fastas and all bowtie2 indices
@@ -64,7 +56,7 @@ workflow ANNOTATE {
     */
     SUMMARIZE(
         anchor_scores,
-        anchor_target_counts,
+        anchors_targets,
         ELEMENT_ANNOTATIONS.out.annotated_anchors,
         ELEMENT_ANNOTATIONS.out.annotated_targets,
         params.run_blast
@@ -78,41 +70,41 @@ workflow ANNOTATE {
         .mix(ch_consensus_fastas)
         .flatten()
 
-    /*
-    // Process to align targets and anchors to genome
-    */
-    GENOME_ALIGNMENT(
-        ch_fastas,
-        params.genome_index,
-        params.transcriptome_index
-    )
+    if (params.run_annotations) {
+        /*
+        // Process to align targets and anchors to genome
+        */
+        GENOME_ALIGNMENT(
+            ch_fastas,
+            params.genome_index,
+            params.transcriptome_index
+        )
 
-    /*
-    // Process to run gene and exon annotations
-    */
-    GENOME_ANNOTATIONS(
-        GENOME_ALIGNMENT.out.bam_tuple,
-        params.gene_bed,
-        params.exon_starts_bed,
-        params.exon_ends_bed
-    )
+        /*
+        // Process to run gene and exon annotations
+        */
+        GENOME_ANNOTATIONS(
+            GENOME_ALIGNMENT.out.bam_tuple,
+            params.gene_bed,
+            params.exon_starts_bed,
+            params.exon_ends_bed
+        )
 
-    /*
-    // Process to prepare consensus fastas for one STAR alignment
-    */
-    PREPARE_CONSENSUS(
-        ch_consensus_fastas.flatten()
-    )
-    /*
-    // Process to concatenate consensus fastas for one STAR alignment
-    */
-    MERGE_CONSENSUS(
-        PREPARE_CONSENSUS.out.fasta.collect()
-    )
+        /*
+        // Process to prepare consensus fastas for one STAR alignment
+        */
+        PREPARE_CONSENSUS(
+            ch_consensus_fastas.flatten()
+        )
 
-    fasta = MERGE_CONSENSUS.out.fasta
+        /*
+        // Process to concatenate consensus fastas for one STAR alignment
+        */
+        MERGE_CONSENSUS(
+            PREPARE_CONSENSUS.out.fasta.collect()
+        )
 
-    if (params.run_splicing_annotations) {
+        fasta = MERGE_CONSENSUS.out.fasta
         /*
         // Process to get splice junctions with STAR
         */
@@ -148,7 +140,5 @@ workflow ANNOTATE {
             SUMMARIZE.out.tsv
         )
     }
-
-
 
 }

@@ -107,8 +107,9 @@ workflow FETCH {
         )
 
         anchors_scores = SIGNIFICANT_ANCHORS.out.scores
-            .first()
-            .filter{ it.size()>0 }
+            .filter{
+                it.countLines() > 1
+            }
 
     }
 

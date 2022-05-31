@@ -7,7 +7,15 @@ import glob
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--outfile_counts_distances",
+        "--outfile_anchor_fasta",
+        type=str
+    )
+    parser.add_argument(
+        "--outfile_target_fasta",
+        type=str
+    )
+    parser.add_argument(
+        "--outfile_anchor_target_counts",
         type=str
     )
     args = parser.parse_args()
@@ -38,7 +46,30 @@ def main():
     counts = counts.fillna(0)
 
     # output anchor targets counts file
-    counts.to_csv(args.outfile_counts_distances, sep='\t', index=False)
+    counts.to_csv(args.outfile_anchor_target_counts, sep='\t', index=False)
+
+    # output anchor and target fastas
+    anchors = (
+        counts['anchor']
+        .drop_duplicates()
+        .tolist()
+    )
+
+    targets = (
+        counts['target']
+        .drop_duplicates()
+        .tolist()
+    )
+
+    with open(args.outfile_anchor_fasta, "w") as anchor_fasta:
+        for seq in anchors:
+            anchor_fasta.write(f'>{seq}\n{seq}\n')
+    anchor_fasta.close()
+
+    with open(args.outfile_target_fasta, 'w') as target_fasta:
+        for seq in targets:
+            target_fasta.write(f'>{seq}\n{seq}\n')
+    target_fasta.close()
 
 
 main()

@@ -1,5 +1,5 @@
-include { PARSE_ANCHORS         } from '../../modules/local/parse_anchors'
-include { ANCHOR_TARGET_COUNTS  } from '../../modules/local/anchor_target_counts'
+include { PARSE_ANCHORS     } from '../../modules/local/parse_anchors'
+include { ANCHORS_TARGETS   } from '../../modules/local/anchors_targets'
 
 
 workflow ANALYZE {
@@ -27,13 +27,13 @@ workflow ANALYZE {
     /*
     // Process to get anchor scores and anchor-target counts
     */
-    ANCHOR_TARGET_COUNTS(
+    ANCHORS_TARGETS(
         PARSE_ANCHORS.out.targets.collect()
     )
 
-
     emit:
-    anchor_target_counts    = ANCHOR_TARGET_COUNTS.out.anchor_target_counts.first()
+    anchors_targets         = ANCHORS_TARGETS.out.anchors_targets
     ch_consensus_fasta      = PARSE_ANCHORS.out.consensus_fasta.collect()
+    ch_anchor_target_fastas = ANCHORS_TARGETS.out.fasta
 
 }

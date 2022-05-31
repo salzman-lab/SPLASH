@@ -46,11 +46,5 @@ process CONSENSUS_ALIGNMENT {
         --sjdbGTFfile ${gtf} \\
         --outReadsUnmapped Fastx
 
-    rm -rf ${fasta_name}__STARgenome/*txt
-    rm -rf ${fasta_name}__STARgenome/exon*
-    rm -rf ${fasta_name}__STARgenome/gene*
-    rm -rf ${fasta_name}__STARgenome/transcript*
-    rm -rf ${fasta_name}__STARgenome/sjdbList.out.tab
-    rm -rf ${fasta_name}__STARpass1
     """
 }

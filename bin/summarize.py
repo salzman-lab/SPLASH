@@ -17,7 +17,7 @@ def get_args():
         type=str
     )
     parser.add_argument(
-        "--anchor_target_counts",
+        "--anchors_targets",
         type=str
     )
     parser.add_argument(
@@ -227,25 +227,12 @@ def main():
         scores.columns = ['anchor', 'pv_hash']
 
 
-    anchor_targets_counts = pd.read_csv(args.anchor_target_counts, sep='\t')
+    anchors_targets = pd.read_csv(args.anchors_targets, sep='\t', names=['anchor', 'target'])
     ann_anchors = pd.read_csv(args.annotated_anchors, sep='\t')
     ann_targets = pd.read_csv(args.annotated_targets, sep='\t')
 
-    anchor_targets_counts['total_target_counts'] = (
-        anchor_targets_counts
-        .drop(['anchor', 'target'], axis=1)
-        .sum(axis=1)
-    )
+    df = pd.merge(anchors_targets, scores, on='anchor')
 
-    anchor_targets_counts = anchor_targets_counts[['anchor', 'target', 'total_target_counts']]
-
-    df = pd.merge(anchor_targets_counts, scores, on='anchor')
-
-    df['rank_target_counts'] = (
-        df
-        .groupby('anchor')['total_target_counts']
-        .rank('average')
-    )
 
     df['rcAnchor'] = (
         df['anchor']

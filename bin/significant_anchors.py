@@ -50,10 +50,7 @@ def main():
             .sort_values('pv_hash')
         )
 
-        if outdf.empty:
-            outdf = pd.DataFrame()
-
-    outdf.to_csv(args.outfile_scores, sep='\t', index=False, header=True)
+    outdf.to_csv(args.outfile_scores, sep='\t', index=False)
 
 
 main()

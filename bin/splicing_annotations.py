@@ -23,6 +23,10 @@ def get_args():
         type=str
     )
     parser.add_argument(
+        "--reported_alignments",
+        type=str
+    )
+    parser.add_argument(
         "--outfile",
         type=str
     )
@@ -62,8 +66,10 @@ def main():
     anchor_ann = pd.read_csv(args.genome_annotations_anchors, sep='\t', usecols=['anchor', 'local_gene', 'end_to_end_gene'])
     df = pd.merge(df, anchor_ann, on='anchor', how='left')
 
-    df['position'] = df['start'] - 1
+    reported_alignments = pd.read_csv(args.reported_alignments, sep='\t', names=['sample_anchor', 'consensus_reported_alignment'])
+    df = pd.merge(df, reported_alignments, on='sample_anchor', how='left')
 
+    df['position'] = df['start'] - 1
     df = df.drop(['start', 'end', 'sample_anchor'], axis=1)
 
     df.rename(
@@ -81,7 +87,9 @@ def main():
         inplace=True
     )
 
-    df = df[['called_exon_chr', 'called_exon_id', 'called_exon_id_position', 'ann_exon_gene', 'ann_exon_strand', 'ann_exon_AS_start', 'ann_exon_AS_end', 'sample', 'anchor', 'consensus', 'anchor_local_gene', 'anchor_end_to_end_gene', 'consensus_gene']]
+    df = df[[
+        'called_exon_chr', 'called_exon_id', 'called_exon_id_position', 'ann_exon_gene', 'ann_exon_strand', 'ann_exon_AS_start', 'ann_exon_AS_end',
+        'sample', 'anchor', 'consensus', 'anchor_local_gene', 'anchor_end_to_end_gene', 'consensus_gene', 'consensus_reported_alignment']]
 
     df = df.replace(".", np.nan)
 

@@ -7,7 +7,7 @@ process SUMMARIZE {
 
     input:
     path anchor_scores
-    path anchor_target_counts
+    path anchors_targets
     path annotated_anchors
     path annotated_targets
     val run_blast
@@ -23,7 +23,7 @@ process SUMMARIZE {
     """
     summarize.py \\
         --anchor_scores ${anchor_scores} \\
-        --anchor_target_counts ${anchor_target_counts} \\
+        --anchors_targets ${anchors_targets} \\
         --annotated_anchors ${annotated_anchors} \\
         --annotated_targets ${annotated_targets} \\
         --outfile ${outfile} \\
