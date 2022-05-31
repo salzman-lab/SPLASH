@@ -1,7 +1,7 @@
 
 process ADDITIONAL_SUMMARY {
 
-    label 'process_low'
+    label 'process_high'
 
     input:
     path consensus_genes
