@@ -9,9 +9,9 @@ process GET_ANCHORS_AND_SCORES {
     path samplesheet
 
     output:
-    path outfile_scores     , emit: scores
-    path "*extra_info*"     , emit: extra_info
-    path "*pkl"             , emit: pkl
+    path outfile_scores     , emit: scores      , optional: true
+    path "*extra_info*"     , emit: extra_info  , optional: true
+    path "*pkl"             , emit: pkl         , optional: true
 
 
     script:
