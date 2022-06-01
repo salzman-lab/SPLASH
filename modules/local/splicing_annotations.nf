@@ -6,6 +6,7 @@ process SPLICING_ANNOTATIONS {
 
     input:
     path bam
+    path unmapped_fasta
     path gene_bed
     path ann_AS_gtf
     path fasta
@@ -18,7 +19,8 @@ process SPLICING_ANNOTATIONS {
     path "consensus_genes.txt"  , emit: consenus_genes
 
     script:
-    outfile                     = "consensus_called_exons.tsv"
+    outfile_unmapped            = "unmapped_consensus_sequences.tsv"
+    outfile_annotations         = "consensus_called_exons.tsv"
     """
     ## get reported alignments
     samtools view ${bam} \\
@@ -51,11 +53,13 @@ process SPLICING_ANNOTATIONS {
 
     ## add consensus and anchor gene columns
     splicing_annotations.py \\
-        --infile annotated_positions_called_exons.bed \\
+        --unmapped_fasta ${unmapped_fasta} \\
+        --ann_called_exons annotated_positions_called_exons.bed \\
         --fasta ${fasta} \\
         --genome_annotations_anchors ${genome_annotations_anchors} \\
         --consensus_genes consensus_genes.txt \\
         --reported_alignments reported_alignments.txt \\
-        --outfile ${outfile}
+        --outfile_unmapped ${outfile_unmapped} \\
+        --outfile_annotations ${outfile_annotations}
     """
 }

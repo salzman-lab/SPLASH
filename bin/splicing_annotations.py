@@ -7,7 +7,11 @@ import numpy as np
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--infile",
+        "--unmapped_fasta",
+        type=str
+    )
+    parser.add_argument(
+        "--ann_called_exons",
         type=str
     )
     parser.add_argument(
@@ -27,7 +31,11 @@ def get_args():
         type=str
     )
     parser.add_argument(
-        "--outfile",
+        "--outfile_unmapped",
+        type=str
+    )
+    parser.add_argument(
+        "--outfile_annotations",
         type=str
     )
     args = parser.parse_args()
@@ -37,12 +45,25 @@ def get_args():
 def main():
     args = get_args()
 
+    unmapped = {}
+    with open(args.unmapped_fasta, 'r') as unmapped_fasta:
+        for line in unmapped_fasta:
+            if line.startswith('>'):
+                unmapped[line.strip().strip('>').split(" ")[0]] = next(unmapped_fasta).strip()
+    unmapped = (
+        pd.DataFrame.from_dict(unmapped, orient='index')
+        .reset_index()
+    )
+    unmapped.columns = ['sample_anchor', 'consensus']
+    unmapped[['sample', 'anchor']] = unmapped['sample_anchor'].str.split('____', expand=True)
+    unmapped = unmapped.drop('sample_anchor', axis=1)
+    unmapped.to_csv(args.outfile_unmapped, index=False, sep='\t')
+
     df = pd.read_csv(
-        args.infile,
+        args.ann_called_exons,
         sep='\t',
         names=['chr', 'start', 'end', 'sample_anchor', 'id', 'gtf_strand', 'gtf_gene', 'gtf_AS_start', 'gtf_AS_end']
     )
-
 
     seqs = {}
     with open(args.fasta, 'r') as fasta:
@@ -66,7 +87,11 @@ def main():
     anchor_ann = pd.read_csv(args.genome_annotations_anchors, sep='\t', usecols=['anchor', 'local_gene', 'end_to_end_gene'])
     df = pd.merge(df, anchor_ann, on='anchor', how='left')
 
-    reported_alignments = pd.read_csv(args.reported_alignments, sep='\t', names=['sample_anchor', 'consensus_reported_alignment'])
+    try:
+        reported_alignments = pd.read_csv(args.reported_alignments, sep='\t', names=['sample_anchor', 'consensus_reported_alignment'])
+    except:
+        reported_alignments = pd.DataFrame(columns=['sample_anchor', 'consensus_reported_alignment'])
+
     df = pd.merge(df, reported_alignments, on='sample_anchor', how='left')
 
     df['position'] = df['start'] - 1
@@ -93,7 +118,7 @@ def main():
 
     df = df.replace(".", np.nan)
 
-    df.to_csv(args.outfile, sep='\t', index=False)
+    df.to_csv(args.outfile_annotations, sep='\t', index=False)
 
 
 main()

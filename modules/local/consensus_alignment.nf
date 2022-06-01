@@ -15,7 +15,7 @@ process CONSENSUS_ALIGNMENT {
 
     output:
     path "*.bam"    , emit: bam
-    path "*.mate1"  , emit: unmapped
+    path "*.mate1"  , emit: unmapped_fasta
 
     script:
     def cores = 1
