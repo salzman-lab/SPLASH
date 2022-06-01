@@ -13,10 +13,11 @@ process SPLICING_ANNOTATIONS {
     path genome_annotations_anchors
 
     output:
-    path "*tsv"                 , emit: tsv             , optional: true
-    path "called_exons.bed"     , emit: bed
-    path fasta                  , emit: fasta
-    path "consensus_genes.txt"  , emit: consenus_genes
+    path outfile_annotations    , emit: consensus_called_exons  , optional: true
+    path "*tsv"                 , emit: tsv                     , optional: true
+    path "called_exons.bed"     , emit: bed                     , optional: true
+    path fasta                  , emit: fasta                   , optional: true
+    path "consensus_genes.txt"  , emit: consenus_genes          , optional: true
 
     script:
     outfile_unmapped            = "unmapped_consensus_sequences.tsv"

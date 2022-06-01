@@ -10,7 +10,7 @@ def get_args():
         type=str
     )
     parser.add_argument(
-        "--consensus_genes",
+        "--consensus_called_exons",
         type=str
     )
     parser.add_argument(
@@ -25,9 +25,14 @@ def main():
     args = get_args()
 
     try:
-        info = pd.read_csv(args.consensus_genes, sep='\t')
+        info = pd.read_csv(args.consensus_called_exons, sep='\t')
         info = info[['anchor', 'anchor_local_gene', 'anchor_end_to_end_gene', 'consensus_gene']]
-        info = info.groupby(['anchor','anchor_local_gene', 'anchor_end_to_end_gene']).agg(pd.Series.mode).reset_index()
+        info = (
+            info
+            .groupby(['anchor','anchor_local_gene', 'anchor_end_to_end_gene'])
+            .agg(pd.Series.mode)
+            .reset_index()
+        )
         info.columns = ['anchor', 'anchor_local_gene', 'anchor_end_to_end_gene', 'consensus_gene_mode']
     except:
         info = pd.DataFrame(columns = ['anchor', 'anchor_local_gene', 'anchor_end_to_end_gene', 'consensus_gene_mode'])

@@ -137,7 +137,7 @@ workflow ANNOTATE {
         // Process to make additional summary file
         */
         ADDITIONAL_SUMMARY(
-            SPLICING_ANNOTATIONS.out.consenus_genes,
+            SPLICING_ANNOTATIONS.out.consensus_called_exons,
             SUMMARIZE.out.tsv
         )
     }

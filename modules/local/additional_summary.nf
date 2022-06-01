@@ -4,7 +4,7 @@ process ADDITIONAL_SUMMARY {
     label 'process_high'
 
     input:
-    path consensus_genes
+    path consensus_called_exons
     path summary
 
     output:
@@ -15,7 +15,7 @@ process ADDITIONAL_SUMMARY {
     """
     additional_summary.py \\
         --summary ${summary} \\
-        --consensus_genes ${consensus_genes} \\
+        --consensus_called_exons ${consensus_called_exons} \\
         --outfile ${outfile}
     """
 }
