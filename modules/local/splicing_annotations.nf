@@ -20,7 +20,7 @@ process SPLICING_ANNOTATIONS {
 
     script:
     outfile_unmapped            = "unmapped_consensus_sequences.tsv"
-    outfile_annotations         = "consensus_called_exons.tsv"
+    outfile_annotations         = "consensus_called_exons.tsv"      , optional: true
     """
     ## get reported alignments
     samtools view ${bam} \\
