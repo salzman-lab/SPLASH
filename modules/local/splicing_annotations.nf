@@ -13,7 +13,7 @@ process SPLICING_ANNOTATIONS {
     path genome_annotations_anchors
 
     output:
-    path "*tsv"                 , emit: tsv
+    path "*tsv"                 , emit: tsv             , optional: true
     path "called_exons.bed"     , emit: bed
     path fasta                  , emit: fasta
     path "consensus_genes.txt"  , emit: consenus_genes
