@@ -281,6 +281,7 @@ def main():
 
     logging.info(f'Finished target fetching')
 
+    # write out if the target dict are not all empty for all anchors
     if not all(map(lambda x: x == [], target_dict.values())):
         # write out anchor dict for merging later
         anchor_df = (
@@ -291,7 +292,7 @@ def main():
 
         # reformat such that there are is a column of counts per anchor-target,
         # where the column is the fastq_id
-        anchor_df.columns = ['anchor_tuple', args.fastq_id]
+        anchor_df.columns = ['anchor_tuple', 'count']
         anchor_df[['anchor', 'target']] = (
             pd.DataFrame(
                 anchor_df['anchor_tuple'].tolist(),
@@ -299,11 +300,14 @@ def main():
             )
         )
 
+        # create a column of the fastq id
+        anchor_df['sample'] = args.fastq_id
+
         # final output columns
-        anchor_df = anchor_df[['anchor', 'target', args.fastq_id]]
+        anchor_df = anchor_df[['anchor', 'target', 'count', 'sample']]
 
     else:
-        anchor_df = pd.DataFrame(columns=['anchor', 'target', args.fastq_id])
+        anchor_df = pd.DataFrame(columns=['anchor', 'target', 'count', 'sample'])
 
     # output anchor-target counts for this fastq
     anchor_df.to_csv(args.out_target_file, index=False, sep='\t')

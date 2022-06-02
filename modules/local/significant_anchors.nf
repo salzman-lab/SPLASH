@@ -14,7 +14,7 @@ process SIGNIFICANT_ANCHORS {
     outfile_scores          = "anchors_pvals.tsv"
     """
     significant_anchors.py \\
-        --pval_threshold ${pval_threshold} \\
+        --fdr_threshold ${pval_threshold} \\
         --outfile_scores ${outfile_scores}
     """
 }

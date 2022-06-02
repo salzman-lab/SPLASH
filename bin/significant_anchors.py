@@ -19,11 +19,14 @@ def get_args():
         "--base_dir",
         type=str
     )
+    # parser.add_argument(
+    #     "--annFile",
+    #     type=str
+    # )
     parser.add_argument(
-        "--annFile",
+        "--outfile_scores",
         type=str
     )
-        
     args = parser.parse_args()
     return args
 
@@ -31,10 +34,8 @@ def get_args():
 def main():
     args = get_args()
 
-
     dfs = []
-    for df_path in glob.glob(args.base_dir+"/pvals_stratified/pvals_*.csv"):
-
+    for df_path in glob.glob("scores*tsv"):
         try:
             dfs.append(
                 pd.read_csv(df_path.strip(), sep='\t')
@@ -44,10 +45,10 @@ def main():
             pass
 
     df = pd.concat(dfs)
-    
-    ### read in annotations and merge
-    ann_genome = pd.read_csv(args.annFile,sep='\t')
-    df = df.merge(ann_genome)
+
+    # ### read in annotations and merge
+    # ann_genome = pd.read_csv(args.annFile,sep='\t')
+    # df = df.merge(ann_genome)
 
     outdf = df.copy()
 
@@ -56,10 +57,8 @@ def main():
         outdf['pv_hash_corrected'] = pv_hash_corrected
 
         outdf = outdf[outdf.pv_hash_corrected < args.fdr_threshold]
-        
-        
-        
-    outdf.to_csv(args.base_dir + '/pvals_all_ann.csv', sep='\t', index=False)
+
+    outdf.to_csv(args.outfile_scores, sep='\t', index=False)
 
 
 main()

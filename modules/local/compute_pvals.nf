@@ -1,5 +1,5 @@
 
-process GET_ANCHORS_AND_SCORES {
+process COMPUTE_PVALS {
 
     label 'process_high'
 
@@ -21,7 +21,7 @@ process GET_ANCHORS_AND_SCORES {
     randHash_parallel.py \\
         --infile ${counts} \\
         --kmer_size ${kmer_size} \\
-        --samplesheetIDs ${samplesheet} \\
+        --samplesheet ${samplesheet} \\
         --outfile ${outfile_scores}
     """
 }

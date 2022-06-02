@@ -145,7 +145,7 @@ workflow STRINGSTATS {
     */
     ANNOTATE(
         anchors_scores,
-        ANALYZE.out.anchors_targets,
+        ANALYZE.out.anchor_target_counts,
         ANALYZE.out.ch_consensus_fasta,
         ANALYZE.out.ch_anchor_target_fastas
     )

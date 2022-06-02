@@ -14,7 +14,7 @@ workflow ANNOTATE {
 
     take:
     anchor_scores
-    anchors_targets
+    anchor_target_counts
     ch_consensus_fastas
     ch_anchor_target_fastas
 
@@ -56,7 +56,7 @@ workflow ANNOTATE {
     */
     SUMMARIZE(
         anchor_scores,
-        anchors_targets,
+        anchor_target_counts,
         ELEMENT_ANNOTATIONS.out.annotated_anchors,
         ELEMENT_ANNOTATIONS.out.annotated_targets,
         params.run_blast

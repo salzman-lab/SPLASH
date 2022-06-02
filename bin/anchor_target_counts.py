@@ -28,35 +28,34 @@ def main():
     # read in target_counts paths
     df_paths = glob.glob("*_target_counts.tsv")
 
-    # merge all target_counts files
-    counts = pd.read_csv(df_paths[0].strip(), sep='\t')
-    for df_path in df_paths[1:]:
+    # read in all target_counts files
+    dfs = []
+    for df_path in df_paths:
         try:
-            df = pd.read_csv(df_path.strip(), sep='\t')
-            counts = counts.merge(
-                df,
-                on=['anchor', 'target'],
-                how='outer'
-            )
-            del(df)
+            dfs.append(pd.read_csv(df_path.strip(), sep='\t'))
         except pd.errors.EmptyDataError:
             pass
 
-    # fill NA with 0
-    counts = counts.fillna(0)
+    # merge all target_counts files, pivot on samples, and replace all NA with 0
+    df = (
+        pd.concat(dfs)
+        .pivot(index=['anchor', 'target'], columns='sample', values='count')
+        .reset_index()
+        .fillna(0
+    ))
 
     # output anchor targets counts file
-    counts.to_csv(args.outfile_anchor_target_counts, sep='\t', index=False)
+    df.to_csv(args.outfile_anchor_target_counts, sep='\t', index=False)
 
     # output anchor and target fastas
     anchors = (
-        counts['anchor']
+        df['anchor']
         .drop_duplicates()
         .tolist()
     )
 
     targets = (
-        counts['target']
+        df['target']
         .drop_duplicates()
         .tolist()
     )

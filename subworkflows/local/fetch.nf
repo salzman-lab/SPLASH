@@ -5,7 +5,7 @@ include { COUNT_ANCHORS             } from '../../modules/local/count_anchors'
 include { STRATIFY_ANCHORS          } from '../../modules/local/stratify_anchors'
 include { GET_ABUNDANT_ANCHORS      } from '../../modules/local/get_abundant_anchors'
 include { MERGE_ABUNDANT_ANCHORS    } from '../../modules/local/merge_abundant_anchors'
-include { GET_ANCHORS_AND_SCORES    } from '../../modules/local/get_anchors_and_scores'
+include { COMPUTE_PVALS             } from '../../modules/local/compute_pvals'
 include { SIGNIFICANT_ANCHORS       } from '../../modules/local/significant_anchors'
 
 
@@ -92,7 +92,7 @@ workflow FETCH {
         /*
         // Process to get significant anchors and their scores
         */
-        GET_ANCHORS_AND_SCORES(
+        COMPUTE_PVALS(
             GET_ABUNDANT_ANCHORS.out.seqs,
             params.kmer_size,
             file(params.input)
@@ -102,7 +102,7 @@ workflow FETCH {
         // Process to output top 5000 anchors as sorted by pvalue
         */
         SIGNIFICANT_ANCHORS(
-            GET_ANCHORS_AND_SCORES.out.scores.collect(),
+            COMPUTE_PVALS.out.scores.collect(),
             params.pval_threshold
         )
 

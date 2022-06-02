@@ -15,14 +15,6 @@ import nltk ### new import
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--inpath",
-        type=str
-    )
-    parser.add_argument(
-        "--slurmID",
-        type=int
-    )
     parser.add_argument( ## if infile exists, use this
         "--infile",
         type=str,
@@ -31,10 +23,6 @@ def get_args():
     parser.add_argument(
         "--kmer_size",
         type=int
-    )
-    parser.add_argument(
-        "--outfldr",
-        type=str
     )
     parser.add_argument( ### takes as input filepath to samplesheet
         "--samplesheet",
@@ -50,6 +38,10 @@ def get_args():
         "--L",
         type=int,
         default=50
+    )
+    parser.add_argument( ### number of random cj to use
+        "--outfile_scores",
+        type=str
     )
     args = parser.parse_args()
     return args
@@ -82,7 +74,7 @@ def main():
     K = args.K
     L = args.L
     dMax=5 ### get rid of soon.
-    
+
     ### load samplesheet c_j's
     useHandCjs = False
     samplesheet = args.samplesheet
@@ -91,6 +83,7 @@ def main():
             cols = f.readline().split(',')
         if len(cols)==1: ### if len(cols) is 1, then only samplesheet name, no ids
             print("Only 1 samplesheet column, using random cjs")
+            print('here')
         elif len(cols)>2:
             print("Improperly formatted samplesheet")
         else:
@@ -103,19 +96,12 @@ def main():
             sheetdf = sheetdf.drop(columns='fname')
             sheetdf['handCjs'] = normalizevec(sheetdf.handCjs) ### normalize in case time-series
             print("Successfully loaded custom cj")
-            
-            
-    fname = ""
-    if args.infile != "":
-        fname = args.infile
-    else:
-        stratifiedChar = ''.join(list(itertools.product('ATCG',repeat=3))[args.slurmID])
-        fname = args.inpath+'/abundant_stratified_{}.txt.gz'.format(stratifiedChar)
-    df = pd.read_csv(fname, delim_whitespace=True, names=['counts','seq','sample'])
+
+    df = pd.read_csv(args.infile, delim_whitespace=True, names=['counts','seq','sample'])
     if useHandCjs:
         df = pd.merge(df,sheetdf)
     print('done reading')
-    
+
     ### split seq into anchor and target
     ### for some reason some files have duplicates, so drop those
     df['anchor'] = df.seq.str[:args.kmer_size]
@@ -153,12 +139,12 @@ def main():
     mergedDf['dij_0'] = np.vectorize(lambda x,y : hamming(x,y))(mergedDf.target,mergedDf.maxTarget)
     df = convertDijToSj(mergedDf,0)
     df['mu_hand'] = df['mu_0']
-    
+
     ### overwrite dij_0 and associated columns with handcrafted
     mergedDf['dij_0'] = np.vectorize(lambda x,y : min(hamming(x,y),dMax)/dMax)(mergedDf.target,mergedDf.maxTarget)
     df = mergedDf.drop(columns=['targ_cts','maxTarget'])
     df = convertDijToSj(df,0)
-    
+
     #### hash based dij, randomly assign each target to 0 or 1
     for k in range(1,K):
         df['dij_'+str(k)] = (df['target'].apply(lambda x : (mmh3.hash(x,seed=k)>0) ))*1.0
@@ -166,22 +152,23 @@ def main():
         df = convertDijToSj(df,k)
 
     df = df.copy() ## get rid of memory issues
-    
+
     print("starting p value computation")
     #### start efficient computation of p values ####
     sjcols = ['sj_'+str(t)for t in range(K)]
     sampSumcols = ['sampSum_'+str(t)for t in range(K)]
 
     dftmp = (df[['anchor','sample','nj'] + sjcols+sampSumcols].drop_duplicates().pivot(index='anchor',values=['nj']+ sjcols+sampSumcols,columns='sample'))
-    
+
     ### define dimensions
     A = len(dftmp)
     p = df['sample'].nunique()
-    
+
     ### get sample names and samplesheet cjs in order
     sampleNames = dftmp.columns.get_level_values(1)[:p].values
-    sheetCj = sheetdf.set_index('sample').T[sampleNames].to_numpy().flatten()   
-    
+
+    sheetCj = sheetdf.set_index('sample').T[sampleNames].to_numpy().flatten()
+
     njMat = np.zeros((A,p))
     njMat = dftmp['nj'].fillna(0).to_numpy()
     njMat = njMat.T #### p x A
@@ -190,21 +177,21 @@ def main():
     sjMat = np.zeros((A,p,K)) ### A x p x K
     for i,col in enumerate(sjcols):
         sjMat[:,:,i]=dftmp[col].fillna(0).to_numpy()
-    sjMat = np.swapaxes(sjMat,0,2)### K x p x A 
+    sjMat = np.swapaxes(sjMat,0,2)### K x p x A
 
     np.random.seed(0)
     cjs = np.random.choice([-1,1],size=(L+1,p))
     cjs[0,:]=sheetCj ### set first row to be samplesheet cjs
-    
+
     zerodCjs = (cjs[:,:,None]*(njMat>0)[None,:,:])
     ### zero out Cjs that correspond to njs of 0 to increase power
     ### L x p x A
-    
+
     testStats = np.abs(cjs@sjMat)
     ### K x L x A
     ### sj are 0 when nj is 0, so don't need to use masked cj
 
-    with np.errstate(divide='ignore', invalid='ignore'): ### discard divide by 0 warnings    
+    with np.errstate(divide='ignore', invalid='ignore'): ### discard divide by 0 warnings
         ### with zeroed cjs
         num = (zerodCjs**2).sum(axis=1)*Marr ### L x A
         denom=(cjs@np.sqrt(njMat))**2 ### can use normal cjs, since 0 pattern matches
@@ -222,12 +209,12 @@ def main():
         # term1HC = np.maximum(term1HC,1) ### if user defined cjs sum to 0, yields nans
         pv = term1HC+term2HC
         ### K x L x A
-    
+
     pv_hand_sheetCjs = np.minimum(pv[0,0,:],1)
     pv_hash_sheetCjs = np.minimum((K-1)*pv[1:,0,:].min(axis=0),1)
     pv_hand = np.minimum(L*pv[0,1:,:].min(axis=0),1) ### axis 1 (L) becomes axis 0 after slicing
     pv_hash = np.minimum(L*(K-1)*pv[1:,1:,:].min(axis=(0,1)),1)
-    
+
     ### get cjOpt and best hash
     B = np.swapaxes(pv[1:,1:,:],0,2)
     min_idx = B.reshape(B.shape[0],-1).argmin(1)
@@ -242,7 +229,7 @@ def main():
     sampSumMat = np.zeros((A,p,K)) ### A x p x K
     for i,col in enumerate(sampSumcols):
         sampSumMat[:,:,i]=dftmp[col].fillna(0).to_numpy()
-    sampSumMat = np.swapaxes(sampSumMat,0,2)### K x p x A 
+    sampSumMat = np.swapaxes(sampSumMat,0,2)### K x p x A
 
     tmpMat = sampSumMat[minpos_vect[:,1],:,list(range(A))] * cjOpts
     effectSize = np.abs((tmpMat*(cjOpts>0)).sum(axis=1)/np.maximum(1,(njMat.T*(cjOpts>0)).sum(axis=1))
@@ -265,13 +252,12 @@ def main():
 
     outdf= outdf.join(pd.DataFrame(cjOpts,columns=['cj_rand_opt_'+samp for samp in sampleNames])) ## add in cj rand opt
     outdf.sort_values('pv_hash',inplace=True)
-    
-    
+
+
     print('writing')
 
-    (outdf
-     .to_csv(args.outfldr+'/pvals_{}.csv'.format(stratifiedChar), sep='\t', index=False))
-    
+    outdf.to_csv(args.outfile_scores, sep='\t', index=False)
+
     print("done")
-    
+
 main()

@@ -17,7 +17,7 @@ def get_args():
         type=str
     )
     parser.add_argument(
-        "--anchors_targets",
+        "--anchor_targets_counts",
         type=str
     )
     parser.add_argument(
@@ -190,7 +190,7 @@ def add_summary(df, ann_table, seq_type, run_blast, top_anchors):
                 .groupby(['anchor'])
                 .apply(
                     lambda x:
-                    x.sort_values(['total_target_counts'], ascending = False)
+                    x.sort_values(['total_anchor_target_counts'], ascending = False)
                 )
                 .reset_index(drop=True)
                 .groupby('anchor')
@@ -218,14 +218,13 @@ def add_summary(df, ann_table, seq_type, run_blast, top_anchors):
 def main():
     args = get_args()
 
+    ## read in anchors and their scores
     scores = (
         pd.read_csv(args.anchor_scores, sep='\t')
         .drop_duplicates()
     )
 
-    if(len(scores.columns) == 2):
-        scores.columns = ['anchor', 'pv_hash']
-
+    ## just a check--if this column exists, remove it
     try:
         scores = (
             scores
@@ -235,12 +234,58 @@ def main():
     except:
         pass
 
-    anchors_targets = pd.read_csv(args.anchors_targets, sep='\t', names=['anchor', 'target'])
+    ## read in anchor target counts file
+    anchor_targets_counts = pd.read_csv(args.anchor_targets_counts, sep='\t')
+    ## read in annotated anchors and targets files
     ann_anchors = pd.read_csv(args.annotated_anchors, sep='\t')
     ann_targets = pd.read_csv(args.annotated_targets, sep='\t')
 
-    df = pd.merge(anchors_targets, scores, on='anchor')
+    ## make a new column of total counts for each anchor-target
+    anchor_targets_counts['total_anchor_target_counts'] = (
+        anchor_targets_counts
+        .drop(['anchor', 'target'], axis=1)
+        .sum(axis=1)
+    )
 
+    # get the indices of top 5 most abundant targets per anchor
+    indices = (
+        anchor_targets_counts
+        .groupby('anchor')['total_anchor_target_counts']
+        .nlargest(5)
+        .reset_index()
+        ['level_1']
+    )
+    # get top 5 most abundant targets per anchor by their indices
+    top_targets = anchor_targets_counts['target'][indices].tolist()
+
+    ## make a new column of number of samples that have this specific anchor
+    anchor_targets_counts['n_samples_anchor'] = (
+        anchor_targets_counts
+        .drop(['target', 'total_anchor_target_counts'], axis=1)
+        .groupby('anchor')
+        .transform(sum)
+        .astype(bool)
+        .sum(axis=1)
+    )
+
+    ## make a new column of number of samples that have this specific anchor-target
+    anchor_targets_counts['n_samples_anchor_target'] = (
+        anchor_targets_counts
+        .drop(['anchor', 'target', 'total_anchor_target_counts'], axis=1)
+        .astype(bool)
+        .sum(axis=1)
+        .reset_index(drop=True)
+    )
+
+    anchor_targets_counts = anchor_targets_counts[['anchor', 'target', 'total_anchor_target_counts', 'n_samples_anchor', 'n_samples_anchor_target']]
+
+    df = pd.merge(anchor_targets_counts, scores, on='anchor')
+
+    df['rank_target_counts'] = (
+        df
+        .groupby('anchor')['total_anchor_target_counts']
+        .rank('average', ascending=False)
+    )
 
     df['rcAnchor'] = (
         df['anchor']
