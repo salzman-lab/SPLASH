@@ -5,6 +5,7 @@ process MERGE_ABUNDANT_ANCHORS {
 
     input:
     path counts
+    val num_decoy_anchors
 
     output:
     path outfile    , emit: seqs
@@ -14,7 +15,7 @@ process MERGE_ABUNDANT_ANCHORS {
     """
     cat counts* \\
         | sort -k1nr \\
-        | head -n 150 \\
+        | head -n ${num_decoy_anchors} \\
         | cut -f2 -d" " \\
         > ${outfile} \\
         || true

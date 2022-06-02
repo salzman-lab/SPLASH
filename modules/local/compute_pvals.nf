@@ -7,6 +7,8 @@ process COMPUTE_PVALS {
     path counts
     val kmer_size
     path samplesheet
+    val K_num_hashes
+    val L_num_random_Cj
 
     output:
     path outfile_scores     , emit: scores      , optional: true
@@ -18,10 +20,12 @@ process COMPUTE_PVALS {
     file_id                 = counts.simpleName
     outfile_scores          = "scores_${file_id}.tsv"
     """
-    randHash_parallel.py \\
+    compute_pvals.py \\
         --infile ${counts} \\
         --kmer_size ${kmer_size} \\
         --samplesheet ${samplesheet} \\
+        --K ${K_num_hashes} \\
+        --L ${L_num_random_Cj} \\
         --outfile ${outfile_scores}
     """
 }

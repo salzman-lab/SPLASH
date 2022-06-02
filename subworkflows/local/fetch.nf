@@ -82,7 +82,8 @@ workflow FETCH {
 
     if (params.run_decoy) {
         MERGE_ABUNDANT_ANCHORS(
-            GET_ABUNDANT_ANCHORS.out.anchor_counts.collect()
+            GET_ABUNDANT_ANCHORS.out.anchor_counts.collect(),
+            params.num_decoy_anchors
         )
 
         anchors_scores = MERGE_ABUNDANT_ANCHORS.out.seqs
@@ -95,7 +96,9 @@ workflow FETCH {
         COMPUTE_PVALS(
             GET_ABUNDANT_ANCHORS.out.seqs,
             params.kmer_size,
-            file(params.input)
+            file(params.input),
+            params.K_num_hashes,
+            params.L_num_random_Cj
         )
 
         /*
@@ -103,7 +106,7 @@ workflow FETCH {
         */
         SIGNIFICANT_ANCHORS(
             COMPUTE_PVALS.out.scores.collect(),
-            params.pval_threshold
+            params.fdr_threshold
         )
 
         anchors_scores = SIGNIFICANT_ANCHORS.out.scores

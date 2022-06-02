@@ -8,11 +8,11 @@ process ANCHOR_TARGET_COUNTS {
     path target_counts
 
     output:
-    path "anchor_targets_counts*.tsv"   , emit: anchor_target_counts
+    path outfile_anchor_target_counts   , emit: anchor_target_counts
     path "*.fasta"                      , emit: fasta
 
     script:
-    outfile_anchor_target_counts        = "anchor_targets_counts.tsv"
+    outfile_anchor_target_counts        = "anchor_top250_targets_counts.tsv"
     outfile_anchor_fasta                = "anchor.fasta"
     outfile_target_fasta                = "target.fasta"
     """

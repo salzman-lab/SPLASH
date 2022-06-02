@@ -41,8 +41,27 @@ def main():
         pd.concat(dfs)
         .pivot(index=['anchor', 'target'], columns='sample', values='count')
         .reset_index()
-        .fillna(0
-    ))
+        .fillna(0)
+    )
+
+    ## make a new column of total counts for each anchor-target
+    df['total_anchor_target_counts'] = (
+        df
+        .drop(['anchor', 'target'], axis=1)
+        .sum(axis=1)
+    )
+
+    ## for each anchor, only report the top 250 most abundant targets
+    df = (
+        df
+        .groupby('anchor')
+        .apply(
+            lambda x:
+            x.nlargest(250, ['total_anchor_target_counts'])
+        )
+        .drop('anchor', axis=1)
+        .reset_index(level=0)
+    )
 
     # output anchor targets counts file
     df.to_csv(args.outfile_anchor_target_counts, sep='\t', index=False)
