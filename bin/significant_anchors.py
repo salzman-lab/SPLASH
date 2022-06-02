@@ -6,16 +6,24 @@ import sys
 import argparse
 import glob
 
+### writes out file:
+### args.base_dir + '/pvals_all_ann.csv'
+
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--pval_threshold",
+        "--fdr_threshold",
         type=float
     )
     parser.add_argument(
-        "--outfile_scores",
+        "--base_dir",
         type=str
     )
+    parser.add_argument(
+        "--annFile",
+        type=str
+    )
+        
     args = parser.parse_args()
     return args
 
@@ -23,10 +31,9 @@ def get_args():
 def main():
     args = get_args()
 
-    df_paths = glob.glob("scores*.tsv")
 
     dfs = []
-    for df_path in df_paths:
+    for df_path in glob.glob(args.base_dir+"/pvals_stratified/pvals_*.csv"):
 
         try:
             dfs.append(
@@ -37,20 +44,22 @@ def main():
             pass
 
     df = pd.concat(dfs)
+    
+    ### read in annotations and merge
+    ann_genome = pd.read_csv(args.annFile,sep='\t')
+    df = df.merge(ann_genome)
 
-    outdf = pd.DataFrame()
+    outdf = df.copy()
 
     if not df.empty:
-        reject, pvals_corrected,_, _ = sm.stats.multipletests(df.pv_hash, alpha=.05, method='fdr_by')
+        _, pv_hash_corrected,_, _ = sm.stats.multipletests(df.pv_hash, alpha=.05, method='fdr_by')
+        outdf['pv_hash_corrected'] = pv_hash_corrected
 
-        outdf = df[reject]
-
-        outdf = (
-            outdf[outdf['pv_hash'] < args.pval_threshold]
-            .sort_values('pv_hash')
-        )
-
-    outdf.to_csv(args.outfile_scores, sep='\t', index=False)
+        outdf = outdf[outdf.pv_hash_corrected < args.fdr_threshold]
+        
+        
+        
+    outdf.to_csv(args.base_dir + '/pvals_all_ann.csv', sep='\t', index=False)
 
 
 main()
