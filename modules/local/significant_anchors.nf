@@ -1,7 +1,7 @@
 
 process SIGNIFICANT_ANCHORS {
 
-    label 'process_low'
+    label 'process_high'
 
     input:
     path anchors
