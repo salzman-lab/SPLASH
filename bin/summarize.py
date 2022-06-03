@@ -274,13 +274,14 @@ def main():
 
         anchor_targets_counts = anchor_targets_counts[['anchor', 'target', 'total_anchor_target_counts', 'n_samples_anchor', 'n_samples_anchor_target']]
 
+    df = pd.merge(anchor_targets_counts, scores, on='anchor')
+
+    if make_target_columns:
         df['rank_target_counts'] = (
             df
             .groupby('anchor')['total_anchor_target_counts']
             .rank('average', ascending=False)
         )
-
-    df = pd.merge(anchor_targets_counts, scores, on='anchor')
 
     df['rcAnchor'] = (
         df['anchor']
