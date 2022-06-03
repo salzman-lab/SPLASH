@@ -224,64 +224,63 @@ def main():
         .drop_duplicates()
     )
 
-    ## just a check--if this column exists, remove it
-    try:
-        scores = (
-            scores
-            .drop('sj_19', axis=1)
-            .drop_duplicates()
-        )
-    except:
-        pass
+    scores_cols = [c for c in scores.columns if "cj_" not in scores.columns]
+    scores.columns = scores_cols
 
     ## read in anchor target counts file
     anchor_targets_counts = pd.read_csv(args.anchor_targets_counts, sep='\t')
+
+    make_target_columns = True
+    if len(anchor_targets_counts.columns) == 2:
+        anchor_targets_counts.columns = ['anchor', 'target']
+        make_target_columns = False
 
     ## read in annotated anchors and targets files
     ann_anchors = pd.read_csv(args.annotated_anchors, sep='\t')
     ann_targets = pd.read_csv(args.annotated_targets, sep='\t')
 
-    # get top 5 most abundant targets per anchor by their indices
-    top_targets = (
-        anchor_targets_counts
-        .groupby('anchor')
-        .apply(
-            lambda x:
-            x.nlargest(5, ['total_anchor_target_counts'])
+    if make_target_columns:
+        # get top 5 most abundant targets per anchor by their indices
+        top_targets = (
+            anchor_targets_counts
+            .groupby('anchor')
+            .apply(
+                lambda x:
+                x.nlargest(5, ['total_anchor_target_counts'])
+            )
+            .drop('anchor', axis=1)
+            ['target']
+            .tolist()
         )
-        .drop('anchor', axis=1)
-        ['target']
-        .tolist()
-    )
 
-    ## make a new column of number of samples that have this specific anchor
-    anchor_targets_counts['n_samples_anchor'] = (
-        anchor_targets_counts
-        .drop(['target', 'total_anchor_target_counts'], axis=1)
-        .groupby('anchor')
-        .transform(sum)
-        .astype(bool)
-        .sum(axis=1)
-    )
+        ## make a new column of number of samples that have this specific anchor
+        anchor_targets_counts['n_samples_anchor'] = (
+            anchor_targets_counts
+            .drop(['target', 'total_anchor_target_counts'], axis=1)
+            .groupby('anchor')
+            .transform(sum)
+            .astype(bool)
+            .sum(axis=1)
+        )
 
-    ## make a new column of number of samples that have this specific anchor-target
-    anchor_targets_counts['n_samples_anchor_target'] = (
-        anchor_targets_counts
-        .drop(['anchor', 'target', 'total_anchor_target_counts'], axis=1)
-        .astype(bool)
-        .sum(axis=1)
-        .reset_index(drop=True)
-    )
+        ## make a new column of number of samples that have this specific anchor-target
+        anchor_targets_counts['n_samples_anchor_target'] = (
+            anchor_targets_counts
+            .drop(['anchor', 'target', 'total_anchor_target_counts'], axis=1)
+            .astype(bool)
+            .sum(axis=1)
+            .reset_index(drop=True)
+        )
 
-    anchor_targets_counts = anchor_targets_counts[['anchor', 'target', 'total_anchor_target_counts', 'n_samples_anchor', 'n_samples_anchor_target']]
+        anchor_targets_counts = anchor_targets_counts[['anchor', 'target', 'total_anchor_target_counts', 'n_samples_anchor', 'n_samples_anchor_target']]
+
+        df['rank_target_counts'] = (
+            df
+            .groupby('anchor')['total_anchor_target_counts']
+            .rank('average', ascending=False)
+        )
 
     df = pd.merge(anchor_targets_counts, scores, on='anchor')
-
-    df['rank_target_counts'] = (
-        df
-        .groupby('anchor')['total_anchor_target_counts']
-        .rank('average', ascending=False)
-    )
 
     df['rcAnchor'] = (
         df['anchor']
