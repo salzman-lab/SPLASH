@@ -224,8 +224,14 @@ def main():
         .drop_duplicates()
     )
 
+    ## account for decoy scores
+    if len(scores.columns) == 2:
+        scores.columns = ['anchor', 'decoy_pvalue']
+
     scores_cols = [c for c in scores.columns if "cj_" not in scores.columns]
     scores.columns = scores_cols
+
+    print(scores.head())
 
     ## read in anchor target counts file
     anchor_targets_counts = pd.read_csv(args.anchor_targets_counts, sep='\t')
