@@ -91,6 +91,7 @@ def main():
 
                     if "N" not in anchor and "N" not in target:
                         file.write(str.encode(f'{anchor+target} {sample}\n'))
+    file.close()
 
 
 main()

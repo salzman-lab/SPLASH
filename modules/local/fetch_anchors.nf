@@ -1,7 +1,8 @@
 
 process FETCH_ANCHORS {
 
-    label 'process_high'
+    tag "${fastq_id}"
+    label 'process_low'
     conda (params.enable_conda ? "conda-forge::python=3.9.5 pandas=1.4.1 numpy=1.22.3" : null)
 
     input:
@@ -17,7 +18,7 @@ process FETCH_ANCHORS {
     tuple val(fastq_id), path(outfile), val(group_id), emit: seqs
 
     script:
-    outfile         = "sequences_${fastq_id}.txt"
+    outfile         = "sequences_${fastq_id}.txt.gz"
     """
     fetch_anchors.py \\
         --infile ${fastq} \\

@@ -1,7 +1,8 @@
 
 process COUNT_ANCHORS {
 
-    label 'process_medium'
+    tag "${fastq_id}"
+    label 'process_low'
 
     input:
     tuple val(fastq_id), path(fastq), val(group_id)
