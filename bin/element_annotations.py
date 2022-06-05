@@ -33,12 +33,15 @@ def main():
     for hits_path in anchor_hits_paths[1:]:
         hits = pd.read_csv(hits_path.strip(), sep='\t')
         anchor_anns = anchor_anns.merge(hits, on='anchor')
+        del(hits)
 
     anchor_anns.to_csv(
         args.outfile_ann_anchors,
         sep='\t',
         index=False
     )
+
+    del(anchor_anns)
 
     # read in target_hits
     target_hits_paths = glob.glob("target_hits*tsv")
@@ -48,6 +51,7 @@ def main():
     for hits_path in target_hits_paths[1:]:
         hits = pd.read_csv(hits_path.strip(), sep='\t')
         target_anns = target_anns.merge(hits, on='target')
+        del(hits)
 
     target_anns.to_csv(
         args.outfile_ann_targets,
