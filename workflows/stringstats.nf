@@ -131,24 +131,26 @@ workflow STRINGSTATS {
 
     }
 
-    /*
-    // Perform analysis
-    */
-    ANALYZE(
-        ch_fastqs,
-        anchors_scores,
-        lookahead
-    )
+    if (! params.run_pvals_only) {
+        /*
+        // Perform analysis
+        */
+        ANALYZE(
+            ch_fastqs,
+            anchors_scores,
+            lookahead
+        )
 
-    /*
-    // Perform annotations
-    */
-    ANNOTATE(
-        anchors_scores,
-        ANALYZE.out.anchor_target_counts,
-        ANALYZE.out.ch_consensus_fasta,
-        ANALYZE.out.ch_anchor_target_fastas
-    )
+        /*
+        // Perform annotations
+        */
+        ANNOTATE(
+            anchors_scores,
+            ANALYZE.out.anchor_target_counts,
+            ANALYZE.out.ch_consensus_fasta,
+            ANALYZE.out.ch_anchor_target_fastas
+        )
+    }
 
 }
 
