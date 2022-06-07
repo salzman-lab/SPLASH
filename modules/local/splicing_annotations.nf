@@ -18,11 +18,16 @@ process SPLICING_ANNOTATIONS {
     path "called_exons.bed"     , emit: bed                     , optional: true
     path fasta                  , emit: fasta                   , optional: true
     path "consensus_genes.txt"  , emit: consenus_genes          , optional: true
+    path "*bam*"                , emit: bam_bai                 , optional: true
 
     script:
     outfile_unmapped            = "unmapped_consensus_sequences.tsv"
     outfile_annotations         = "consensus_called_exons.tsv"
     """
+    ## sort bam and index for later
+    samtools sort ${bam} > sorted_${bam}
+    samtools index sorted_${bam}
+
     ## get reported alignments
     samtools view ${bam} \\
         | cut -f1,10 \\

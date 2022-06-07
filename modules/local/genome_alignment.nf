@@ -12,6 +12,7 @@ process GENOME_ALIGNMENT {
 
     output:
     tuple path(fasta), path(end_to_end_genome_bam), path(end_to_end_transcriptome_bam), path(local_genome_bam), path(local_transcriptome_bam), emit: bam_tuple
+    path "*bam*" , emit: bam
 
     script:
     fasta_name                      = fasta.baseName
@@ -22,18 +23,27 @@ process GENOME_ALIGNMENT {
     """
     bowtie2 -f -x ${genome_index} -U ${fasta} -k 1 --quiet \\
         | samtools view -bS - \\
+        | samtools sort - \\
         > ${end_to_end_genome_bam}
 
     bowtie2 -f -x ${genome_index} -U ${fasta} -k 1 --local --quiet \\
         | samtools view -bS - \\
+        | samtools sort - \\
         > ${local_genome_bam}
 
     bowtie2 -f -x ${transcriptome_index} -U ${fasta} -k 1 --quiet \\
         | samtools view -bS - \\
+        | samtools sort - \\
         > ${end_to_end_transcriptome_bam}
 
     bowtie2 -f -x ${transcriptome_index} -U ${fasta} -k 1 --local --quiet \\
         | samtools view -bS - \\
+        | samtools sort - \\
         > ${local_transcriptome_bam}
+
+    for file in *bam
+    do
+        samtools index \${file}
+    done
     """
 }
