@@ -250,20 +250,27 @@ def main():
     effectSize = np.abs((tmpMat*(cjOpts>0)).sum(axis=1)/np.maximum(1,(njMat.T*(cjOpts>0)).sum(axis=1))
                   + (tmpMat*(cjOpts<0)).sum(axis=1)/np.maximum(1,(njMat.T*(cjOpts<0)).sum(axis=1))
                  )
-
+    
+    ### new, computing sheetCj effect size
+    ### preserves sign, can be between -1 and 1
+    tmpMat = sampSumMat[minpos_vect[:,1],:,list(range(A))] * sheetCj ### A x p
+    effectSize_sheet = ((tmpMat*(sheetCj>0)).sum(axis=1)/np.maximum(1,(njMat.T*(sheetCj>0)).sum(axis=1))
+                  + (tmpMat*(sheetCj<0)).sum(axis=1)/np.maximum(1,(njMat.T*(sheetCj<0)).sum(axis=1)))
+    
+    
     outdf = pd.DataFrame({'anchor':dftmp.index.to_list(),'pv_hash':pv_hash, 'pv_hand':pv_hand,
              'pv_hand_sheetCjs':pv_hand_sheetCjs, 'pv_hash_sheetCjs':pv_hash_sheetCjs,
-             'effect_size':effectSize,'optHash':hashOpts, 'M':Marr})
+             'effect_size_randCjs':effectSize,'effect_size_sheetCjs':effectSize_sheet,'optHash':hashOpts, 'M':Marr})
 
     entDf = (df.groupby(['anchor','target']).counts.sum()
              .groupby('anchor').apply(lambda x : scipy.stats.entropy(x,base=2))
              .reset_index().rename({'counts':'entropy'},axis=1))
 
     outdf = outdf.merge(entDf)
-    outdf = outdf.merge(df[['anchor','mu_hand']].drop_duplicates())
+    outdf = outdf.merge(df[['anchor','mu_ham','mu_lev']].drop_duplicates())
 
     if not useHandCjs:
-        outdf = outdf.drop(columns=['pv_hand_sheetCjs','pv_hash_sheetCjs'])
+        outdf = outdf.drop(columns=['pv_hand_sheetCjs','pv_hash_sheetCjs','effect_size_sheetCjs'])
 
     outdf= outdf.join(pd.DataFrame(cjOpts,columns=['cj_rand_opt_'+samp for samp in sampleNames])) ## add in cj rand opt
     outdf.sort_values('pv_hash',inplace=True)
