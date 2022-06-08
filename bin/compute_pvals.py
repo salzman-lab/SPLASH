@@ -240,7 +240,7 @@ def main():
     cjOpts = zerodCjs[minpos_vect[:,0],:,list(range(A))]
     hashOpts = minpos_vect[:,1]
 
-    ###compute effect size
+    ###compute effect size for random cj
     sampSumMat = np.zeros((A,p,K)) ### A x p x K
     for i,col in enumerate(sampSumcols):
         sampSumMat[:,:,i]=dftmp[col].fillna(0).to_numpy()
@@ -250,13 +250,19 @@ def main():
     effectSize = np.abs((tmpMat*(cjOpts>0)).sum(axis=1)/np.maximum(1,(njMat.T*(cjOpts>0)).sum(axis=1))
                   + (tmpMat*(cjOpts<0)).sum(axis=1)/np.maximum(1,(njMat.T*(cjOpts<0)).sum(axis=1))
                  )
+    ### where all samples have same cluster id, set effect size to 0
+    sameLocs = np.abs(((njMat.T>0)*(cjOpts)).sum(axis=1)/(njMat.T>0).sum(axis=1))==1
+    effectSize[sameLocs]=0
     
-    ### new, computing sheetCj effect size
+    ### comput sheetCj effect size
     ### preserves sign, can be between -1 and 1
-    tmpMat = sampSumMat[minpos_vect[:,1],:,list(range(A))] * sheetCj ### A x p
+    ### take fresh argmin to find minimizing hash
+    tmpMat = sampSumMat[pv[1:,0,:].argmin(axis=0)+1,:,list(range(A))] * sheetCj ### A x p
     effectSize_sheet = ((tmpMat*(sheetCj>0)).sum(axis=1)/np.maximum(1,(njMat.T*(sheetCj>0)).sum(axis=1))
                   + (tmpMat*(sheetCj<0)).sum(axis=1)/np.maximum(1,(njMat.T*(sheetCj<0)).sum(axis=1)))
-    
+    ### where all samples have same cluster id, set effect size to 0
+    sameLocs = np.abs(((njMat.T>0)*(sheetCj)).sum(axis=1)/(njMat.T>0).sum(axis=1))==1
+    effectSize_sheet[sameLocs]=0
     
     outdf = pd.DataFrame({'anchor':dftmp.index.to_list(),'pv_hash':pv_hash, 'pv_hand':pv_hand,
              'pv_hand_sheetCjs':pv_hand_sheetCjs, 'pv_hash_sheetCjs':pv_hash_sheetCjs,
