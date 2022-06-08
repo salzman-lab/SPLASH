@@ -147,7 +147,12 @@ def main():
     ### first call is to generate hand mu (no limit)
     mergedDf['dij_0'] = np.vectorize(lambda x,y : hamming(x,y))(mergedDf.target,mergedDf.maxTarget)
     df = convertDijToSj(mergedDf,0)
-    df['mu_hand'] = df['mu_0']
+    df['mu_ham'] = df['mu_0']
+    
+    ### generate levenstein distance based mu
+    mergedDf['dij_0'] = np.vectorize(lambda x,y : nltk.edit_distance(x,y))(mergedDf.target,mergedDf.maxTarget)
+    df = convertDijToSj(mergedDf,0)
+    df['mu_lev'] = df['mu_0']
 
     ### overwrite dij_0 and associated columns with handcrafted
     mergedDf['dij_0'] = np.vectorize(lambda x,y : min(hamming(x,y),dMax)/dMax)(mergedDf.target,mergedDf.maxTarget)
