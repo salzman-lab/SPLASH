@@ -12,6 +12,7 @@ Motivation
 1. Install Java.
 2. Install [`nextflow`](https://nf-co.re/usage/installation) (`>=20.04.0`).
 3. Install [`docker`](https://www.docker.com/) or [`singularity`](https://sylabs.io/guides/3.5/user-guide/introduction.html). By using the `docker` or `singularity` nextflow profile, the pipeline can be run within the stringstats docker container (also available on [dockerhub](https://hub.docker.com/repository/docker/mariekevromman/stringstats)), which contains all the required dependencies.
+4. TODO: conda
 
 # Test Run Command
 To test this pipeine, use the command below. The `test` profie will launch a pipeline run with a small dataset.
@@ -62,7 +63,7 @@ In this example bowtie2 samplesheet, the output anchors and targets will be alig
 ## Optional Inputs
 ### *`--anchors_file`*
 
-To bypass the `get_anchors` step and input a list of anchors of interest, provide this parameter.
+To bypass the `get_anchors` step and input a list of anchors of interest, provide this parameter. Please note that the samplesheet must be provided as well.
 
 The anchors file should be a 1 column file with a header, consisting of a list of anchor sequences of interest, with one anchor per line. An example:
 ```
@@ -99,16 +100,18 @@ nextflow run kaitlinchaung/stringstats \
 | --skip_trimming | Boolean value to indicate if adaptor trimming should be skipped, options: `true`, `false` | `true` |
 | --use_read_length | Boolean value to indicate if the distance between anchor and target is a function of read length, options: `true`, `false` | `true` |
 | --lookahead | The distance between anchor and target if `--use_read_length true` | 0 |
-| --unmapped | Boolean value to indicate if all reads should be used as input, or only the unmapped reads (based on bowtie2 mapping against provided `--bowtie2_index`). If `--unmapped false`, all reads will be used in this run; if `--unmapped true`, only the unmapped reads will be used in this run; options: `true`, `false`   | `false` |
 | --bowtie2_index | Index used for mapping the fastq reads using bowtie2 and extracting the unmapped reads if `--unmapped true` is set | `NA` |
-| --run_blast | Boolean value to run blast on sequences that do not have any element annotation, options: `true`, `false` | `false` |
-
+| --run_get_unmapped | Boolean value to indicate if all reads should be used as input, or only the unmapped reads (based on bowtie2 mapping against provided `--bowtie2_index`). If `--run_get_unmapped false`, all reads will be used in this run; if `--unmapped true`, only the unmapped reads will be used in this run; options: `true`, `false`   | `false` |
+| --run_decoy | Boolean value to run the decoy version of the pipeline, where the top 1000 most abudnanta anchors are used as pipeline input, options: `true`, `false` | `false` |
+| --run_annotations | Boolean value for running genomea nd splicing annotations, options: `true`, `false` | `true` |
+| --run_anchor_target_counts | Boolean value for creating a counts table of anchor-targets by sample for visualization, options: `true`, `false` | `false` |
+| --run_pvals_only | Boolean value to complete the pipeline after pvalues are completed, options: `true`, `false` | `false` |
 
 *`fetch_anchors`*
 
 | Argument              | Description       | Default  |
 | --------------------- | ----------------- |--------- |
-| --num_lines | Maximum number of reads to fetch anchors and targets from | no maximum aka 0 |
+| --num_reads_first_pass | Maximum number of reads to fetch anchors and targets from | 4M |
 | --kmer_size | Length of sequences for anchors and targets | 27 |
 | --anchor_mode | Mode by which to fetch anchors and target sequences, options: `chunk`, `tile`| `tile` |
 | --window_slide | Size of sliding window to fetch anchors, when in `tile` mode | 5 |
@@ -117,18 +120,16 @@ nextflow run kaitlinchaung/stringstats \
 | Argument              | Description       | Default  |
 | --------------------- | ----------------- |--------- |
 | --anchor_count_threshold | Minimum number of total counts required to calculate a score for an anchor | 50 |
-| --distance_type | options: `hamming`, `lev` | `lev` |
-| --max_targets | Maximum number of targets per anchor for score calculation | 50 |
-| --max_dist | Maximum distance allowed between targets in score calculation | 10 |
-| --bonfer | Number of corrections | 10 |
-| --pval_threshold | Pvalue threshold to call a significant anchor | 0.1 |
+| --K_num_hashes | Number of random hashes | 10 |
+| --L_num_random_Cj | Number of random CJ | 50 |
+| --fdr_threshold | Pvalue threshold to call a significant anchor | 0.05 |
 
 
 *`parse_anchors`*
 
 | Argument              | Description       | Default  |
 | --------------------- | ----------------- |----------|
-| --num_parse_anchors_reads | Maximum length of candidate consensus sequences used to build the final consensus sequence | 4000000 |
+| --num_reads_second_pass | Maximum number of reads to build consensus sequences from | 4M |
 | --consensus_length | Maximum length of candidate consensus sequences used to build the final consensus sequence | 200 |
 | --direction | The relative direction to search for candidate consensus sequences and targets, options: `up`, `down` | `down` |
 
@@ -138,10 +139,11 @@ nextflow run kaitlinchaung/stringstats \
 | --genome_index | bowtie2 genome index used in `genome_annotations_*` files |
 | --transcriptome_index | bowtie2 transcriptome index used in `genome_annotations_*` files |
 | --gene_bed | BED file of annotated genes used in `genome_annotations_*` files |
-| --exon_starts_bed | BED file of annotated exon start sites used in `genome_annotations_*` files |
-| --exon_ends_bed | BED file of annotated exon end sites used in `genome_annotations_*` files |
+| --exon_starts_bed | BED file of annotated exon start sites used in `genome_annotations_*` files, each entry is from [a, a] where a = exon start |
+| --exon_ends_bed | BED file of annotated exon end sites used in `genome_annotations_*` files, each entry is from [a, a] where a = exon end  |
 | --star_index | STAR genome index used in splice junction annotations |
 | --gtf | GTF file used in splice junction annotations |
+| --ann_AS_gtf | alternative splicing annotation file |
 
 
 ## Citations
