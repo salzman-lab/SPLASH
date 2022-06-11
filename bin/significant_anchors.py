@@ -46,10 +46,10 @@ def main():
     outdf = df.copy()
 
     if not df.empty:
-        _, pv_hash_corrected,_, _ = sm.stats.multipletests(df.pv_hash, alpha=.05, method='fdr_by')
-        outdf['pv_hash_corrected'] = pv_hash_corrected
+        _, pv_corrected,_, _ = sm.stats.multipletests(df.pv_hash_both, alpha=.05, method='fdr_by')
+        outdf['pv_hash_both_corrected'] = pv_corrected
 
-        outdf = outdf[outdf.pv_hash_corrected < args.fdr_threshold]
+        outdf = outdf[outdf.pv_hash_both_corrected < args.fdr_threshold]
 
 
     print('writing')

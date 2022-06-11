@@ -11,8 +11,7 @@ import pickle
 import nltk
 
 ### inputs:
-##### either infile (explicit stratified anchors.txt file), or inpath as
-###### /oak/stanford/groups/horence/kaitlin/results_nomad/bulk_RNAseq/paper/AA_antibody_secreting_cells/abundant_stratified_anchors/ and slurmID (can be renamed) ranging from 0 to 63 indicating which file to analyze
+#####  stratified anchors.txt file
 ##### samplesheet: e.g. /oak/stanford/groups/horence/kaitlin/running_nomad/bulk_RNAseq/samplesheets/samplesheet_AA_antibody_secreting_cells.csv
 ### outputs:
 ##### args.outfldr+'/pvals_{}.csv'
@@ -274,6 +273,8 @@ def main():
 
     outdf = outdf.merge(entDf)
     outdf = outdf.merge(df[['anchor','mu_ham','mu_lev']].drop_duplicates())
+    
+    outdf['pv_hash_both'] = 2*np.minimum(outdf.pv_hash,outdf.pv_hash_sheetCjs)
 
     if not useHandCjs:
         outdf = outdf.drop(columns=['pv_hand_sheetCjs','pv_hash_sheetCjs','effect_size_sheetCjs'])
