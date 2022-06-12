@@ -6,11 +6,6 @@ import sys
 import argparse
 import glob
 
-### inputs:
-##### outputs of compute_pvals.py: args.base_dir+"/pvals_stratified/pvals_{}.csv"
-##### genome annotation file: args.annFile (e.g. /oak/stanford/groups/horence/kaitlin/results_nomad/bulk_RNAseq/paper/AA_antibody_secreting_cells/genome_annotations/genome_annotations_anchor.tsv)
-### writes out file:
-##### args.base_dir + '/pvals_all_ann.csv'
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -22,6 +17,11 @@ def get_args():
     parser.add_argument(
         "--outfile_scores",
         type=str
+    )
+    parser.add_argument(
+        "--full_csv_path",
+        type=str,
+        default=""
     )
 
     args = parser.parse_args()
@@ -48,6 +48,9 @@ def main():
     if not df.empty:
         _, pv_corrected,_, _ = sm.stats.multipletests(df.pv_hash_both, alpha=.05, method='fdr_by')
         outdf['pv_hash_both_corrected'] = pv_corrected
+        
+        if args.full_csv_path != "":
+            outdf.to_csv(args.full_csv_path, sep='\t', index=False)
 
         outdf = outdf[outdf.pv_hash_both_corrected < args.fdr_threshold]
 
@@ -55,5 +58,7 @@ def main():
     print('writing')
     outdf.to_csv(args.outfile_scores, sep='\t', index=False)
 
+    
+        
 
 main()
