@@ -229,7 +229,7 @@ def main():
     if len(scores.columns) == 2:
         scores.columns = ['anchor', 'decoy_pvalue']
 
-    scores_cols = [c for c in scores.columns if "cj_" not in scores.columns]
+    scores_cols = [c for c in scores.columns if "cj_" not in c]
     scores.columns = scores_cols
 
     print(scores.head())
