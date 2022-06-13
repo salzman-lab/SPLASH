@@ -25,7 +25,7 @@ def main():
     args = get_args()
 
     try:
-        info = pd.read_csv(args.consensus_called_exons, sep='\t')
+        info = pd.read_csv(args.consensus_called_exons, sep='\t').drop_duplicates()
         info = info[['anchor', 'anchor_local_gene', 'anchor_end_to_end_gene', 'consensus_gene']]
         info = (
             info
