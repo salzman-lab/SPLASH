@@ -1,7 +1,7 @@
 
 process ADDITIONAL_SUMMARY {
 
-    label 'process_high'
+    label 'process_high_memory'
 
     input:
     path consensus_called_exons
