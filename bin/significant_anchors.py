@@ -19,9 +19,8 @@ def get_args():
         type=str
     )
     parser.add_argument(
-        "--full_csv_path",
-        type=str,
-        default=""
+        "--all_anchors_pvals_file",
+        action='store_true'
     )
 
     args = parser.parse_args()
@@ -48,17 +47,15 @@ def main():
     if not df.empty:
         _, pv_corrected,_, _ = sm.stats.multipletests(df.pv_hash_both, alpha=.05, method='fdr_by')
         outdf['pv_hash_both_corrected'] = pv_corrected
-        
-        if args.full_csv_path != "":
-            outdf.to_csv(args.full_csv_path, sep='\t', index=False)
+
+        if args.all_anchors_pvals_file:
+            outdf.to_csv(f"all_{args.outfile_scores}", sep='\t', index=False)
 
         outdf = outdf[outdf.pv_hash_both_corrected < args.fdr_threshold]
 
-
-    print('writing')
     outdf.to_csv(args.outfile_scores, sep='\t', index=False)
 
-    
-        
+
+
 
 main()

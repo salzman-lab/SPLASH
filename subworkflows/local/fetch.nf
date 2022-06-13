@@ -106,7 +106,8 @@ workflow FETCH {
         */
         SIGNIFICANT_ANCHORS(
             COMPUTE_PVALS.out.scores.collect(),
-            params.fdr_threshold
+            params.fdr_threshold,
+            params.all_anchors_pvals_file
         )
 
         anchors_scores = SIGNIFICANT_ANCHORS.out.scores
