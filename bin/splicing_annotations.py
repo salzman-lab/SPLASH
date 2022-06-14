@@ -136,6 +136,7 @@ def main():
             'sample', 'anchor', 'consensus', 'anchor_local_gene', 'anchor_end_to_end_gene', 'consensus_gene', 'consensus_reported_alignment']]
 
         ## clean up from bedtools
+        df = df.drop_duplicates()
         df = df.replace(".", np.nan)
 
         ## output
