@@ -3,21 +3,21 @@
 
 The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It uses Docker/Singularity containers making installation trivial and results highly reproducible. The [Nextflow DSL2](https://www.nextflow.io/docs/latest/dsl2.html) implementation of this pipeline uses one container per process which makes it much easier to maintain and update software dependencies. Where possible, these processes have been submitted to and installed from [nf-core/modules](https://github.com/nf-core/modules) in order to make them available to all nf-core pipelines, and to everyone within the Nextflow community!
 
-# stringstats
+# nomad
 Motivation
 
 # Prerequisites
-**For sherlock users, more details found at https://github.com/kaitlinchaung/stringstats/blob/main/nextflow.md**
+**For sherlock users, more details found at https://github.com/kaitlinchaung/nomad/blob/main/nextflow.md**
 
 1. Install Java.
 2. Install [`nextflow`](https://nf-co.re/usage/installation) (`>=20.04.0`).
-3. Install [`docker`](https://www.docker.com/) or [`singularity`](https://sylabs.io/guides/3.5/user-guide/introduction.html). By using the `docker` or `singularity` nextflow profile, the pipeline can be run within the stringstats docker container (also available on [dockerhub](https://hub.docker.com/repository/docker/mariekevromman/stringstats)), which contains all the required dependencies.
+3. Install [`docker`](https://www.docker.com/) or [`singularity`](https://sylabs.io/guides/3.5/user-guide/introduction.html). By using the `docker` or `singularity` nextflow profile, the pipeline can be run within the nomad docker container (also available on [dockerhub](https://hub.docker.com/repository/docker/mariekevromman/nomad)), which contains all the required dependencies.
 4. TODO: conda
 
 # Test Run Command
 To test this pipeine, use the command below. The `test` profie will launch a pipeline run with a small dataset.
 ```bash
-nextflow run kaitlinchaung/stringstats \
+nextflow run kaitlinchaung/nomad \
     -profile test \
     -r main \
     -latest
@@ -74,7 +74,7 @@ GGGGGGGGGG
 ```
 An example run command with this optional input:
 ```
-nextflow run kaitlinchaung/stringstats \
+nextflow run kaitlinchaung/nomad \
     --input samplesheet.csv \
     --anchors_file anchors.txt \
     -r main \
@@ -88,7 +88,7 @@ Please note that input parameters should be passed with the a double-hypen, whil
 
 For example:
 ```
-nextflow run kaitlinchaung/stringstats \
+nextflow run kaitlinchaung/nomad \
     --input input.txt \
     -r main \
     -latest \
@@ -134,6 +134,7 @@ nextflow run kaitlinchaung/stringstats \
 | --direction | The relative direction to search for candidate consensus sequences and targets, options: `up`, `down` | `down` |
 
 *Annotation-related parameters*
+if these parameters are not passed in, the pipeline will default to hg38 versions of these files, hosted on sherlock
 | Argument              | Description       |
 | --------------------- | ----------------- |
 | --genome_index | bowtie2 genome index used in `genome_annotations_*` files |
