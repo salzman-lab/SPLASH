@@ -1,9 +1,9 @@
 #!/usr/bin/env nextflow
 /*
 ========================================================================================
-    nf-core/stringstats
+    kaitlinchaung/nomad
 ========================================================================================
-    Github : https://github.com/kaitlinchaung/stringstats
+    Github : https://github.com/kaitlinchaung/nomad
 
 ----------------------------------------------------------------------------------------
 */
@@ -31,13 +31,13 @@ WorkflowMain.initialise(workflow, params, log)
 ========================================================================================
 */
 
-include { STRINGSTATS } from './workflows/stringstats'
+include { NOMAD } from './workflows/nomad'
 
 //
-// WORKFLOW: Run main kaitlinchaung/stringstats analysis pipeline
+// WORKFLOW: Run main kaitlinchaung/nomad analysis pipeline
 //
-workflow RUN_STRINGSTATS {
-    STRINGSTATS ()
+workflow RUN_NOMAD {
+    NOMAD ()
 }
 
 /*
@@ -51,7 +51,7 @@ workflow RUN_STRINGSTATS {
 // See: https://github.com/nf-core/rnaseq/issues/619
 //
 workflow {
-    RUN_STRINGSTATS ()
+    RUN_NOMAD ()
 }
 
 /*

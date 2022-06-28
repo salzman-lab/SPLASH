@@ -6,6 +6,7 @@ process GET_ABUNDANT_ANCHORS {
     input:
     path counts
     val anchor_count_threshold
+    val kmer_size
 
     output:
     path "*gz"                      , emit: seqs
@@ -16,7 +17,7 @@ process GET_ABUNDANT_ANCHORS {
     """
     ## Create third column of the anchor sequence, so that the file = 54mer-sample counts, 54mer, anchor
     ## Sort for joining later
-    paste -d' ' ${counts} <(cut -f2 -d' ' ${counts} | cut -c-27) \\
+    paste -d' ' ${counts} <(cut -f2 -d' ' ${counts} | cut -c-${kmer_size}) \\
         | sort -k4 \\
         > with_anchors.txt
 

@@ -1,4 +1,4 @@
-# nf-core/stringstats: Output
+# kaitlinchaung/nomad: Output
 
 ## Introduction
 

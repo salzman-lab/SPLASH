@@ -3,7 +3,7 @@ process PARSE_ANCHORS {
 
     tag "${fastq_id}"
     label 'process_medium'
-    conda (params.enable_conda ? "conda-forge::python=3.9.5 pandas=1.4.1" : null)
+    conda (params.enable_conda ? "conda-forge::python=3.9.5 pandas=1.4.1 conda-forge::biopython" : null)
 
     input:
     tuple val(fastq_id), path(fastq), val(group_id)

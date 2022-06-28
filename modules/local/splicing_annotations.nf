@@ -2,7 +2,7 @@
 process SPLICING_ANNOTATIONS {
 
     label 'process_medium'
-    conda (params.enable_conda ? "bioconda::bedtools=2.30.0" : null)
+    conda (params.enable_conda ? "bioconda::samtools bioconda::bedtools=2.30.0 conda-forge::python=3.9.5 pandas=1.4.3 numpy=1.22.3" : null)
 
     input:
     path bam

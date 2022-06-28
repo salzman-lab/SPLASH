@@ -1,4 +1,4 @@
-# nf-core/stringstats: Citations
+# kaitlinchaung/nomad: Citations
 
 ## [nf-core](https://pubmed.ncbi.nlm.nih.gov/32055031/)
 

@@ -1,11 +1,11 @@
 ---
 name: Feature request
-about: Suggest an idea for the nf-core/stringstats pipeline
+about: Suggest an idea for the kaitlinchaung/nomad pipeline
 labels: enhancement
 ---
 
 <!--
-# nf-core/stringstats feature request
+# kaitlinchaung/nomad feature request
 
 Hi there!
 

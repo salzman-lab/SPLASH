@@ -1,6 +1,6 @@
 {
-    "name": "nf-core/stringstats",
-    "homePage": "https://github.com/nf-core/stringstats",
+    "name": "kaitlinchaung/nomad",
+    "homePage": "https://github.com/kaitlinchaung/nomad",
     "repos": {
         "nf-core/modules": {
             "fastqc": {
