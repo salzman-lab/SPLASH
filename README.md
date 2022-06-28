@@ -7,7 +7,6 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
 A statistical, reference-free algorithm subsumes myriad problems in genome science and enables novel discovery
 
 # Prerequisites
-**For sherlock users, more details found at https://github.com/kaitlinchaung/nomad/blob/main/nextflow.md**
 
 1. Install Java.
 2. Install [`nextflow`](https://nf-co.re/usage/installation) (`>=20.04.0`).
@@ -133,7 +132,7 @@ nextflow run kaitlinchaung/nomad \
 | --direction | The relative direction to search for candidate consensus sequences and targets, options: `up`, `down` | `down` |
 
 *Annotation-related parameters*
-If these parameters are not passed in, the pipeline will default to hg38 versions of these files, hosted on Sherlock
+**If these parameters are not passed in, the pipeline will default to hg38 versions of these files, hosted on Sherlock. For users without Sherlock access, this step may break.**
 | Argument              | Description       |
 | --------------------- | ----------------- |
 | --genome_index | bowtie2 genome index used in `genome_annotations_*` files |
