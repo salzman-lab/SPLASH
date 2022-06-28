@@ -41,7 +41,7 @@ def main():
 
     df = pd.concat(dfs)
 
-
+    ## if it's an empty df, just output the df
     outdf = df.copy()
 
     if not df.empty:

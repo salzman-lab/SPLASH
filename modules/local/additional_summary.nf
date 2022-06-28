@@ -2,6 +2,7 @@
 process ADDITIONAL_SUMMARY {
 
     label 'process_high_memory'
+    conda (params.enable_conda ? "conda-forge::python=3.9.5 pandas=1.4.3" : null)
 
     input:
     path consensus_called_exons

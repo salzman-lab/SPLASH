@@ -1,19 +1,11 @@
-----------------------------------------------------
-                                        ,--./,-.
-        ___     __   __   __   ___     /,-._.--~\\
-  |\\ | |__  __ /  ` /  \\ |__) |__         }  {
-  | \\| |       \\__, \\__/ |  \\ |___     \\`-._,-`-,
-                                        `._,._,'
-  nf-core/stringstats v${version}
-----------------------------------------------------
 
 Run Name: $runName
 
 <% if (success){
-    out << "## nf-core/stringstats execution completed successfully! ##"
+    out << "## kaitlinchaung/nomad execution completed successfully! ##"
 } else {
     out << """####################################################
-## nf-core/stringstats execution completed unsuccessfully! ##
+## kaitlinchaung/nomad execution completed unsuccessfully! ##
 ####################################################
 The exit status of the task that caused the workflow execution to fail was: $exitStatus.
 The full error message was:
@@ -36,5 +28,5 @@ Pipeline Configuration:
 <% out << summary.collect{ k,v -> " - $k: $v" }.join("\n") %>
 
 --
-nf-core/stringstats
-https://github.com/nf-core/stringstats
+kaitlinchaung/nomad
+https://github.com/kaitlinchaung/nomad

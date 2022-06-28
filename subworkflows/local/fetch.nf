@@ -77,7 +77,8 @@ workflow FETCH {
     */
     GET_ABUNDANT_ANCHORS(
         STRATIFY_ANCHORS.out.seqs.flatten(),
-        params.anchor_count_threshold
+        params.anchor_count_threshold,
+        params.kmer_size
     )
 
     if (params.run_decoy) {

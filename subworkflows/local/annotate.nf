@@ -21,7 +21,7 @@ workflow ANNOTATE {
     main:
 
     // create samplesheet of bowtie2 indices
-    ch_indices = Channel.fromPath(params.bowtie2_samplesheet)
+    ch_indices = Channel.fromPath(params.element_annotations_samplesheet)
         .splitCsv(
             header: false
         )

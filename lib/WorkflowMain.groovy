@@ -1,5 +1,5 @@
 //
-// This file holds several functions specific to the main.nf workflow in the nf-core/stringstats pipeline
+// This file holds several functions specific to the main.nf workflow in the kaitlinchaung/nomad pipeline
 //
 
 class WorkflowMain {
