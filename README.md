@@ -6,13 +6,13 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
 # NOMAD
 A statistical, reference-free algorithm subsumes myriad problems in genome science and enables novel discovery
 
-# Prerequisites
+## Prerequisites
 
 1. Install Java.
 2. Install [`nextflow`](https://nf-co.re/usage/installation) (`>=20.04.0`).
 3. Depending on your use case, install [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html#regular-installation), [`docker`](https://www.docker.com/), or [`singularity`](https://sylabs.io/guides/3.5/user-guide/introduction.html). By using the `docker` or `singularity` nextflow profile, the pipeline can be run within the NOMAD docker container (also available on [dockerhub](https://hub.docker.com/repository/docker/kaitlinchaung/stringstats), which contains all the required dependencies.
 
-# Test Run Command
+## Test Run Command
 To test this pipeine, use the command below. The `test` profile will launch a pipeline run with a small dataset.
 ```bash
 nextflow run kaitlinchaung/nomad \
@@ -21,7 +21,7 @@ nextflow run kaitlinchaung/nomad \
     -latest
 ```
 
-# Running on your own data
+## Running on your own data
 To run this pipeline on your own samplesheet, use a command similar to:
 ```bash
 nextflow run kaitlinchaung/nomad \
