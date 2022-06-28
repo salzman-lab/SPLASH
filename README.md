@@ -14,9 +14,27 @@ A statistical, reference-free algorithm subsumes myriad problems in genome scien
 
 ## Test Run Command
 To test this pipeine, use the command below. The `test` profile will launch a pipeline run with a small dataset.
+
+How to run with singularity:
 ```bash
 nextflow run kaitlinchaung/nomad \
-    -profile test \
+    -profile test,singularity \
+    -r main \
+    -latest
+```
+
+How to run with docker:
+```bash
+nextflow run kaitlinchaung/nomad \
+    -profile test,docker \
+    -r main \
+    -latest
+```
+
+How to run with conda:
+```bash
+nextflow run kaitlinchaung/nomad \
+    -profile test,conda \
     -r main \
     -latest
 ```
