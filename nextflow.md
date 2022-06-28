@@ -46,9 +46,6 @@ Docker is another container management system, but it cannot run on Sherlock (or
 
 For those who choose to use conda over Singularity/Docker, conda must be [installed](https://docs.conda.io/en/latest/miniconda.html) and available (miniconda is fine, and is less bloated than anaconda).
 
-# Configure git private repositories
-If this repo is private, please follow these [instructions](https://www.nextflow.io/blog/2021/configure-git-repositories-with-nextflow.html) first.
-
 # Setting Up Your First Run
 
 Generally, the pipeline is launched from a head node, which will launch child processes for each step/branch of the pipeline. Thus, the pipeline can be launched in one of several ways:
@@ -57,7 +54,7 @@ Generally, the pipeline is launched from a head node, which will launch child pr
     2. Start a [interative/compute](https://www.sherlock.stanford.edu/docs/user-guide/running-jobs/#interactive-jobs) node on Sherlock
         1. Even though the head node requires very little memory, it is not recommended to run computation on login nodes
     3. Launch your pipeline in the command line
-2. In a sbatch job
+2. Launch the pipeline in a sbatch script (described below)
 
 ## Pipeline sbatch scripts
 
@@ -71,10 +68,10 @@ This sbatch script is doing the following:
 2. Navigate into the work directory
 3. Launch a pipeline
     1. We can run pipelines by providing the account and repo name of pipeline.
-        1. So for example, `nextflow run kaitlinchaung/stringstats` refers to the pipeline that is stored at https://github.com/kaitlinchaung/stringstats
+        1. So for example, `nextflow run kaitlinchaung/nomad` refers to the pipeline that is stored at https://github.com/kaitlinchaung/nomad
     2. Use the following profiles (which are defined in `nextflow.config`):
         1. `test`, which runs the test dataset that is stored on github
-        2. `sherlock`, which calls the parameters required to run this pipeline on sherlock
+        2. `horence`, which calls the parameters required to run this pipeline on sherlock on the horence, quake, and owners partitions
         3. `singularity`, which calls the containter required to use Singularity to run this pipeline. Note that this is interchangeable with `docker` or `conda`
     3. Running the `main` branch of the repo (`-r main`)
     4. Running the latest revision/commit of the repo (`-latest`)
@@ -95,12 +92,12 @@ This sbatch script is doing the following:
 #SBATCH --mem=4Gb
 #SBATCH --requeue
 
-work_dir=test_run
+work_dir=${PWD}/test_run
 mkdir -p ${work_dir}
 cd ${work_dir}
 
-nextflow run kaitlinchaung/stringstats \
-    -profile test,sherlock,singularity \
+nextflow run kaitlinchaung/nomad \
+    -profile test,horence,singularity \
     -r main \
     -latest \
     -resume
@@ -125,21 +122,19 @@ Here is an example of an sbatch script that runs a real dataset, with all defaul
 #SBATCH --requeue
 
 samplesheet=/home/users/kaitlin3/data/samplesheet_viral.csv
-bowtie2_samplesheet=/oak/stanford/groups/horence/kaitlin/bowtie2_annotations/references/bowtie2_index_samplesheet.csv
 outdir=/home/users/kaitlin3/results/viral
 
-work_dir=viral
+work_dir=${PWD}/viral
 mkdir -p ${work_dir}
 cd ${work_dir}
 
 
-nextflow run kaitlinchaung/stringstats \
-    -profile test,sherlock,singularity \
+nextflow run kaitlinchaung/nomad \
+    -profile horence,singularity \
     -r main \
     -latest \
     -resume \
     --input ${samplesheet} \
-    --bowtie2_sampleshet ${bowtie2_samplesheet} \
     --output ${outdir}
 ```
 
@@ -158,25 +153,24 @@ Here is an sbatch script, that modifies a couple of pipeline parameters. Please 
 #SBATCH --requeue
 
 samplesheet=/home/users/kaitlin3/data/samplesheet_viral.csv
-bowtie2_samplesheet=/oak/stanford/groups/horence/kaitlin/bowtie2_annotations/references/bowtie2_index_samplesheet.csv
-outdir=/home/users/kaitlin3/results/viral_strict_params
+outdir=/home/users/kaitlin3/results/viral
 
-work_dir=viral_strict_params
+work_dir=${PWD}/viral
 mkdir -p ${work_dir}
 cd ${work_dir}
 
 
-nextflow run kaitlinchaung/stringstats \
-    -profile test,sherlock,singularity \
+nextflow run kaitlinchaung/nomad \
+    -profile horence,singularity \
     -r main \
     -latest \
     -resume \
     --input ${samplesheet} \
-    --bowtie2_sampleshet ${bowtie2_samplesheet} \
     --output ${outdir} \
-    --n_iterations 200 \
-    --use_std true \
-    --compute_target_distance false
+    --K_num_hashes 200 \
+    --L_num_random_Cj 100 \
+    --run_pvals_only true \
+    --gene_bed genes.bed
 ```
 
 # Troubleshooting
@@ -187,14 +181,14 @@ According to nextflow docs:
 
 Sometimes, there can be issues with commits not being up to date in the local repo. This can happen when you are getting errors that are not in sync with the version of the pipeline you are running (ie your version seems to be a commit behind the remote version), or if you get an error like this:
 ```
-Unknown error accessing project `kaitlinchaung/stringstats` -- Repository may be corrupted: /home/users/kaitlin3/.nextflow/assets/kaitlincha
-ung/stringstats
+Unknown error accessing project `kaitlinchaung/nomad` -- Repository may be corrupted: /home/users/kaitlin3/.nextflow/assets/kaitlincha
+ung/nomad
 ```
 
 In that case, you can always refresh your local version with:
 ```
-rm /home/users/kaitlin3/.nextflow/assets/kaitlinchaung/stringstats
-nextflow pull kaitlinchaung/stringstats
+rm /home/users/kaitlin3/.nextflow/assets/kaitlinchaung/nomad
+nextflow pull kaitlinchaung/nomad
 ```
 
 Note that the above may be different for you, depending on where nextflow is installed.
