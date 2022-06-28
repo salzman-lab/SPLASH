@@ -21,6 +21,17 @@ nextflow run kaitlinchaung/nomad \
     -latest
 ```
 
+# Running on your own data
+To run this pipeline on your own samplesheet, use a command similar to:
+```bash
+nextflow run kaitlinchaung/nomad \
+    -profile <<singularity/conda/docker>> \
+    -r main \
+    -latest \
+    -resume \
+    --input <<YOUR_SAMPLESHEET>>
+```
+
 # Inputs
 ## Required Inputs
 *`--input`*
