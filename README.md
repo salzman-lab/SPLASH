@@ -40,6 +40,8 @@ The input samplesheet should be a comma-separated file with no header, consistin
 1. full paths to gzip fastq files to analyze (required)
 2. group IDs of type integer, corresponding to experimental groups of each fastq file (optional)
 
+If paired end sequencing data is being used, please only use files from only Read 1 or files from only Read 2.
+
 In this example samplesheet, 4 fastq files are being analyzed to compare 2 experimental groups.
 ```
 /data/file1.fastq.gz,1
