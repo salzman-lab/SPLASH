@@ -45,23 +45,28 @@ def get_args():
 def main():
     args = get_args()
 
-    ## read in unmapped fasta reads into df
-    unmapped = {}
-    with open(args.unmapped_fasta, 'r') as unmapped_fasta:
-        for line in unmapped_fasta:
-            if line.startswith('>'):
-                ## strip away unnecessary information
-                unmapped[line.strip().strip('>').split(" ")[0]] = next(unmapped_fasta).strip()
-    ## conert to df
-    unmapped = (
-        pd.DataFrame.from_dict(unmapped, orient='index')
-        .reset_index()
-    )
-    unmapped.columns = ['sample_anchor', 'consensus']
-    ## create columns
-    unmapped[['sample', 'anchor']] = unmapped['sample_anchor'].str.split('____', expand=True)
-    unmapped = unmapped.drop('sample_anchor', axis=1)
-    ## output
+    try:
+        ## read in unmapped fasta reads into df
+        unmapped = {}
+        with open(args.unmapped_fasta, 'r') as unmapped_fasta:
+            for line in unmapped_fasta:
+                if line.startswith('>'):
+                    ## strip away unnecessary information
+                    unmapped[line.strip().strip('>').split(" ")[0]] = next(unmapped_fasta).strip()
+        ## conert to df
+        unmapped = (
+            pd.DataFrame.from_dict(unmapped, orient='index')
+            .reset_index()
+        )
+        unmapped.columns = ['sample_anchor', 'consensus']
+        ## create columns
+        unmapped[['sample', 'anchor']] = unmapped['sample_anchor'].str.split('____', expand=True)
+        unmapped = unmapped.drop('sample_anchor', axis=1)
+    except:
+        ## if there are no unmapped reads
+        unmapped = pd.DataFrame(columns=['consensus', 'sample', 'anchor'])
+
+    ## output unmapped reads
     unmapped.to_csv(args.outfile_unmapped, index=False, sep='\t')
 
     ## read in annotated called exons
