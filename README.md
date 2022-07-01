@@ -132,7 +132,7 @@ nextflow run kaitlinchaung/nomad \
 | --bowtie2_index | Index used for mapping the fastq reads using bowtie2 and extracting the unmapped reads if `--unmapped true` is set | `NA` |
 | --run_get_unmapped | Boolean value to indicate if all reads should be used as input, or only the unmapped reads (based on bowtie2 mapping against provided `--bowtie2_index`). If `--run_get_unmapped false`, all reads will be used in this run; if `--unmapped true`, only the unmapped reads will be used in this run; options: `true`, `false`   | `false` |
 | --run_decoy | Boolean value to run the decoy version of the pipeline, where the top 1000 most abudnanta anchors are used as pipeline input, options: `true`, `false` | `false` |
-| --run_annotations | Boolean value for running genomea nd splicing annotations, options: `true`, `false` | `true` |
+| --run_annotations | Boolean value for running genome and splicing annotations, options: `true`, `false` | `false` |
 | --run_anchor_target_counts | Boolean value for creating a counts table of anchor-targets by sample for visualization, options: `true`, `false` | `false` |
 | --run_pvals_only | Boolean value to complete the pipeline after pvalues are completed, options: `true`, `false` | `false` |
 
