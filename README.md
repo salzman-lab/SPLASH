@@ -78,13 +78,13 @@ In this example samplesheet, 4 fastq files are being analyzed, in unsupervised m
 
 *`--element_annotation_samplesheet`*
 
-This parameter is a full path to a samplesheet of bowtie2 indices, used in the element annotations step. The default set of bowtie2 indices used in the NOMAD manuscript can be downloaded [here](https://zenodo.org/record/6809331#.YsfDouxKhTY).
+This parameter is a full path to a samplesheet of bowtie2 indices, used in the element annotations step. The default set of bowtie2 indices used in the NOMAD manuscript can be downloaded [here](https://zenodo.org/record/6809531#.YsfR_OzMJTY).
 
 The element annotation samplesheet must not have a header, and it must contain the full path to each bowtie2 index, including the index stem.
 
 Below are general guidlines to creating the element annotation samplesheet:
 
-1. Download [indices](https://zenodo.org/record/6809331#.YsfDouxKhTY).
+1. Download [indices](https://zenodo.org/record/6809531#.YsfR_OzMJTY).
 2. Unpack indices to a index directory
 ```
 tar -zxvf nomad_element_annotation_indices.tar.gz
