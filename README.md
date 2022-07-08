@@ -60,14 +60,14 @@ The input samplesheet should be a comma-separated file with no header, consistin
 
 If paired end sequencing data is being used, please only use files from only Read 1 or files from only Read 2.
 
-In this example samplesheet, 4 fastq files are being analyzed to compare 2 experimental groups.
+In this example samplesheet, 4 fastq files are being analyzed in supervised mode.
 ```
 /data/file1.fastq.gz,1
 /data/file2.fastq.gz,1
 /data/file3.fastq.gz,2
 /data/file4.fastq.gz,2
 ```
-In this example samplesheet, 4 fastq files are being analyzed, without comparing any experimental groups.
+In this example samplesheet, 4 fastq files are being analyzed, in unsupervised mode.
 ```
 /data/file1.fastq.gz
 /data/file2.fastq.gz
@@ -77,20 +77,42 @@ In this example samplesheet, 4 fastq files are being analyzed, without comparing
 
 *`--element_annotation_samplesheet`*
 
-The element annotation samplesheet should be 1-column file with no header, consisting of:
-1. full paths to [bowtie2 references](bowtie link), including the reference stem
+This parameter is a full path to a samplesheet of bowtie2 indices, used in the element annotations step. The default set of bowtie2 indices used in the NOMAD manuscript can be downloaded [here](https://zenodo.org/record/6809331#.YsfDouxKhTY).
 
-Currently, this paramter defaults to a set of references that is available to Sherlock users.
+The element annotation samplesheet must not have a header, and it must contain the full path to each bowtie2 index, including the index stem.
 
-In this example bowtie2 samplesheet, the output anchors and targets will be aligned to the *mm10* and *hg38* indices.
+Below are general guidlines to creating the element annotation samplesheet:
+
+1. Download [indices](https://zenodo.org/record/6809331#.YsfDouxKhTY).
+2. Unpack indices to a index directory
 ```
-/references/mm10/mm10
-/references/hg38/hg38
+tar -zxvf nomad_element_annotation_indices.tar.gz
+```
+3. Create the samplesheet, where each line is the full path to each subdirectory from `nomad_element_annotation_indices`, including the reference stems.
+
+For example, if you downloaded `nomad_element_annotation_indices` into `/home/Documents/nomad`,
+then your samplesheet would look like the following. Please note that the reference stem is required, otherwise this step will fail.
+```
+/home/Documents/nomad/nomad_element_annotation_indices/dfam_te_eukaryota/dfam_te_eukaryota
+/home/Documents/nomad/nomad_element_annotation_indices/direct_repeats/direct_repeats
+/home/Documents/nomad/nomad_element_annotation_indices/escherichia_phage_phiX174/escherichia_phage_phiX174
+/home/Documents/nomad/nomad_element_annotation_indices/eukaryota_its1_itstonedb/eukaryota_its1_itstonedb
+...
+```
+4. Pass in the full path to the samplesheet as a parameter of your run.
+```
+nextflow run kaitlinchaung/stringstats \
+    -profile singularity \
+    --input /home/data/samplesheet_COVID.csv \
+    --element_annotation_samplesheet /home/data/indices_samplesheet.csv \
+    -latest
 ```
 
+
+Note: Sherlock users who have access to the horence Oak directory do not need to specify this parameter; it will default to a prebuilt-samplesheet on Oak.
 
 ## Optional Inputs
-### *`--anchors_file`*
+*`--anchors_file`*
 
 To bypass the `get_anchors` step and input a list of anchors of interest, provide this parameter. Please note that the samplesheet must be provided as well.
 
