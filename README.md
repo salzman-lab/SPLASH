@@ -47,7 +47,8 @@ nextflow run kaitlinchaung/nomad \
     -r main \
     -latest \
     -resume \
-    --input <<YOUR_SAMPLESHEET>>
+    --input <<YOUR_SAMPLESHEET>> \
+    --element_annotation_samplesheet <<ELEMENT_ANN_SAMPLESHEET>>
 ```
 
 # Inputs
