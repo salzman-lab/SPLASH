@@ -163,7 +163,7 @@ nextflow run kaitlinchaung/nomad \
 
 | Argument              | Description       | Default  |
 | --------------------- | ----------------- |--------- |
-| --num_reads_first_pass | Maximum number of reads to fetch anchors and targets from | 4M |
+| --num_reads_first_pass | Maximum number of reads to fetch anchors and targets from | 4000000 |
 | --kmer_size | Length of sequences for anchors and targets | 27 |
 | --anchor_mode | Mode by which to fetch anchors and target sequences, options: `chunk`, `tile`| `tile` |
 | --window_slide | Size of sliding window to fetch anchors, when in `tile` mode | 5 |
@@ -181,7 +181,7 @@ nextflow run kaitlinchaung/nomad \
 
 | Argument              | Description       | Default  |
 | --------------------- | ----------------- |----------|
-| --num_reads_second_pass | Maximum number of reads to build consensus sequences from | 4M |
+| --num_reads_second_pass | Maximum number of reads to build consensus sequences from | 4000000 |
 | --consensus_length | Maximum length of candidate consensus sequences used to build the final consensus sequence | 200 |
 | --direction | The relative direction to search for candidate consensus sequences and targets, options: `up`, `down` | `down` |
 
