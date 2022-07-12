@@ -48,7 +48,7 @@ nextflow run kaitlinchaung/nomad \
     -latest \
     -resume \
     --input <<YOUR_SAMPLESHEET>> \
-    --element_annotation_samplesheet <<ELEMENT_ANN_SAMPLESHEET>>
+    --element_annotations_samplesheet <<ELEMENT_ANN_SAMPLESHEET>>
 ```
 
 # Inputs
@@ -76,7 +76,7 @@ In this example samplesheet, 4 fastq files are being analyzed, in unsupervised m
 /data/file4.fastq.gz
 ```
 
-*`--element_annotation_samplesheet`*
+*`--element_annotations_samplesheet`*
 
 This parameter is a full path to a samplesheet of bowtie2 indices, used in the element annotations step. The default set of bowtie2 indices used in the NOMAD manuscript can be downloaded [here](https://zenodo.org/record/6809531#.YsfR_OzMJTY).
 
@@ -105,7 +105,7 @@ then your samplesheet would look like the following. Please note that the refere
 nextflow run kaitlinchaung/stringstats \
     -profile singularity \
     --input /home/data/samplesheet_COVID.csv \
-    --element_annotation_samplesheet /home/data/indices_samplesheet.csv \
+    --element_annotations_samplesheet /home/data/indices_samplesheet.csv \
     -latest
 ```
 
