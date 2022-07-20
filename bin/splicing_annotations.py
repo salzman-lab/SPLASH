@@ -73,7 +73,7 @@ def main():
     df = pd.read_csv(
         args.ann_called_exons,
         sep='\t',
-        names=['chr', 'start', 'end', 'sample_anchor', 'id', 'gtf_strand', 'gtf_gene', 'gtf_AS_start', 'gtf_AS_end']
+        names=['chr', 'start', 'end', 'sample_anchor', 'id', 'gtf_strand', 'gtf_gene']
     )
 
     ## proceed with merging if annotated called exons not empty
@@ -126,8 +126,6 @@ def main():
                 "id" : "called_exon_id",
                 "gtf_strand" : "ann_exon_strand",
                 "gtf_gene" : "ann_exon_gene",
-                "gtf_AS_start" : "ann_exon_AS_start",
-                "gtf_AS_end" : "ann_exon_AS_end",
                 "local_gene" : "anchor_local_gene",
                 "end_to_end_gene" : "anchor_end_to_end_gene",
                 "position" : "called_exon_id_position"
@@ -137,7 +135,7 @@ def main():
 
         ## reorder columns
         df = df[[
-            'called_exon_chr', 'called_exon_id', 'called_exon_id_position', 'ann_exon_gene', 'ann_exon_strand', 'ann_exon_AS_start', 'ann_exon_AS_end',
+            'called_exon_chr', 'called_exon_id', 'called_exon_id_position', 'ann_exon_gene', 'ann_exon_strand',
             'sample', 'anchor', 'consensus', 'anchor_local_gene', 'anchor_end_to_end_gene', 'consensus_gene', 'consensus_reported_alignment']]
 
         ## clean up from bedtools

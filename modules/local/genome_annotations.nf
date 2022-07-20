@@ -8,8 +8,6 @@ process GENOME_ANNOTATIONS {
     input:
     tuple path(fasta), path(end_to_end_genome_bam), path(end_to_end_transcriptome_bam), path(local_genome_bam), path(local_transcriptome_bam)
     path gene_bed
-    path exon_starts_bed
-    path exon_ends_bed
 
     output:
     path "*tsv"         , emit: annotations
@@ -54,22 +52,6 @@ process GENOME_ANNOTATIONS {
             | cut -f4,6 \\
             | sort \\
             > local/${fasta_name}_genome_genes.txt
-        bedtools closest -a local/${fasta_name}_genome.bed -b ${exon_starts_bed} -D ref -id -t first \\
-            | cut -f4,13 \\
-            | sort \\
-            > local/${fasta_name}_genome_upstream_exon_starts.txt
-        bedtools closest -a local/${fasta_name}_genome.bed -b ${exon_ends_bed} -D ref -id -t first \\
-            | cut -f4,13 \\
-            | sort \\
-            > local/${fasta_name}_genome_upstream_exon_ends.txt
-        bedtools closest -a local/${fasta_name}_genome.bed -b ${exon_starts_bed} -D ref -iu -t first \\
-            | cut -f4,13 \\
-            | sort \\
-            > local/${fasta_name}_genome_downstream_exon_starts.txt
-        bedtools closest -a local/${fasta_name}_genome.bed -b ${exon_ends_bed} -D ref -iu -t first \\
-            | cut -f4,13 \\
-            | sort \\
-            > local/${fasta_name}_genome_downstream_exon_ends.txt
     fi
 
     ##
@@ -102,22 +84,6 @@ process GENOME_ANNOTATIONS {
             | cut -f4,6 \\
             | sort \\
             >  end_to_end/${fasta_name}_genome_genes.txt
-        bedtools closest -a end_to_end/${fasta_name}_genome.bed -b ${exon_starts_bed} -D ref -id -t first \\
-            | cut -f4,13 \\
-            | sort \\
-            >  end_to_end/${fasta_name}_genome_upstream_exon_starts.txt
-        bedtools closest -a end_to_end/${fasta_name}_genome.bed -b ${exon_ends_bed} -D ref -id -t first \\
-            | cut -f4,13 \\
-            | sort \\
-            >  end_to_end/${fasta_name}_genome_upstream_exon_ends.txt
-        bedtools closest -a end_to_end/${fasta_name}_genome.bed -b ${exon_starts_bed} -D ref -iu -t first \\
-            | cut -f4,13 \\
-            | sort \\
-            >  end_to_end/${fasta_name}_genome_downstream_exon_starts.txt
-        bedtools closest -a end_to_end/${fasta_name}_genome.bed -b ${exon_ends_bed} -D ref -iu -t first \\
-            | cut -f4,13 \\
-            | sort \\
-            >  end_to_end/${fasta_name}_genome_downstream_exon_ends.txt
     fi
 
     genome_annotations.py \\
