@@ -192,11 +192,8 @@ nextflow run kaitlinchaung/nomad \
 | --genome_index | bowtie2 genome index used in `genome_annotations_*` files |
 | --transcriptome_index | bowtie2 transcriptome index used in `genome_annotations_*` files |
 | --gene_bed | BED file of annotated genes used in `genome_annotations_*` files |
-| --exon_starts_bed | BED file of annotated exon start sites used in `genome_annotations_*` files, each entry is from [a, a] where a = exon start |
-| --exon_ends_bed | BED file of annotated exon end sites used in `genome_annotations_*` files, each entry is from [a, a] where a = exon end  |
 | --star_index | STAR genome index used in splice junction annotations |
 | --gtf | GTF file used in splice junction annotations |
-| --ann_AS_gtf | alternative splicing annotation file |
 
 
 ## Citations

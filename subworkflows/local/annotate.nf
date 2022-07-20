@@ -85,9 +85,7 @@ workflow ANNOTATE {
         */
         GENOME_ANNOTATIONS(
             GENOME_ALIGNMENT.out.bam_tuple,
-            params.gene_bed,
-            params.exon_starts_bed,
-            params.exon_ends_bed
+            params.gene_bed
         )
 
         /*
@@ -128,7 +126,6 @@ workflow ANNOTATE {
             CONSENSUS_ALIGNMENT.out.bam,
             CONSENSUS_ALIGNMENT.out.unmapped_fasta,
             params.gene_bed,
-            params.ann_AS_gtf,
             fasta,
             genome_annotations_anchors
         )

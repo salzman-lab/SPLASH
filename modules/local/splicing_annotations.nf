@@ -8,7 +8,6 @@ process SPLICING_ANNOTATIONS {
     path bam
     path unmapped_fasta
     path gene_bed
-    path ann_AS_gtf
     path fasta
     path genome_annotations_anchors
 
@@ -45,12 +44,6 @@ process SPLICING_ANNOTATIONS {
         | awk -v OFS='\\t' '{if (\$2 < 0) print \$1,0,\$3,\$4,\$5,\$6; else print \$1,\$2,\$3,\$4,\$5,\$6}' \\
         > positions_called_exons.bed
 
-    ## annotate called exon start and ends
-    bedtools intersect -a positions_called_exons.bed -b ${ann_AS_gtf} -loj -wb \\
-        | cut -f1-5,10-13 \\
-        | bedtools groupby -g 1,2,3,4,5, -c 6,7,8,9 -o distinct,distinct,distinct,distinct \\
-        > annotated_positions_called_exons.bed
-
     ## get consensus genes
     bedtools intersect -a called_exons.bed -b ${gene_bed} -wb -loj \\
         | cut -f 4,10 \\
@@ -60,8 +53,8 @@ process SPLICING_ANNOTATIONS {
     ## add consensus and anchor gene columns
     splicing_annotations.py \\
         --unmapped_fasta ${unmapped_fasta} \\
-        --ann_called_exons annotated_positions_called_exons.bed \\
         --fasta ${fasta} \\
+        --ann_called_exons positions_called_exons.bed \\
         --genome_annotations_anchors ${genome_annotations_anchors} \\
         --consensus_genes consensus_genes.txt \\
         --reported_alignments reported_alignments.txt \\
