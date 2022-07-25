@@ -1,4 +1,6 @@
 include { GET_UNMAPPED              } from '../../modules/local/get_unmapped'
+include { EXTRACT_CBC_UMI           } from '../../modules/local/extract_cbc_umi'
+include { DEDUP_CBC_UMI             } from '../../modules/local/dedup_cbc_umi'
 include { TRIMGALORE                } from '../../modules/nf-core/modules/trimgalore/main'
 include { FETCH_ANCHORS             } from '../../modules/local/fetch_anchors'
 include { COUNT_ANCHORS             } from '../../modules/local/count_anchors'
@@ -41,6 +43,18 @@ workflow FETCH {
 
         ch_fastqs = GET_UNMAPPED.out.fastq
 
+    }
+
+    if (params.10X) {
+        EXTRACT_CBC_UMI(
+            ch_fastqs
+        )
+
+        DEDUP_CBC_UMI(
+            EXTRACT_CBC_UMI.out.fastqs
+        )
+
+        ch_fastqs = DEDUP_CBC_UMI.out.fastqs
     }
 
     /*

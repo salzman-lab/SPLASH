@@ -11,6 +11,10 @@ def get_args():
         type=str
     )
     parser.add_argument(
+        "--run_type",
+        type=str
+    )
+    parser.add_argument(
         "--fastq_id",
         type=str
     )
@@ -38,24 +42,12 @@ def get_args():
         "--outfile",
         type=str
     )
-    parser.add_argument(
-        "--10X",
-        action='store_true'
-    )
     args = parser.parse_args()
     return args
 
 
 def main():
     args = get_args()
-
-    if not args.10X:
-        sample = args.fastq_id
-
-    if args.anchor_mode == 'chunk':
-        step_size = args.kmer_size
-    elif args.anchor_mode == 'tile':
-        step_size = args.window_slide
 
     x = 0
 
@@ -68,26 +60,14 @@ def main():
 
             x += 1
 
-
+            cbc = line.split(' ')[0].split('_')[1]
+            umi = line.split(' ')[0].split('_')[2]
+            sample = cbc + umi
 
             if x % 4 == 2:
                 read = line.strip()
+                file.write(str.encode(f'{sample} {read}\n'))
 
-                last_base = len(read) - (args.lookahead + 2 * args.kmer_size)
-
-                for i in range(0, last_base, step_size):
-                    # get anchor
-                    anchor = read[0+i : args.kmer_size+i]
-
-                    # get target start and end positions, as a function of anchor end
-                    target_start = (args.kmer_size+i) + args.lookahead
-                    target_end = target_start + args.kmer_size
-
-                    # get target
-                    target = read[target_start : target_end]
-
-                    if "N" not in anchor and "N" not in target:
-                        file.write(str.encode(f'{anchor+target} {sample}\n'))
     file.close()
 
 
