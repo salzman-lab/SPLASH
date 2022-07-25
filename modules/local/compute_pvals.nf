@@ -5,7 +5,7 @@ process COMPUTE_PVALS {
     conda (
         params.enable_conda
         ?
-        "conda-forge::python=3.9.5 pandas=1.4.3 numpy=1.22.3 conda-forge::mmh3=3.0.0 anaconda::scipy=1.7.3 anaconda::nltk=3.7"
+        "conda-forge::python=3.9.5 pandas=1.4.3 numpy conda-forge::mmh3=3.0.0 anaconda::scipy=1.7.3 anaconda::nltk=3.7"
         :
         null
     )
