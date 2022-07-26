@@ -82,7 +82,10 @@ workflow FETCH {
             params.kmer_size,
             file(params.input),
             params.K_num_hashes,
-            params.L_num_random_Cj
+            params.L_num_random_Cj,
+            params.anchor_unique_targets_threshold,
+            params.anchor_samples_threshold,
+            params.anchor_sample_counts_threshold
         )
 
         /*

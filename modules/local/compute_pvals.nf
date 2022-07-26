@@ -10,6 +10,9 @@ process COMPUTE_PVALS {
     path samplesheet
     val K_num_hashes
     val L_num_random_Cj
+    val anchor_unique_targets_threshold
+    val anchor_samples_threshold
+    val anchor_sample_counts_threshold
 
     output:
     path outfile_scores     , emit: scores      , optional: true
@@ -27,6 +30,9 @@ process COMPUTE_PVALS {
         --samplesheet ${samplesheet} \\
         --K ${K_num_hashes} \\
         --L ${L_num_random_Cj} \\
+        --anchor_unique_targets_threshold ${anchor_unique_targets_threshold} \\
+        --anchor_samples_threshold ${anchor_samples_threshold} \\
+        --anchor_sample_counts_threshold ${anchor_sample_counts_threshold} \\
         --outfile ${outfile_scores}
     """
 }
