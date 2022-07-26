@@ -5,7 +5,7 @@ process COUNT_ANCHORS {
     label 'process_low'
 
     input:
-    tuple val(fastq_id), path(fastq), val(group_id)
+    tuple val(fastq_id), path(fastq)
 
     output:
     path outfile, emit: seqs

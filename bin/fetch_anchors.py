@@ -11,10 +11,6 @@ def get_args():
         type=str
     )
     parser.add_argument(
-        "--run_type",
-        type=str
-    )
-    parser.add_argument(
         "--fastq_id",
         type=str
     )
@@ -42,15 +38,33 @@ def get_args():
         "--outfile",
         type=str
     )
+    parser.add_argument(
+        "--is_10X",
+        action='store_true'
+    )
     args = parser.parse_args()
     return args
 
 
+def get_anchor_target(read, lookahead, kmer_size, step_size):
+    last_base = len(read) - (lookahead + 2 * kmer_size)
+
+    for i in range(0, last_base, step_size):
+        # get anchor
+        anchor = read[0+i : kmer_size+i]
+
+        # get target start and end positions, as a function of anchor end
+        target_start = (kmer_size+i) + lookahead
+        target_end = target_start + kmer_size
+
+        # get target
+        target = read[target_start : target_end]
+    # return
+    return anchor, target
+
+
 def main():
     args = get_args()
-
-    if args.run_type == 'bulk':
-        sample = args.fastq_id
 
     if args.anchor_mode == 'chunk':
         step_size = args.kmer_size
@@ -62,35 +76,32 @@ def main():
     file = gzip.open(args.outfile, 'wb')
     with gzip.open(args.infile, 'rt') as infile:
         for line in infile:
-            if args.num_lines != 0:
-                if x > args.num_lines:
-                    break
 
-            x += 1
+            ## if this 10X, parse each line as [cbc+umi, read]
+            if args.is_10X:
+                (cbc_umi, read) = line.split(" ")
+                cbc = cbc_umi[0:16]
+                anchor, target = get_anchor_target(read, args.lookahead, args.kmer_size, step_size)
 
-            if args.run_type == 'single_cell':
-                if x % 4 == 1:
-                    # example: '@A00111:664:HVFMTDSXY:1:1101:13711:1376 2:N:0:CGAATATTCG+TTGCTTCCAG'
-                    sample = line.split(' ')[1].split(':')[3].split('+')[0]
+                # write out anchor and target, with the cbc as sample
+                if "N" not in anchor and "N" not in target:
+                    file.write(str.encode(f'{anchor+target} {cbc}\n'))
 
-            if x % 4 == 2:
-                read = line.strip()
+            ## if this is not 10X, parse as fastq file
+            else:
 
-                last_base = len(read) - (args.lookahead + 2 * args.kmer_size)
+                if args.num_lines != 0:
+                    if x > args.num_lines:
+                        break
 
-                for i in range(0, last_base, step_size):
-                    # get anchor
-                    anchor = read[0+i : args.kmer_size+i]
+                x += 1
+                if x % 4 == 2:
+                    read = line.strip()
 
-                    # get target start and end positions, as a function of anchor end
-                    target_start = (args.kmer_size+i) + args.lookahead
-                    target_end = target_start + args.kmer_size
-
-                    # get target
-                    target = read[target_start : target_end]
+                    anchor, target = get_anchor_target(read, args.lookahead, args.kmer_size, step_size)
 
                     if "N" not in anchor and "N" not in target:
-                        file.write(str.encode(f'{anchor+target} {sample}\n'))
+                        file.write(str.encode(f'{anchor+target} {args.fastq_id}\n'))
     file.close()
 
 

@@ -1,4 +1,3 @@
-include { GET_UNMAPPED              } from '../../modules/local/get_unmapped'
 include { TRIMGALORE                } from '../../modules/nf-core/modules/trimgalore/main'
 include { FETCH_ANCHORS             } from '../../modules/local/fetch_anchors'
 include { COUNT_ANCHORS             } from '../../modules/local/count_anchors'
@@ -25,22 +24,6 @@ workflow FETCH {
             ch_fastqs
         )
         ch_fastqs = TRIMGALORE.out.fastq
-    }
-
-    /*
-    // Check if we are only using unmapped reads
-    */
-    if (params.run_get_unmapped) {
-        /*
-        // Get unmapped reads
-        */
-        GET_UNMAPPED(
-            ch_fastqs,
-            params.index_bowtie
-        )
-
-        ch_fastqs = GET_UNMAPPED.out.fastq
-
     }
 
     /*

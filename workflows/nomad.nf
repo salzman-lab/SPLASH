@@ -37,6 +37,7 @@ include { ADD_DUMMY_SCORE           } from '../modules/local/add_dummy_score'
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
+include { FETCH_10X         } from '../subworkflows/local/fetch_10X'
 include { FETCH             } from '../subworkflows/local/fetch'
 include { ANALYZE           } from '../subworkflows/local/analyze'
 include { ANNOTATE          } from '../subworkflows/local/annotate'
@@ -62,28 +63,59 @@ include { ANNOTATE          } from '../subworkflows/local/annotate'
 
 workflow NOMAD {
 
-    // Parse samplesheet
-    Channel
-        .fromPath(params.input)
-        .splitCsv(
-            header: false
-        )
-        .map { row ->
-            tuple(
-                file(row[0]).simpleName,
-                file(row[0]),
-                row[1]
+    if (params.is_10X) {
+        Channel
+            .fromPath(params.input)
+            .splitCsv(
+                header: false
             )
-        }
-        .set{ ch_fastqs }
+            .map { row ->
+                tuple(
+                    row[0],
+                    file(row[1]),
+                    file(row[2])
+                )
+            }
+            .set{ ch_paired_fastqs }
+
+        FETCH_10X(
+            ch_paired_fastqs
+        )
+        ch_fastqs = FETCH_10X.out.fastqs
+
+    } else {
+        // Parse samplesheet
+        Channel
+            .fromPath(params.input)
+            .splitCsv(
+                header: false
+            )
+            .map { row ->
+                tuple(
+                    file(row[0]).simpleName,
+                    file(row[0]),
+                    row[1]
+                )
+            }
+            .set{ ch_fastqs }
+    }
 
     // Define lookahead parameter
     if (params.use_read_length) {
         /*
         // Get read length of dataset
         */
+        if (params.is_10X){
+            fastq = ch_paired_fastqs.first().map{
+                it[2]
+            }.view()
+        } else {
+            fastq = ch_fastqs.first().map{
+                it[1]
+            }.view()
+        }
         GET_READ_LENGTH(
-            ch_fastqs.first()
+            fastq
         )
         read_length = GET_READ_LENGTH.out.read_length.toInteger()
         lookahead = ((read_length - 2 * params.kmer_size) / 2).toInteger()
