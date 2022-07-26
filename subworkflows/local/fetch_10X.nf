@@ -9,12 +9,20 @@ workflow FETCH_10X {
 
     main:
 
-    UMITOOLS(
-        ch_paired_fastqs
-    )
+    if (params.run_umitools) {
+
+        UMITOOLS(
+            ch_paired_fastqs
+        )
+        ch_fastqs = UMITOOLS.out.fastqs
+
+    } else {
+
+        ch_fastqs = ch_paired_fastqs
+    }
 
     EXTRACT_CBC_UMI(
-        UMITOOLS.out.fastqs,
+        ch_fastqs,
         params.num_reads_first_pass
     )
 

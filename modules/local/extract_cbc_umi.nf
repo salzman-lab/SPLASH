@@ -6,15 +6,14 @@ process EXTRACT_CBC_UMI {
     conda (params.enable_conda ? "conda-forge::python=3.9.5" : null)
 
     input:
-    path(fastq)
+    tuple val(id), path(extracted_R1), path(fastq)
     val num_reads_first_pass
 
     output:
-    tuple val(fastq_id), path(outfile), emit: seqs
+    tuple val(id), path(outfile)  , emit: seqs
 
     script:
-    fastq_id        = "${fastq.simpleName}"
-    outfile         = "extracted_cbc_umi_${fastq_id}.txt.gz"
+    outfile                       = "extracted_cbc_umi_${id}.txt.gz"
     """
     extract_cbc_umi.py \\
         --infile ${fastq} \\

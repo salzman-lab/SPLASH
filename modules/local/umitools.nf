@@ -13,9 +13,9 @@ process UMITOOLS {
     tuple val(id), path(R1), path(R2)
 
     output:
-    path extracted_R2           , emit: fastqs
-    path "whitelist_${id}.txt"  , emit: whitelist
-    path "*log"                 , emit: log
+    tuple val(id), path(extracted_R1), path(extracted_R2)   , emit: fastqs
+    path "whitelist_${id}.txt"                              , emit: whitelist
+    path "*log"                                             , emit: log
 
     script:
     extracted_R1 = "${id}_R1.extracted.fastq.gz"
