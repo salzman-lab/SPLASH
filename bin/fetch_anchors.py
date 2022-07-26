@@ -65,7 +65,6 @@ def get_anchor_target(read, lookahead, kmer_size, step_size):
 
 def main():
     args = get_args()
-    print(args.is_10X)
 
     if args.anchor_mode == 'chunk':
         step_size = args.kmer_size

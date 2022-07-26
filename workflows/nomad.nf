@@ -93,8 +93,7 @@ workflow NOMAD {
             .map { row ->
                 tuple(
                     file(row[0]).simpleName,
-                    file(row[0]),
-                    row[1]
+                    file(row[0])
                 )
             }
             .set{ ch_fastqs }
@@ -108,11 +107,11 @@ workflow NOMAD {
         if (params.is_10X){
             fastq = ch_paired_fastqs.first().map{
                 it[2]
-            }.view()
+            }
         } else {
             fastq = ch_fastqs.first().map{
                 it[1]
-            }.view()
+            }
         }
         GET_READ_LENGTH(
             fastq

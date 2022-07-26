@@ -18,8 +18,8 @@ process FETCH_ANCHORS {
     tuple val(fastq_id), path(outfile), emit: seqs
 
     script:
-    def is_10X     = is_10X ? "--is_10X" : ""
-    outfile     = "sequences_${fastq_id}.txt.gz"
+    def is_10X   = (is_10X == true) ? "--is_10X" : ""
+    outfile      = "sequences_${fastq_id}.txt.gz"
     """
     fetch_anchors.py \\
         --infile ${fastq} \\
