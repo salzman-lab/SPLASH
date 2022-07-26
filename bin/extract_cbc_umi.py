@@ -11,31 +11,7 @@ def get_args():
         type=str
     )
     parser.add_argument(
-        "--run_type",
-        type=str
-    )
-    parser.add_argument(
-        "--fastq_id",
-        type=str
-    )
-    parser.add_argument(
         "--num_lines",
-        type=int
-    )
-    parser.add_argument(
-        "--kmer_size",
-        type=int
-    )
-    parser.add_argument(
-        "--lookahead",
-        type=int
-    )
-    parser.add_argument(
-        "--anchor_mode",
-        type=str
-    )
-    parser.add_argument(
-        "--window_slide",
         type=int
     )
     parser.add_argument(
@@ -59,10 +35,10 @@ def main():
                     break
 
             x += 1
-
-            cbc = line.split(' ')[0].split('_')[1]
-            umi = line.split(' ')[0].split('_')[2]
-            sample = cbc + umi
+            if x % 4 == 1:
+                cbc = line.split(' ')[0].split('_')[1]
+                umi = line.split(' ')[0].split('_')[2]
+                sample = cbc + umi
 
             if x % 4 == 2:
                 read = line.strip()

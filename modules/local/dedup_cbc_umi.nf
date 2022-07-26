@@ -4,16 +4,18 @@ process DEDUP_CBC_UMI {
     label 'process_low'
 
     input:
-    tuple val(fastq_id), path(fastq), val(group_id)
+    tuple val(fastq_id), path(fastq)
 
     output:
-    tuple val(fastq_id), path(outfile), val(group_id), emit: seqs
+    tuple val(fastq_id), path(outfile), emit: seqs
 
     script:
     outfile         = "dedup_cbc_umi_${fastq_id}.txt.gz"
     """
     zcat ${fastq} \\
         | sort -u -k1,1 \\
-        > ${outfile}
+        > dedup_cbc_umi_${fastq_id}.txt
+
+    gzip dedup_cbc_umi_${fastq_id}.txt
     """
 }
