@@ -43,6 +43,18 @@ def get_args():
         default=50
     )
     parser.add_argument(
+        "--anchor_unique_targets_threshold",
+        type=int
+    )
+    parser.add_argument(
+        "--anchor_samples_threshold",
+        type=int
+    )
+    parser.add_argument(
+        "--anchor_sample_counts_threshold",
+        type=int
+    )
+    parser.add_argument(
         "--outfile_scores",
         type=str,
         default=""
@@ -121,7 +133,11 @@ def main():
     df['anch_uniqTargs'] = df.groupby('anchor').target.transform('nunique')
     df['anch_samples']= df.groupby('anchor')['sample'].transform('nunique')
     df['anchSample_cts'] = df.groupby(['anchor','sample']).counts.transform('sum')
-    df = df[(df.anch_uniqTargs>1) & (df.anch_samples > 1) & (df.anchSample_cts>5)]
+    df = df[
+        (df.anch_uniqTargs > args.anchor_unique_targets_threshold) &
+        (df.anch_samples > args.anchor_samples_threshold) &
+        (df.anchSample_cts > args.anchor_sample_counts_threshold)
+    ]
     df['anch_cts'] = df.groupby('anchor').counts.transform('sum') ## number of reads per anchor
     df = df[df.anch_cts > 30]
     ### above line filters, can change parameters
@@ -147,7 +163,7 @@ def main():
     mergedDf['dij_0'] = np.vectorize(lambda x,y : hamming(x,y))(mergedDf.target,mergedDf.maxTarget)
     df = convertDijToSj(mergedDf,0)
     df['mu_ham'] = df['mu_0']
-    
+
     ### generate levenstein distance based mu
     mergedDf['dij_0'] = np.vectorize(lambda x,y : nltk.edit_distance(x,y))(mergedDf.target,mergedDf.maxTarget)
     df = convertDijToSj(mergedDf,0)
@@ -252,7 +268,7 @@ def main():
     ### where all samples have same cluster id, set effect size to 0
     sameLocs = np.abs(((njMat.T>0)*(cjOpts)).sum(axis=1)/(njMat.T>0).sum(axis=1))==1
     effectSize[sameLocs]=0
-    
+
     ### comput sheetCj effect size
     ### preserves sign, can be between -1 and 1
     ### take fresh argmin to find minimizing hash
@@ -262,7 +278,7 @@ def main():
     ### where all samples have same cluster id, set effect size to 0
     sameLocs = np.abs(((njMat.T>0)*(sheetCj)).sum(axis=1)/(njMat.T>0).sum(axis=1))==1
     effectSize_sheet[sameLocs]=0
-    
+
     outdf = pd.DataFrame({'anchor':dftmp.index.to_list(),'pv_hash':pv_hash, 'pv_hand':pv_hand,
              'pv_hand_sheetCjs':pv_hand_sheetCjs, 'pv_hash_sheetCjs':pv_hash_sheetCjs,
              'effect_size_randCjs':effectSize,'effect_size_sheetCjs':effectSize_sheet,'optHash':hashOpts, 'M':Marr})
@@ -273,7 +289,7 @@ def main():
 
     outdf = outdf.merge(entDf)
     outdf = outdf.merge(df[['anchor','mu_ham','mu_lev']].drop_duplicates())
-    
+
     outdf['pv_hash_both'] = 2*np.minimum(outdf.pv_hash,outdf.pv_hash_sheetCjs)
 
     if not useHandCjs:
