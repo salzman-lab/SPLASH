@@ -1,7 +1,7 @@
 process UMITOOLS {
 
     tag "${R1.simpleName}"
-    label "process_low"
+    label "process_high"
 
     conda (params.enable_conda ? "bioconda::umi_tools=1.1.2" : null)
     // From nf-core
