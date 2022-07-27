@@ -19,6 +19,17 @@ WorkflowNomad.initialise(params, log)
 
 /*
 ========================================================================================
+    GENOME PARAMETER VALUES
+========================================================================================
+*/
+
+genome_index     = Channel.fromPath(WorkflowMain.getGenomeAttribute(params, 'bowtie2'), type:'any')
+star_index       = Channel.fromPath(WorkflowMain.getGenomeAttribute(params, 'star'), type:'any')
+gtf              = WorkflowMain.getGenomeAttribute(params, 'gtf')
+gene_bed         = WorkflowMain.getGenomeAttribute(params, 'bed12')
+
+/*
+========================================================================================
     IMPORT LOCAL MODULES/SUBWORKFLOWS
 ========================================================================================
 */
@@ -179,7 +190,11 @@ workflow NOMAD {
             anchors_scores,
             ANALYZE.out.anchor_target_counts,
             ANALYZE.out.ch_consensus_fasta,
-            ANALYZE.out.ch_anchor_target_fastas
+            ANALYZE.out.ch_anchor_target_fastas,
+            genome_index,
+            star_index,
+            gtf,
+            gene_bed
         )
     }
 

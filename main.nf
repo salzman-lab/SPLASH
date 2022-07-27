@@ -12,17 +12,6 @@ nextflow.enable.dsl = 2
 
 /*
 ========================================================================================
-    GENOME PARAMETER VALUES
-========================================================================================
-*/
-
-params.genome_index     = WorkflowMain.getGenomeAttribute(params, 'bowtie2')
-params.star_index       = WorkflowMain.getGenomeAttribute(params, 'star')
-params.gtf              = WorkflowMain.getGenomeAttribute(params, 'gtf')
-params.gene_bed         = WorkflowMain.getGenomeAttribute(params, 'bed12')
-
-/*
-========================================================================================
     VALIDATE & PRINT PARAMETER SUMMARY
 ========================================================================================
 */

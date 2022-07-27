@@ -17,6 +17,10 @@ workflow ANNOTATE {
     anchor_target_counts
     ch_consensus_fastas
     ch_anchor_target_fastas
+    genome_index
+    star_index
+    gtf
+    gene_bed
 
     main:
 
@@ -74,69 +78,71 @@ workflow ANNOTATE {
         /*
         // Process to align targets and anchors to genome
         */
+
+        genome_index.view()
         GENOME_ALIGNMENT(
             ch_fastas,
-            params.genome_index,
+            genome_index.collect(),
             params.transcriptome_index
         )
 
-        /*
-        // Process to run gene and exon annotations
-        */
-        GENOME_ANNOTATIONS(
-            GENOME_ALIGNMENT.out.bam_tuple,
-            params.gene_bed
-        )
+        // /*
+        // // Process to run gene and exon annotations
+        // */
+        // GENOME_ANNOTATIONS(
+        //     GENOME_ALIGNMENT.out.bam_tuple,
+        //     gene_bed
+        // )
 
-        /*
-        // Process to prepare consensus fastas for one STAR alignment
-        */
-        PREPARE_CONSENSUS(
-            ch_consensus_fastas.flatten()
-        )
+        // /*
+        // // Process to prepare consensus fastas for one STAR alignment
+        // */
+        // PREPARE_CONSENSUS(
+        //     ch_consensus_fastas.flatten()
+        // )
 
-        /*
-        // Process to concatenate consensus fastas for one STAR alignment
-        */
-        MERGE_CONSENSUS(
-            PREPARE_CONSENSUS.out.fasta.collect()
-        )
+        // /*
+        // // Process to concatenate consensus fastas for one STAR alignment
+        // */
+        // MERGE_CONSENSUS(
+        //     PREPARE_CONSENSUS.out.fasta.collect()
+        // )
 
-        fasta = MERGE_CONSENSUS.out.fasta
-        /*
-        // Process to get splice junctions with STAR
-        */
-        CONSENSUS_ALIGNMENT(
-            fasta,
-            params.star_index,
-            params.gtf
-        )
+        // fasta = MERGE_CONSENSUS.out.fasta
+        // /*
+        // // Process to get splice junctions with STAR
+        // */
+        // CONSENSUS_ALIGNMENT(
+        //     fasta,
+        //     star_index.collect(),
+        //     gtf
+        // )
 
-        GENOME_ANNOTATIONS.out.annotations
-            .filter{
-                file ->
-                file.name.contains('genome_annotations_anchor.tsv')
-            }
-            .set{genome_annotations_anchors}
+        // GENOME_ANNOTATIONS.out.annotations
+        //     .filter{
+        //         file ->
+        //         file.name.contains('genome_annotations_anchor.tsv')
+        //     }
+        //     .set{genome_annotations_anchors}
 
-        /*
-        // Process to get called exons from bam file
-        */
-        SPLICING_ANNOTATIONS(
-            CONSENSUS_ALIGNMENT.out.bam,
-            CONSENSUS_ALIGNMENT.out.unmapped_fasta,
-            params.gene_bed,
-            fasta,
-            genome_annotations_anchors
-        )
+        // /*
+        // // Process to get called exons from bam file
+        // */
+        // SPLICING_ANNOTATIONS(
+        //     CONSENSUS_ALIGNMENT.out.bam,
+        //     CONSENSUS_ALIGNMENT.out.unmapped_fasta,
+        //     gene_bed,
+        //     fasta,
+        //     genome_annotations_anchors
+        // )
 
-        /*
-        // Process to make additional summary file
-        */
-        ADDITIONAL_SUMMARY(
-            SPLICING_ANNOTATIONS.out.consensus_called_exons,
-            SUMMARIZE.out.tsv
-        )
+        // /*
+        // // Process to make additional summary file
+        // */
+        // ADDITIONAL_SUMMARY(
+        //     SPLICING_ANNOTATIONS.out.consensus_called_exons,
+        //     SUMMARIZE.out.tsv
+        // )
     }
 
 }
