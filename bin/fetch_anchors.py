@@ -48,7 +48,8 @@ def get_args():
 
 def get_anchor_target(read, lookahead, kmer_size, step_size):
     last_base = len(read) - (lookahead + 2 * kmer_size)
-
+    anchor = ""
+    target = ""
     for i in range(0, last_base, step_size):
         # get anchor
         anchor = read[0+i : kmer_size+i]
