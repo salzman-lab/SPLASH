@@ -6,7 +6,7 @@ process PARSE_ANCHORS {
     conda (params.enable_conda ? "conda-forge::python=3.9.5 pandas=1.4.1 conda-forge::biopython" : null)
 
     input:
-    tuple val(fastq_id), path(fastq), val(group_id)
+    tuple val(fastq_id), path(fastq)
     path anchors_pvals_file
     val num_reads_second_pass
     val consensus_length
