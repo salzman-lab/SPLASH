@@ -61,7 +61,7 @@ def get_anchor_target(read, lookahead, kmer_size, step_size):
         # get target
         target = read[target_start : target_end]
     # return
-    if anchor and target:
+    if len(anchor)>1 and len(target)>1:
         return anchor, target
     else:
         return 'N','N'
