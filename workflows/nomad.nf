@@ -30,6 +30,7 @@ def modules = params.modules.clone()
 // MODULE: Local to the pipeline
 //
 include { GET_SOFTWARE_VERSIONS     } from '../modules/local/get_software_versions' addParams( options: [publish_files : ['tsv':'']] )
+include { SAMPLESHEET_CHECK         } from '../modules/local/samplesheet_check'
 include { GET_READ_LENGTH           } from '../modules/local/get_read_length'
 include { ADD_DUMMY_SCORE           } from '../modules/local/add_dummy_score'
 
@@ -37,11 +38,10 @@ include { ADD_DUMMY_SCORE           } from '../modules/local/add_dummy_score'
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
-include { FETCH_10X         } from '../subworkflows/local/fetch_10X'
-include { FETCH             } from '../subworkflows/local/fetch'
-include { ANALYZE           } from '../subworkflows/local/analyze'
-include { ANNOTATE          } from '../subworkflows/local/annotate'
-
+include { FETCH_10X                 } from '../subworkflows/local/fetch_10X'
+include { FETCH                     } from '../subworkflows/local/fetch'
+include { ANALYZE                   } from '../subworkflows/local/analyze'
+include { ANNOTATE                  } from '../subworkflows/local/annotate'
 
 
 /*
@@ -62,6 +62,12 @@ include { ANNOTATE          } from '../subworkflows/local/annotate'
 
 
 workflow NOMAD {
+
+    // Validate samplesheet
+    SAMPLESHEET_CHECK(
+        file(params.input),
+        params.is_10X
+    )
 
     if (params.is_10X) {
         Channel
@@ -114,7 +120,8 @@ workflow NOMAD {
             }
         }
         GET_READ_LENGTH(
-            fastq
+            fastq,
+            SAMPLESHEET_CHECK.out.samplesheet
         )
         read_length = GET_READ_LENGTH.out.read_length.toInteger()
         lookahead = ((read_length - 2 * params.kmer_size) / 2).toInteger()
