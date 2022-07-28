@@ -2,7 +2,6 @@ process GET_READ_LENGTH {
 
     input:
     path fastq
-    path samplesheet
 
     output:
     env read_length, emit: read_length

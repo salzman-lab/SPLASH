@@ -1,25 +1,31 @@
 #!/usr/bin/env python3
+
+# TODO nf-core: Update the script to check the samplesheet
 # This script is based on the example at: https://raw.githubusercontent.com/nf-core/test-datasets/viralrecon/samplesheet/samplesheet_test_illumina_amplicon.csv
 
 import os
-from os.path import exists
 import sys
 import errno
 import argparse
 
 
-def get_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--samplesheet",
-        type=str
-    )
-    parser.add_argument(
-        "--is_10X",
-        action='store_true'
-    )
-    args = parser.parse_args()
-    return args
+def parse_args(args=None):
+    Description = "Reformat kaitlinchaung/nomad samplesheet file and check its contents."
+    Epilog = "Example usage: python check_samplesheet.py <FILE_IN> <FILE_OUT>"
+
+    parser = argparse.ArgumentParser(description=Description, epilog=Epilog)
+    parser.add_argument("FILE_IN", help="Input samplesheet file.")
+    parser.add_argument("FILE_OUT", help="Output file.")
+    return parser.parse_args(args)
+
+
+def make_dir(path):
+    if len(path) > 0:
+        try:
+            os.makedirs(path)
+        except OSError as exception:
+            if exception.errno != errno.EEXIST:
+                raise exception
 
 
 def print_error(error, context="Line", context_str=""):
@@ -32,121 +38,109 @@ def print_error(error, context="Line", context_str=""):
     sys.exit(1)
 
 
-def main():
-    args = get_args()
+# TODO nf-core: Update the check_samplesheet function
+def check_samplesheet(file_in, file_out):
+    """
+    This function checks that the samplesheet follows the following structure:
 
-    with open(args.samplesheet, "r") as file_in:
-        for line in file_in:
+    sample,fastq_1,fastq_2
+    SAMPLE_PE,SAMPLE_PE_RUN1_1.fastq.gz,SAMPLE_PE_RUN1_2.fastq.gz
+    SAMPLE_PE,SAMPLE_PE_RUN2_1.fastq.gz,SAMPLE_PE_RUN2_2.fastq.gz
+    SAMPLE_SE,SAMPLE_SE_RUN1_1.fastq.gz,
 
-            ## get row
-            row = [x for x in line.strip().split(',')]
+    For an example see:
+    https://raw.githubusercontent.com/nf-core/test-datasets/viralrecon/samplesheet/samplesheet_test_illumina_amplicon.csv
+    """
 
-            ## check that samplesheet is formatted as: sample_ID, fastq_R1, fastq_R2
-            if args.is_10X:
+    sample_mapping_dict = {}
+    with open(file_in, "r") as fin:
 
-                ## error if there are not exactly 3 columns
-                if len(row) != 3:
-                    print_error(
-                        "ERROR: 10X samplesheets must contain 3 columns.",
-                        "Line",
-                        line
-                    )
+        ## Check header
+        MIN_COLS = 2
+        # TODO nf-core: Update the column names for the input samplesheet
+        HEADER = ["sample", "fastq_1", "fastq_2"]
+        header = [x.strip('"') for x in fin.readline().strip().split(",")]
+        if header[: len(HEADER)] != HEADER:
+            print("ERROR: Please check samplesheet header -> {} != {}".format(",".join(header), ",".join(HEADER)))
+            sys.exit(1)
 
-                sample_ID, fastq_R1, fastq_R2 = row
+        ## Check sample entries
+        for line in fin:
+            lspl = [x.strip().strip('"') for x in line.strip().split(",")]
 
-                ## error if any value is empty
-                if not sample_ID or not fastq_R1 or not fastq_R2:
-                    print_error(
-                        f"Error: Column entries in samplesheet must not be empty, for values {row}.",
-                        "Line",
-                        line
-                    )
+            # Check valid number of columns per row
+            if len(lspl) < len(HEADER):
+                print_error(
+                    "Invalid number of columns (minimum = {})!".format(len(HEADER)),
+                    "Line",
+                    line,
+                )
+            num_cols = len([x for x in lspl if x])
+            if num_cols < MIN_COLS:
+                print_error(
+                    "Invalid number of populated columns (minimum = {})!".format(MIN_COLS),
+                    "Line",
+                    line,
+                )
 
-                ## error if fastqs are not gzipped or if the paths are not valid
-                for fastq in [fastq_R1, fastq_R2]:
+            ## Check sample name entries
+            sample, fastq_1, fastq_2 = lspl[: len(HEADER)]
+            sample = sample.replace(" ", "_")
+            if not sample:
+                print_error("Sample entry has not been specified!", "Line", line)
+
+            ## Check FastQ file extension
+            for fastq in [fastq_1, fastq_2]:
+                if fastq:
+                    if fastq.find(" ") != -1:
+                        print_error("FastQ file contains spaces!", "Line", line)
                     if not fastq.endswith(".fastq.gz") and not fastq.endswith(".fq.gz"):
                         print_error(
-                            f"ERROR: FASTQ file does not have extension '.fastq.gz' or '.fq.gz': {fastq}",
-                            "Line",
-                            line,
-                        )
-                    if not exists(fastq):
-                        print_error(
-                            f"ERROR: FASTQ file does not exist at this path: {fastq}",
+                            "FastQ file does not have extension '.fastq.gz' or '.fq.gz'!",
                             "Line",
                             line,
                         )
 
-
-            ## check that samplesheet is formatted as: fastq, optional group_ID(-1/1)
+            ## Auto-detect paired-end/single-end
+            sample_info = []  ## [single_end, fastq_1, fastq_2]
+            if sample and fastq_1 and fastq_2:  ## Paired-end short reads
+                sample_info = ["0", fastq_1, fastq_2]
+            elif sample and fastq_1 and not fastq_2:  ## Single-end short reads
+                sample_info = ["1", fastq_1, fastq_2]
             else:
-                ## error if there are not exactly 3 columns
-                if len(row) > 2:
-                    print_error(
-                        "ERROR: Samplesheets must contain at most 2 columns.",
-                        "Line",
-                        line
-                    )
+                print_error("Invalid combination of columns provided!", "Line", line)
+
+            ## Create sample mapping dictionary = { sample: [ single_end, fastq_1, fastq_2 ] }
+            if sample not in sample_mapping_dict:
+                sample_mapping_dict[sample] = [sample_info]
+            else:
+                if sample_info in sample_mapping_dict[sample]:
+                    print_error("Samplesheet contains duplicate rows!", "Line", line)
                 else:
-                    ## if no group_ids are provided
-                    if len(row) == 1:
-                        (fastq_file) = row
+                    sample_mapping_dict[sample].append(sample_info)
 
-                        ## error if any value is empty
-                        if not fastq_file:
-                            print_error(
-                                f"Error: Column entries in samplesheet must not be empty, for values {row}.",
-                                "Line",
-                                line
-                            )
-                    ## if group_ids are provided
-                    elif len(row) == 2:
-                        (fastq_file, group_id) = row
+    ## Write validated samplesheet with appropriate columns
+    if len(sample_mapping_dict) > 0:
+        out_dir = os.path.dirname(file_out)
+        make_dir(out_dir)
+        with open(file_out, "w") as fout:
+            fout.write(",".join(["sample", "single_end", "fastq_1", "fastq_2"]) + "\n")
+            for sample in sorted(sample_mapping_dict.keys()):
 
-                        ## error if any value is empty
-                        if not fastq_file or not group_id:
-                            print_error(
-                                f"Error: Column entries in samplesheet must not be empty, for values {row}.",
-                                "Line",
-                                line
-                            )
+                ## Check that multiple runs of the same sample are of the same datatype
+                if not all(x[0] == sample_mapping_dict[sample][0][0] for x in sample_mapping_dict[sample]):
+                    print_error("Multiple runs of a sample must be of the same datatype!", "Sample: {}".format(sample))
 
-                        ## error if group_id is not 1 or -1
-                        if group_id.strip() not in ["-1", "1"]:
-                            print_error(
-                                f"ERROR: Group ID values must be 1 or -1: {group_id}",
-                                "Line",
-                                line,
-                            )
-
-                    ## error if fastqs are not gzipped or if the paths are not valid
-                    try:
-                        if not fastq_file.endswith(".fastq.gz") and not fastq_file.endswith(".fq.gz"):
-                            print_error(
-                                f"ERROR: FASTQ file does not have extension '.fastq.gz' or '.fq.gz': {fastq_file}",
-                                "Line",
-                                line,
-                            )
-                        if not exists(fastq_file):
-                            print_error(
-                                f"ERROR: FASTQ file does not exist at this path: {fastq_file}",
-                                "Line",
-                                line,
-                            )
-                    except:
-                        for fastq in fastq_file:
-                            if not fastq.endswith(".fastq.gz") and not fastq.endswith(".fq.gz"):
-                                print_error(
-                                    f"ERROR: FASTQ file does not have extension '.fastq.gz' or '.fq.gz': {fastq}",
-                                    "Line",
-                                    line,
-                                )
-                            if not exists(fastq):
-                                print_error(
-                                    f"ERROR: FASTQ file does not exist at this path: {fastq}",
-                                    "Line",
-                                    line,
-                                )
+                for idx, val in enumerate(sample_mapping_dict[sample]):
+                    fout.write(",".join(["{}_T{}".format(sample, idx + 1)] + val) + "\n")
+    else:
+        print_error("No entries to process!", "Samplesheet: {}".format(file_in))
 
 
-main()
+def main(args=None):
+    args = parse_args(args)
+    check_samplesheet(args.FILE_IN, args.FILE_OUT)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
