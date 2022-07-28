@@ -6,13 +6,13 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
 # NOMAD
 A statistical, reference-free algorithm subsumes myriad problems in genome science and enables novel discovery
 
-## Prerequisites
+# Prerequisites
 
 1. Install Java.
 2. Install [`nextflow`](https://nf-co.re/usage/installation) (`>=20.04.0`).
 3. Depending on your use case, install [`conda`](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html#regular-installation), [`docker`](https://www.docker.com/), or [`singularity`](https://sylabs.io/guides/3.5/user-guide/introduction.html). By using the `docker` or `singularity` nextflow profile, the pipeline can be run within the NOMAD docker container (also available on [dockerhub](https://hub.docker.com/repository/docker/kaitlinchaung/stringstats), which contains all the required dependencies.
 
-## Test Run Command
+## Running on a test dataset
 To test this pipeine, use the command below. The `test` profile will launch a pipeline run with a small dataset.
 
 How to run with singularity:
@@ -143,7 +143,7 @@ nextflow run kaitlinchaung/nomad \
 
 # Parameters
 
-Please note that input parameters should be passed with the a double-hypen, while Nextflow-specific parameters should be passed with a single hyphen. Parameters that are not explicitly defined will be set to the defaults below.
+Please note that input parameters should be passed with the a double-hypen, while Nextflow-specific parameters should be passed with a single hyphen. Parameters that are not explicitly defined will be set to the defaults below. All below parameters will have a default value assigned to them.
 
 For example:
 ```
@@ -164,28 +164,23 @@ By default, NOMAD performs the following steps:
 The following parameters will add or remove steps from the default pipeline, they should be modified depending on use case. By default, all of these values are set to `false`.
 
 ```
---run_trimming <true, false>                 Run fastq trimming with TrimGalore.
---run_umitools <true, false>                 Run UMITools extraction on 10X fastqs.
---run_decoy <true, false>                    Run abundance control analysis.
---run_annotations <true, false>              Run genome and splicing annotations, and create .heatmaps
---run_anchor_target_counts <true, false>     Create anchor-target counts contingency table.
---run_pvals_only <true, false>               Only run steps 1-2 above.
---run_anchor_heatmaps <true, false>          Create anchor heatmaps, using NOMAD output files.
+--run_trimming <true, false>                Run fastq trimming with TrimGalore.
+--run_umitools <true, false>                Run UMITools extraction on 10X fastqs.
+--run_decoy <true, false>                   Run abundance control analysis.
+--run_annotations <true, false>             Run genome and splicing annotations, and create .heatmaps
+--run_anchor_target_counts <true, false>    Create anchor-target counts contingency table.
+--run_pvals_only <true, false>              Only run steps 1-2 above.
+--run_anchor_heatmaps <true, false>         Create anchor heatmaps, using NOMAD output files.
+```
+
+## Pipeline Parameters
+```
+--use_read_length <true, false>             Determine anchor-target distance as a function of read length (default: true)
+--lookahead <int>                           Anchor-target distance if `--use_read_length false` (default: null)
+--num_reads_first_pass <int>                Number of FASTQ reads to process, for anchor significance calculations (default: 4000000)
 ```
 
 
-
-| Argument              | Description       | Default  |
-| --------------------- | ----------------- |--------- |
-| --skip_trimming | Boolean value to indicate if adaptor trimming should be skipped, options: `true`, `false` | `true` |
-| --use_read_length | Boolean value to indicate if the distance between anchor and target is a function of read length, options: `true`, `false` | `true` |
-| --lookahead | The distance between anchor and target if `--use_read_length true` | 0 |
-| --bowtie2_index | Index used for mapping the fastq reads using bowtie2 and extracting the unmapped reads if `--unmapped true` is set | `NA` |
-| --run_get_unmapped | Boolean value to indicate if all reads should be used as input, or only the unmapped reads (based on bowtie2 mapping against provided `--bowtie2_index`). If `--run_get_unmapped false`, all reads will be used in this run; if `--unmapped true`, only the unmapped reads will be used in this run; options: `true`, `false`   | `false` |
-| --run_decoy | Boolean value to run the decoy version of the pipeline, where the top 1000 most abudnanta anchors are used as pipeline input, options: `true`, `false` | `false` |
-| --run_annotations | Boolean value for running genome and splicing annotations, options: `true`, `false` | `false` |
-| --run_anchor_target_counts | Boolean value for creating a counts table of anchor-targets by sample for visualization, options: `true`, `false` | `false` |
-| --run_pvals_only | Boolean value to complete the pipeline after pvalues are completed, options: `true`, `false` | `false` |
 
 *`fetch_anchors`*
 
