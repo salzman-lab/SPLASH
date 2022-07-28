@@ -9,6 +9,19 @@ def summary_params = NfcoreSchema.paramsSummaryMap(workflow, params)
 // Validate input parameters
 WorkflowNomad.initialise(params, log)
 
+// Check input path parameters to see if the files exist if they have been specified
+checkPathParamList = [
+    params.star_index,
+    params.genome_index,
+    params.gene_bed,
+    params.gtf
+]
+for (param in checkPathParamList) {
+    if (param) {
+        file(param, checkIfExists: true)
+        println(param)
+    }
+}
 
 /*
 ========================================================================================
