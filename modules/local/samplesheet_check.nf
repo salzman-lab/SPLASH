@@ -1,13 +1,6 @@
-// Import generic module functions
-include { saveFiles } from './functions'
-
-params.options = [:]
 
 process SAMPLESHEET_CHECK {
-    tag "$samplesheet"
-    publishDir "${params.outdir}",
-        mode: params.publish_dir_mode,
-        saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:'pipeline_info', meta:[:], publish_by_meta:[]) }
+    tag "${samplesheet}"
 
     conda (params.enable_conda ? "conda-forge::python=3.8.3" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
@@ -18,14 +11,16 @@ process SAMPLESHEET_CHECK {
 
     input:
     path samplesheet
+    val is_10X
 
     output:
-    path '*.csv'
+    path samplesheet    , emit: samplesheet
 
     script: // This script is bundled with the pipeline, in kaitlinchaung/nomad/bin/
+    def is_10X          = (is_10X == true) ? "--is_10X" : ""
     """
     check_samplesheet.py \\
-        $samplesheet \\
-        samplesheet.valid.csv
+        --samplesheet ${samplesheet} \\
+        ${is_10X}
     """
 }
