@@ -63,10 +63,10 @@ If paired end sequencing data is being used, please only use files from only Rea
 
 In this example samplesheet, 4 fastq files are being analyzed in supervised mode.
 ```
-/data/file1.fastq.gz,1
-/data/file2.fastq.gz,1
-/data/file3.fastq.gz,2
-/data/file4.fastq.gz,2
+/data/file1.fastq.gz,-1
+/data/file2.fastq.gz,-1
+/data/file3.fastq.gz,1
+/data/file4.fastq.gz,1
 ```
 In this example samplesheet, 4 fastq files are being analyzed, in unsupervised mode.
 ```
@@ -84,15 +84,23 @@ The element annotation samplesheet must not have a header, and it must contain t
 
 Below are general guidlines to creating the element annotation samplesheet:
 
-1. Download [indices](https://zenodo.org/record/6809531#.YsfR_OzMJTY).
-2. Unpack indices to a index directory
+1. Navigate to a NOMAD index directory.
+```
+mkdir -p /home/Documents/nomad
+cd /home/Documents/nomad
+```
+2. Download [indices](https://zenodo.org/record/6809531#.YsfR_OzMJTY).
+```
+wget https://zenodo.org/record/6809531/files/nomad_element_annotation_indices.tar.gz?download=1
+```
+3. Unpack indices into the index directory.
 ```
 tar -zxvf nomad_element_annotation_indices.tar.gz
 ```
-3. Create the samplesheet, where each line is the full path to each subdirectory from `nomad_element_annotation_indices`, including the reference stems.
+4. Create the samplesheet, where each line is the full path to each subdirectory from `nomad_element_annotation_indices`, including the reference stems.
 
 For example, if you downloaded `nomad_element_annotation_indices` into `/home/Documents/nomad`,
-then your samplesheet would look like the following. Please note that the reference stem is required, otherwise this step will fail.
+then your samplesheet would look like the following. Please note that the reference stem--NOT the directory path--is required, otherwise this step will fail.
 ```
 /home/Documents/nomad/nomad_element_annotation_indices/dfam_te_eukaryota/dfam_te_eukaryota
 /home/Documents/nomad/nomad_element_annotation_indices/direct_repeats/direct_repeats
@@ -100,7 +108,7 @@ then your samplesheet would look like the following. Please note that the refere
 /home/Documents/nomad/nomad_element_annotation_indices/eukaryota_its1_itstonedb/eukaryota_its1_itstonedb
 ...
 ```
-4. Pass in the full path to the samplesheet as a parameter of your run.
+5. Pass in the full path to the samplesheet as a parameter of your run.
 ```
 nextflow run kaitlinchaung/stringstats \
     -profile singularity \
@@ -109,13 +117,12 @@ nextflow run kaitlinchaung/stringstats \
     -latest
 ```
 
-
 Note: Sherlock users who have access to the horence Oak directory do not need to specify this parameter; it will default to a prebuilt-samplesheet on Oak.
 
-## Optional Inputs
+## Bypassing significance calculations
 *`--anchors_file`*
 
-To bypass the `get_anchors` step and input a list of anchors of interest, provide this parameter. Please note that the samplesheet must be provided as well.
+To input a list of anchors of interest and skip significant calculations, provide this parameter. This can be used if a user wants to generate contingency tables, consensus files, and/or annotation-based outputs from a specific list of anchors.
 
 The anchors file should be a 1 column file with a header, consisting of a list of anchor sequences of interest, with one anchor per line. An example:
 ```
@@ -124,28 +131,49 @@ AAAAAAAAAA
 CCCCCCCCCC
 GGGGGGGGGG
 ```
-An example run command with this optional input:
+An example run command with this optional input. Please note that the samplesheet must be provided as well:
 ```
 nextflow run kaitlinchaung/nomad \
     --input samplesheet.csv \
     --anchors_file anchors.txt \
+    --element_annotations_samplesheet /home/data/indices_samplesheet.csv \
     -r main \
     -latest
 ```
 
-
-## Parameters
+# Parameters
 
 Please note that input parameters should be passed with the a double-hypen, while Nextflow-specific parameters should be passed with a single hyphen. Parameters that are not explicitly defined will be set to the defaults below.
 
 For example:
 ```
-nextflow run kaitlinchaung/nomad \
+nextflow run kaitlinchaung/nomad
     --input input.txt \
     -r main \
     -latest \
-    --num_lines 2000
+    --run_annotations true
 ```
+
+## Pipeline Management Parameters
+By default, NOMAD performs the following steps:
+1. Anchor and target preprocessing (k-mer fetching, counting, abundance filtering)
+2. Anchor significance calculations
+3. Consensus building
+4. Element annotations
+
+The following parameters will add or remove steps from the default pipeline, they should be modified depending on use case. By default, all of these values are set to `false`.
+
+```
+--run_trimming <true, false>                 Run fastq trimming with TrimGalore.
+--run_umitools <true, false>                 Run UMITools extraction on 10X fastqs.
+--run_decoy <true, false>                    Run abundance control analysis.
+--run_annotations <true, false>              Run genome and splicing annotations, and create .heatmaps
+--run_anchor_target_counts <true, false>     Create anchor-target counts contingency table.
+--run_pvals_only <true, false>               Only run steps 1-2 above.
+--run_anchor_heatmaps <true, false>          Create anchor heatmaps, using NOMAD output files.
+```
+
+
 
 | Argument              | Description       | Default  |
 | --------------------- | ----------------- |--------- |
