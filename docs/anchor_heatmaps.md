@@ -39,3 +39,6 @@ nextflow run kaitlinchaung/nomad \
     --heatmap_anchor_list anchor_list.tsv
 
 ```
+
+## Outputs
+Outputs would be found in `./results/anchor_heatmaps`.
