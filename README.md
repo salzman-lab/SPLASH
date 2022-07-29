@@ -173,51 +173,36 @@ The following parameters will add or remove steps from the default pipeline, the
 --run_anchor_heatmaps <true, false>         Create anchor heatmaps, using NOMAD output files.
 ```
 
-## Pipeline Parameters
+## Anchor Parameters
 ```
 --use_read_length <true, false>             Determine anchor-target distance as a function of read length (default: true)
 --lookahead <int>                           Anchor-target distance if `--use_read_length false` (default: null)
---num_reads_first_pass <int>                Number of FASTQ reads to process, for anchor significance calculations (default: 4000000)
+--kmer_size                                 Length of anchors and targets (default: 27)
+--num_reads_first_pass <int>                Number of FASTQ reads to process on first pass, for anchor significance calculations (default: 4000000)
+--num_reads_first_pass <int>                Number of FASTQ reads to process on second pass, for consensus building (default: 4000000)
+--anchor_mode <chunk, tile>                 How anchors are fetched, where chunk anchors are adjacent and tile anchors re overlapping (default: tile)
+--window_slide <int>                        Size of sliding windows, if `--anchor_mode tile` (default: 5)
+--K_num_hashes <int>                        Number of random hashes in significance caluclations (default: 10)
+--L_num_random_Cj <int>                     Number of random c_j in significance calculations (default: 50)
+--anchor_count_threshold <int>              Minimum number of total counts required to calculate pvalues for an anchor (default: 50)
+--anchor_unique_targets_threshold <int>     Minimum number of unique targets to calculate pvalues for an anchor (default: 1)
+--anchor_samples_threshold <int>            Minimum number of samples required to calculate pvalues for an anchor (default: 1)
+--anchor_sample_counts_threshold <int>      Minimum number of counts across samples required to calculate pvalues for an anchor (default: 5)
+--fdr_threshold <float>                     Threshold to call a significant anchor (default: 0.05)
+--consensus_length <int>                    Maximum length of candidate consensus sequences used to build the final consensus sequence (default: 200)
 ```
 
+## Annotation Parameters
+These parameters are only used/required if `--run_annotations true`. Otherwise, they do not need to be defined.
+```
+--genome_index <dir+stem>                   [bowtie2 genome index](http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#the-bowtie2-build-indexer) used in genome annotations
+--transcriptome_index <dir+stem>            [bowtie2 transcriptome index](http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#the-bowtie2-build-indexer) used in genome annotations
+--star_index <dir>                          Path to STAR index used in splicing annotations
+--gtf <file>                                Path to GTF used in splcing annotations
+--gene_bed <file>                           Path to BED file of genes used in genome annotations
+```
 
-
-*`fetch_anchors`*
-
-| Argument              | Description       | Default  |
-| --------------------- | ----------------- |--------- |
-| --num_reads_first_pass | Maximum number of reads to fetch anchors and targets from | 4000000 |
-| --kmer_size | Length of sequences for anchors and targets | 27 |
-| --anchor_mode | Mode by which to fetch anchors and target sequences, options: `chunk`, `tile`| `tile` |
-| --window_slide | Size of sliding window to fetch anchors, when in `tile` mode | 5 |
-
-*`get_anchors_and_scores`*
-| Argument              | Description       | Default  |
-| --------------------- | ----------------- |--------- |
-| --anchor_count_threshold | Minimum number of total counts required to calculate a score for an anchor | 50 |
-| --K_num_hashes | Number of random hashes | 10 |
-| --L_num_random_Cj | Number of random CJ | 50 |
-| --fdr_threshold | Pvalue threshold to call a significant anchor | 0.05 |
-
-
-*`parse_anchors`*
-
-| Argument              | Description       | Default  |
-| --------------------- | ----------------- |----------|
-| --num_reads_second_pass | Maximum number of reads to build consensus sequences from | 4000000 |
-| --consensus_length | Maximum length of candidate consensus sequences used to build the final consensus sequence | 200 |
-| --direction | The relative direction to search for candidate consensus sequences and targets, options: `up`, `down` | `down` |
-
-*Annotation-related parameters*
-**If these parameters are not passed in, the pipeline will default to hg38 versions of these files, hosted on Sherlock. For users without Sherlock access, this step may break.**
-| Argument              | Description       |
-| --------------------- | ----------------- |
-| --genome_index | bowtie2 genome index used in `genome_annotations_*` files |
-| --transcriptome_index | bowtie2 transcriptome index used in `genome_annotations_*` files |
-| --gene_bed | BED file of annotated genes used in `genome_annotations_*` files |
-| --star_index | STAR genome index used in splice junction annotations |
-| --gtf | GTF file used in splice junction annotations |
-
+For `--genome_index` and `--transcriptome_index`, these parameters should be formatted as the directory + reference stem. For example, the parameter would be `--genome_index /home/references/NAME` if `/home/references` contained files such as `NAME.1.bt2`, `NAME.2.bt2`, etc.
 
 ## Citations
 
