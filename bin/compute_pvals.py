@@ -43,6 +43,10 @@ def get_args():
         default=50
     )
     parser.add_argument(
+        "--anchor_count_threshold",
+        type=int
+    )
+    parser.add_argument(
         "--anchor_unique_targets_threshold",
         type=int
     )
@@ -139,7 +143,7 @@ def main():
         (df.anchSample_cts > args.anchor_sample_counts_threshold)
     ]
     df['anch_cts'] = df.groupby('anchor').counts.transform('sum') ## number of reads per anchor
-    df = df[df.anch_cts > 30]
+    df = df[df.anch_cts > args.anchor_count_threshold]
     ### above line filters, can change parameters
     print('done filtering')
 

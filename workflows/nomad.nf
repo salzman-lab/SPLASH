@@ -42,6 +42,7 @@ include { FETCH_10X                 } from '../subworkflows/local/fetch_10X'
 include { FETCH                     } from '../subworkflows/local/fetch'
 include { ANALYZE                   } from '../subworkflows/local/analyze'
 include { ANNOTATE                  } from '../subworkflows/local/annotate'
+include { PLOT                      } from '../subworkflows/local/plot'
 
 
 /*
@@ -63,6 +64,7 @@ include { ANNOTATE                  } from '../subworkflows/local/annotate'
 
 workflow NOMAD {
 
+
     // Validate samplesheet
     SAMPLESHEET_CHECK(
         file(params.input),
@@ -70,6 +72,7 @@ workflow NOMAD {
     )
 
     if (params.is_10X) {
+        // Parse 10X samplesheet
         Channel
             .fromPath(params.input)
             .splitCsv(
@@ -83,6 +86,8 @@ workflow NOMAD {
                 )
             }
             .set{ ch_paired_fastqs }
+
+        ch_original_fastqs = ch_paired_fastqs
 
         FETCH_10X(
             ch_paired_fastqs
@@ -103,6 +108,8 @@ workflow NOMAD {
                 )
             }
             .set{ ch_fastqs }
+
+        ch_original_fastqs = ch_fastqs
     }
 
     // Define lookahead parameter
@@ -130,6 +137,7 @@ workflow NOMAD {
         lookahead = params.lookahead
     }
 
+    // If we are fetching counts for an input anchor file or a control run
     if (params.anchors_file || params.run_decoy) {
 
         if (params.run_decoy) {
@@ -141,7 +149,7 @@ workflow NOMAD {
                 lookahead
             )
 
-            anchors = FETCH.out.anchors_scores
+            anchors = FETCH.out.anchors_pvals
 
         } else {
             anchors = file(params.anchors_file)
@@ -154,8 +162,9 @@ workflow NOMAD {
             anchors
         )
 
-        anchors_scores = ADD_DUMMY_SCORE.out.anchors_scores
+        anchors_pvals = ADD_DUMMY_SCORE.out.anchors_pvals
 
+    // Fetch anchors by computing significance
     } else {
         /*
         // Get significant anchors
@@ -165,17 +174,18 @@ workflow NOMAD {
             lookahead
         )
 
-        anchors_scores = FETCH.out.anchors_scores
+        anchors_pvals = FETCH.out.anchors_pvals
 
     }
 
+    // Only proceed if we are doing more than pval caluclations
     if (! params.run_pvals_only) {
         /*
         // Perform analysis
         */
         ANALYZE(
-            ch_fastqs,
-            anchors_scores,
+            ch_original_fastqs,
+            anchors_pvals,
             lookahead
         )
 
@@ -183,11 +193,31 @@ workflow NOMAD {
         // Perform annotations
         */
         ANNOTATE(
-            anchors_scores,
+            anchors_pvals,
             ANALYZE.out.anchor_target_counts,
             ANALYZE.out.ch_consensus_fasta,
             ANALYZE.out.ch_anchor_target_fastas
         )
+
+        abundant_stratified_anchors = FETCH.out.abundant_stratified_anchors
+        consensus_fractions         = ANALYZE.out.consensus_fractions
+        additional_summary          = ANNOTATE.out.additional_summary
+        genome_annotations_anchors  = ANNOTATE.out.genome_annotations_anchors
+
+        // // If annotations are run OR we only want to plot, run plot
+        // if (params.run_annotations){
+        //     /*
+        //     // Perform plotting
+        //     */
+        //     PLOT(
+        //         abundant_stratified_anchors,
+        //         consensus_fractions,
+        //         anchors_pvals,
+        //         additional_summary,
+        //         genome_annotations_anchors
+        //     )
+        // }
+
     }
 
 }

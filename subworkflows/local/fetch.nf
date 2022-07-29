@@ -64,13 +64,16 @@ workflow FETCH {
         params.kmer_size
     )
 
+    abudant_seqs                    = GET_ABUNDANT_ANCHORS.out.anchor_counts
+    abundant_stratified_anchors     = GET_ABUNDANT_ANCHORS.out.seqs
+
     if (params.run_decoy) {
         MERGE_ABUNDANT_ANCHORS(
-            GET_ABUNDANT_ANCHORS.out.anchor_counts.collect(),
+            abudant_seqs,
             params.num_decoy_anchors
         )
 
-        anchors_scores = MERGE_ABUNDANT_ANCHORS.out.seqs
+        anchors_pvals = MERGE_ABUNDANT_ANCHORS.out.seqs
 
 
     } else {
@@ -78,11 +81,12 @@ workflow FETCH {
         // Process to get significant anchors and their scores
         */
         COMPUTE_PVALS(
-            GET_ABUNDANT_ANCHORS.out.seqs,
+            abundant_stratified_anchors,
             params.kmer_size,
             file(params.input),
             params.K_num_hashes,
             params.L_num_random_Cj,
+            params.anchor_count_threshold,
             params.anchor_unique_targets_threshold,
             params.anchor_samples_threshold,
             params.anchor_sample_counts_threshold
@@ -97,7 +101,7 @@ workflow FETCH {
             params.all_anchors_pvals_file
         )
 
-        anchors_scores = SIGNIFICANT_ANCHORS.out.scores
+        anchors_pvals = SIGNIFICANT_ANCHORS.out.scores
             .filter{
                 it.countLines() > 1
             }
@@ -105,6 +109,7 @@ workflow FETCH {
     }
 
     emit:
-    anchors_scores = anchors_scores
+    anchors_pvals               = anchors_pvals
+    abundant_stratified_anchors = abundant_stratified_anchors.collect()
 
 }

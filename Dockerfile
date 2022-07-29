@@ -5,7 +5,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y wget && apt-get install -y --no-install-recommends build-essential r-base python3.9 python3-pip python3-setuptools python3-dev
 WORKDIR /app
 COPY requirements.txt /app/requirements.txt
-RUN pip3 install -r requirements.txt
+RUN export TMPDIR='/var/tmp'
+RUN pip3 install --no-cache-dir -r requirements.txt
 
 # install dependencies and clean up apt garbage
 RUN apt-get update && apt-get install --no-install-recommends -y \
@@ -13,6 +14,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     libbz2-dev \
     liblzma-dev \
     libcurl4-gnutls-dev \
+    libgnutls-openssl27 \
     zlib1g-dev \
     libssl-dev \
     gcc \
@@ -66,9 +68,4 @@ RUN wget https://github.com/samtools/samtools/releases/download/1.15.1/samtools-
     make && \
     make install
 
-# install bowtie
-WORKDIR /bin
-RUN wget https://github.com/BenLangmead/bowtie/releases/download/v1.3.1/bowtie-1.3.1-linux-x86_64.zip
-RUN unzip bowtie-1.3.1-linux-x86_64.zip
-ENV PATH="/bin/bowtie-1.3.1-linux-x86_64:${PATH}"
-WORKDIR /
+

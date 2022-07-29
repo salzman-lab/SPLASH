@@ -50,7 +50,8 @@ workflow ANALYZE {
 
     emit:
     anchor_target_counts        = anchor_target_counts
-    ch_consensus_fasta          = PARSE_ANCHORS.out.consensus_fasta.collect()
     ch_anchor_target_fastas     = ch_anchor_target_fastas
+    ch_consensus_fasta          = PARSE_ANCHORS.out.consensus_fasta.collect()
+    consensus_fractions         = PARSE_ANCHORS.out.consensus_fractions.collect()
 
 }

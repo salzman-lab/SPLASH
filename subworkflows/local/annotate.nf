@@ -112,12 +112,11 @@ workflow ANNOTATE {
             params.gtf
         )
 
-        GENOME_ANNOTATIONS.out.annotations
+        genome_annotations_anchors = GENOME_ANNOTATIONS.out.annotations
             .filter{
                 file ->
                 file.name.contains('genome_annotations_anchor.tsv')
             }
-            .set{genome_annotations_anchors}
 
         /*
         // Process to get called exons from bam file
@@ -137,6 +136,17 @@ workflow ANNOTATE {
             SPLICING_ANNOTATIONS.out.consensus_called_exons,
             SUMMARIZE.out.tsv
         )
+
+        additional_summary = ADDITIONAL_SUMMARY.out.tsv
+        genome_annotations = genome_annotations_anchors
+    } else {
+        additional_summary          = null
+        genome_annotations_anchors  = null
+
     }
 
+
+    emit:
+    additional_summary          = additional_summary
+    genome_annotations_anchors  = genome_annotations_anchors
 }

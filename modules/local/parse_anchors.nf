@@ -17,7 +17,8 @@ process PARSE_ANCHORS {
     output:
     path "*_target_counts.tsv"  , emit: targets
     path "*.fasta"              , emit: consensus_fasta
-    path "*.tab"                , emit: consensus_stats
+    path "*_counts.tab"         , emit: consensus_counts
+    path "*_fractions.tab"      , emit: consensus_fractions
     path "*log"                 , emit: log
 
     script:
