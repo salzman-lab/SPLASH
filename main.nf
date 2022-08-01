@@ -37,24 +37,17 @@ include { ANCHOR_HEATMAPS   } from './modules/local/anchor_heatmaps'
 //
 // WORKFLOW: Run main kaitlinchaung/nomad analysis pipeline
 //
+
 workflow RUN_NOMAD {
     // If we are only plotting,
     if (params.run_anchor_heatmaps){
-        // Declare file paths, if results directory is provided
-        if (params.results_dir) {
-            anchors_pvals                       = file("${params.results_dir}/anchors_pvals.tsv", checkIfExists: true)
-            genome_annotations_anchors          = "${params.results_dir}/genome_annotations/genome_annotations_anchor.tsv"
-            additional_summary                  = "${params.results_dir}/additional_summary.tsv"
-            abundant_stratified_anchors_path    = "${params.results_dir}/abundant_stratified_anchors/*txt.gz"
-            consensus_fractions_path            = "${params.results_dir}/consensus_anchors/*fractions.tab"
-        // Otherwise, read in file paths from params
-        } else {
-            anchors_pvals                       = file(params.anchor_pvals, checkIfExists: true)
-            genome_annotations_anchors          = params.genome_annotations_anchors
-            additional_summary                  = params.additional_summary
-            abundant_stratified_anchors_path    = params.abundant_stratified_anchors
-            consensus_fractions_path            = params.consensus_fractions_path
-        }
+
+        // Declare file paths
+        anchors_pvals                       = file("${params.results_dir}/anchors_pvals.tsv", checkIfExists: true)
+        genome_annotations_anchors          = "${params.results_dir}/genome_annotations/genome_annotations_anchor.tsv"
+        additional_summary                  = "${params.results_dir}/additional_summary.tsv"
+        abundant_stratified_anchors_path    = "${params.results_dir}/abundant_stratified_anchors/*txt.gz"
+        consensus_fractions_path            = "${params.results_dir}/consensus_anchors/*fractions.tab"
 
         // Create channels with files
         Channel
