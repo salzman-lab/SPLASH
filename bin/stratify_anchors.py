@@ -14,6 +14,10 @@ def get_args():
         "--stratify_level",
         type=int
     )
+    parser.add_argument(
+        "--is_RNAseq",
+        action='store_true'
+    )
     args = parser.parse_args()
     return args
 
@@ -31,8 +35,9 @@ def main():
                 count, kmer, sample = tuple(line.strip().split(" "))
                 substr = kmer[0:args.stratify_level]
 
-                if substr.startswith('TTT'):
-                    next
+                if args.is_RNAseq:
+                    if substr.startswith('TTT'):
+                        next
 
                 # this is the first 3mer, open the file and write out
                 if not current_substr:
