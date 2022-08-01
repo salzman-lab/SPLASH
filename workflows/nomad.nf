@@ -64,12 +64,20 @@ include { PLOT                      } from '../subworkflows/local/plot'
 
 workflow NOMAD {
 
+    // Skip the samplesheet check if this is test run
+    profile = "Project : $workflow.profile"
+    if (profile.contains('test')){
+        ch_samplesheet = file(params.input)
 
-    // Validate samplesheet
-    SAMPLESHEET_CHECK(
-        file(params.input),
-        params.is_10X
-    )
+    } else {
+        // Validate samplesheet
+        SAMPLESHEET_CHECK(
+            file(params.input),
+            params.is_10X
+        )
+        ch_samplesheet = SAMPLESHEET_CHECK.out.samplesheet
+
+    }
 
     if (params.is_10X) {
         // Parse 10X samplesheet
@@ -128,7 +136,7 @@ workflow NOMAD {
         }
         GET_READ_LENGTH(
             fastq,
-            SAMPLESHEET_CHECK.out.samplesheet
+            ch_samplesheet
         )
         read_length = GET_READ_LENGTH.out.read_length.toInteger()
         lookahead = ((read_length - 2 * params.kmer_size) / 2).toInteger()
