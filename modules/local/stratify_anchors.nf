@@ -7,6 +7,7 @@ process STRATIFY_ANCHORS {
     input:
     path counts
     val stratify_level
+    val is_RNAseq
 
     output:
     path("stratified_*"), emit: seqs

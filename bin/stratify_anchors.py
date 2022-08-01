@@ -31,6 +31,9 @@ def main():
                 count, kmer, sample = tuple(line.strip().split(" "))
                 substr = kmer[0:args.stratify_level]
 
+                if substr.startswith('TTT'):
+                    next
+
                 # this is the first 3mer, open the file and write out
                 if not current_substr:
                     current_substr = substr
