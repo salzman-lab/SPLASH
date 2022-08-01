@@ -52,8 +52,7 @@ workflow FETCH {
     */
     STRATIFY_ANCHORS(
         COUNT_ANCHORS.out.seqs.collect(),
-        params.stratify_level,
-        params.is_RNAseq
+        params.stratify_level
     )
 
     /*

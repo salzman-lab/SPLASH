@@ -7,13 +7,11 @@ process STRATIFY_ANCHORS {
     input:
     path counts
     val stratify_level
-    val is_RNAseq
 
     output:
     path("stratified_*"), emit: seqs
 
     script:
-    def is_RNAseq       = (is_RNAseq == true) ? "--is_RNAseq" : ""
     """
     for file in counted*txt
     do
