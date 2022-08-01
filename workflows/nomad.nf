@@ -204,19 +204,19 @@ workflow NOMAD {
         additional_summary          = ANNOTATE.out.additional_summary
         genome_annotations_anchors  = ANNOTATE.out.genome_annotations_anchors
 
-        // // If annotations are run OR we only want to plot, run plot
-        // if (params.run_annotations){
-        //     /*
-        //     // Perform plotting
-        //     */
-        //     PLOT(
-        //         abundant_stratified_anchors,
-        //         consensus_fractions,
-        //         anchors_pvals,
-        //         additional_summary,
-        //         genome_annotations_anchors
-        //     )
-        // }
+        // If annotations are run OR we only want to plot, run plot
+        if (params.run_annotations){
+            /*
+            // Perform plotting
+            */
+            PLOT(
+                abundant_stratified_anchors,
+                consensus_fractions,
+                anchors_pvals,
+                additional_summary,
+                genome_annotations_anchors
+            )
+        }
 
     }
 
