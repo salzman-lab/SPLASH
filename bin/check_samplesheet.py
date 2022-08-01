@@ -111,6 +111,14 @@ def main():
                                 line
                             )
 
+                        ## error if group_id is not 1 or -1
+                        if group_id.strip() not in ["-1", "1"]:
+                            print_error(
+                                f"ERROR: Group ID values must be 1 or -1: {group_id}",
+                                "Line",
+                                line,
+                            )
+
                     ## error if fastqs are not gzipped or if the paths are not valid
                     try:
                         if not fastq_file.endswith(".fastq.gz") and not fastq_file.endswith(".fq.gz"):
