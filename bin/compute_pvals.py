@@ -2,12 +2,10 @@
 
 import numpy as np
 import pandas as pd
-import sys,itertools
 import mmh3
 import argparse
 from scipy import stats
 import scipy
-import pickle
 import nltk
 import time #### just for testing
 
@@ -93,17 +91,19 @@ def convertDijToSj(df,idx):
     return df
 
 
+### compute hamming distance between two vectors
 def hamming(x,y):
     return sum(c1 != c2 for c1, c2 in zip(x,y))
 
-
-def normalizevec(x): ### shift and scale vector so that it's in [-1,1]
+### shift and scale vector so that it's in [-1,1]
+def normalizevec(x):
     return 2*(x-x.min()) / (x.max()-x.min())-1
+
 
 def main():
     args = get_args()
-    K = args.K
-    L = args.L
+    K = args.K+1 ### for zero indexing of levenshtein-based
+    L = args.L+1 ### for zero indexing of samplesheet-based
 
     print("running compute_pvals script on {}".format(args.infile))
 
@@ -181,14 +181,9 @@ def main():
     df['mean_target_hamming_distance'] = df['mu_0']
 
     ### generate levenstein distance based mu
-    # mergedDf['dij_0'] = np.vectorize(lambda x,y : nltk.edit_distance(x,y))(mergedDf.target,mergedDf.maxTarget)
-    mergedDf['dij_0'] = np.vectorize(lambda x,y : hamming(x,y))(mergedDf.target,mergedDf.maxTarget) ######### DELETE THIS######################
+    mergedDf['dij_0'] = np.vectorize(lambda x,y : nltk.edit_distance(x,y))(mergedDf.target,mergedDf.maxTarget)
     df = convertDijToSj(mergedDf,0)
     df['mean_target_levenshtein_distance'] = df['mu_0']
-
-    ### overwrite dij_0 and associated columns with handcrafted
-    # mergedDf['dij_0'] = np.vectorize(lambda x,y : hamming(x,y))(mergedDf.target,mergedDf.maxTarget) ##### to do, delete?
-    # df = convertDijToSj(df,0)
 
     df = mergedDf.drop(columns=['targ_cts','maxTarget'])
 
@@ -240,13 +235,10 @@ def main():
     # anchor_batch_size = int(10**8 / len(sampleNames) / numRandomCj)
 
     for i in range(int(Atotal//anchor_batch_size)+1):
-        ### operate on dftmp[i*anchor_batch_size : (i+1)*anchor_batch_size]
-        # A = len(dftmp[i*anchor_batch_size : (i+1)*anchor_batch_size])
+        ### operate on df_pivoted_full[i*anchor_batch_size : (i+1)*anchor_batch_size]
         idx_start = i*anchor_batch_size
         idx_end = min((i+1)*anchor_batch_size,len(df_pivoted_full))
         A = idx_end-idx_start ### number of anchors used here
-        # print(dftmp.iloc[0:5]['nj'])
-        # continue
 
         dftmp = df_pivoted_full.iloc[i*anchor_batch_size : (i+1)*anchor_batch_size]
         print(A,len(dftmp),idx_start,idx_end,len(df_pivoted_full))
@@ -341,10 +333,7 @@ def main():
         cjOptMat[idx_start:idx_end] = cjOpts
 
 
-
-
     print('finished with p-value computation, {:.1F} sec'.format(time.time()-startTime))
-
     
     outdf = pd.DataFrame({'anchor':df_pivoted_full.index.to_list(),'pval_random':pval_random, 'pval_samplesheet':pval_samplesheet,
              'effect_size_random':effect_size_random,'effect_size_samplesheet':effect_size_samplesheet,'optHash':optHash, 'num_observations':fullMarr})
