@@ -59,9 +59,13 @@ workflow FETCH {
     if (params.is_RNAseq) {
         ch_stratified_anchors = STRATIFY_ANCHORS.out.seqs
             .flatten()
-            .filter { it -> !file(it).name.contains("TTT") }
+            .filter {
+                it -> !file(it).name.contains("TTT")
+            }
+
     } else {
-        ch_stratified_anchors = STRATIFY_ANCHORS.out.seqs
+        ch_stratified_anchors = STRATIFY_ANCHORS.out.seqs.flatten()
+
     }
 
     /*
