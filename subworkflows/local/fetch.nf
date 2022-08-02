@@ -55,11 +55,20 @@ workflow FETCH {
         params.stratify_level
     )
 
+    // Do not proceed with TTT file if in RNAseq mode
+    if (params.is_RNAseq) {
+        ch_stratified_anchors = STRATIFY_ANCHORS.out.seqs
+            .flatten()
+            .filter { it -> !file(it).name.contains("TTT") }
+    } else {
+        ch_stratified_anchors = STRATIFY_ANCHORS.out.seqs
+    }
+
     /*
     // Process to filter kmer counts for abundant anchors
     */
     GET_ABUNDANT_ANCHORS(
-        STRATIFY_ANCHORS.out.seqs.flatten(),
+        ch_stratified_anchors,
         params.anchor_count_threshold,
         params.kmer_size
     )
