@@ -133,6 +133,7 @@ The following parameters will add or remove steps from the default pipeline, the
 
 ## Anchor Parameters
 ```
+--is_RNAseq <true, false>                   Omit processing of anchors starting with "TTT", for RNAseq-specific analyses
 --use_read_length <true, false>             Determine anchor-target distance as a function of read length (default: true)
 --lookahead <int>                           Anchor-target distance if `--use_read_length false` (default: null)
 --kmer_size                                 Length of anchors and targets (default: 27)
