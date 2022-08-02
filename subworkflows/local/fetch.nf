@@ -102,7 +102,8 @@ workflow FETCH {
             params.anchor_count_threshold,
             params.anchor_unique_targets_threshold,
             params.anchor_samples_threshold,
-            params.anchor_sample_counts_threshold
+            params.anchor_sample_counts_threshold,
+            params.anchor_batch_size
         )
 
         /*
@@ -111,7 +112,7 @@ workflow FETCH {
         SIGNIFICANT_ANCHORS(
             COMPUTE_PVALS.out.scores.collect(),
             params.fdr_threshold,
-            params.all_anchors_pvals_file
+            file(params.input)
         )
 
         anchors_pvals = SIGNIFICANT_ANCHORS.out.scores

@@ -100,7 +100,7 @@ def shorten(x,l=15):
 ###   anch: anchor to plot
 ###   cjSheet: cj values from samplesheet
 ###   args: passed in argparser
-def plotContingency(dfpvals,dfcts,anch,cjSheet,args,plotConsensus=True):
+def plotContingency(dfpvals, dfcts, anch, cjSheet, useSheetCjs, args,plotConsensus=True):
     start = time.time()
 
     ### check if samplesheet metadata passed in (cjSheet set to all 1s by default)
@@ -160,11 +160,9 @@ def plotContingency(dfpvals,dfcts,anch,cjSheet,args,plotConsensus=True):
         n1 = (cjOpt>0).sum()
         n2 = (cjOpt<0).sum()
 
-    if 'pv_hand_sheetCjs' not in dfpvals.columns:
-        pvRow.loc['pv_hand_sheetCjs']=np.nan
-        pvRow.loc['pv_hash_sheetCjs']=np.nan
-        pvRow.loc['effect_size_sheetCjs']=np.nan
-
+    if not useSheetCjs:
+        pvRow.loc['pval_samplesheet']=np.nan
+        pvRow.loc['effect_size_samplesheet']=np.nan
 
     ### currently always true, but in case it should be changed for later
     if plotConsensus:
@@ -178,30 +176,55 @@ def plotContingency(dfpvals,dfcts,anch,cjSheet,args,plotConsensus=True):
 
     fig.set_facecolor('white')
 
-    (fig.suptitle('''Dataset {}, anchor {}
-    Local gene {}, consensus gene {}, transcript gene {}
-    Corrected (both rand and sheet c)hash-based p value = {:.2E}
-    (rand f, rand c) p value = {:.2E}, (rand f, sheet c) p value = {:.2E}
-    Cosine similarity between random c and samplesheet c = {:.2F}
-    Random c effect size = {:.2F}, Sheet c effect size = {:.2F}
-    Mu_lev = {:.2F}, total number of observations M = {}
-    Number of +1 samples = {}, number of -1 samples = {}'''
-              .format(args.dataset,
-                  anch,
-                      pvRow.anchor_local_gene,
-                      pvRow.consensus_gene_mode,
-                      pvRow.transcript_gene,
-                      pvRow['pv_hash_both_corrected'],
-                     pvRow['pv_hash'],
-                     pvRow['pv_hash_sheetCjs'],
-                     cjOpt@cjSheet/len(cjSheet),
-                      pvRow['effect_size_randCjs'],
-                     pvRow['effect_size_sheetCjs'],
-                      pvRow['mu_lev'],
-                     int(pvRow.M),
-                     n1,
-                     n2),
-                 y=1.05))
+    if useSheetCjs:
+        (fig.suptitle('''Dataset {}, anchor {}
+        Local gene {}, consensus gene {}, transcript gene {}
+        Corrected (both rand and sheet c)hash-based p value = {:.2E}
+        (rand f, rand c) p value = {:.2E}, (rand f, sheet c) p value = {:.2E}
+        Cosine similarity between random c and samplesheet c = {:.2F}
+        Random c effect size = {:.2F}, Sheet c effect size = {:.2F}
+        Mu_lev = {:.2F}, total number of observations M = {}
+        Number of +1 samples = {}, number of -1 samples = {}'''
+                .format(
+                        args.dataset,
+                        anch,
+                        pvRow.anchor_local_gene,
+                        pvRow.consensus_gene_mode,
+                        pvRow.transcript_gene,
+                        pvRow['pval_aggregated_corrected'],
+                        pvRow['pval_random'],
+                        pvRow['pval_samplesheet'],
+                        cjOpt@cjSheet/len(cjSheet),
+                        pvRow['effect_size_random'],
+                        pvRow['effect_size_samplesheet'],
+                        pvRow['mean_target_levenshtein_distance'],
+                        int(pvRow.num_observations),
+                        n1,
+                        n2
+                    ),y=1.05))
+    else:
+        (fig.suptitle('''Dataset {}, anchor {}
+        Local gene {}, consensus gene {}, transcript gene {}
+        (rand f, rand c) p value = {:.2E}, Corrected (rand f, rand c) p value = {:.2E}
+        Cosine similarity between random c and samplesheet c = {:.2F}
+        Random c effect size = {:.2F}
+        Mu_lev = {:.2F}, total number of observations M = {}
+        Number of +1 samples = {}, number of -1 samples = {}'''
+                .format(
+                        args.dataset,
+                        anch,
+                        pvRow.anchor_local_gene,
+                        pvRow.consensus_gene_mode,
+                        pvRow.transcript_gene,
+                        pvRow['pval_random'],
+                        pvRow['pval_random_corrected'],
+                        cjOpt@cjSheet/len(cjSheet),
+                        pvRow['effect_size_random'],
+                        pvRow['mean_target_levenshtein_distance'],
+                        int(pvRow.num_observations),
+                        n1,
+                        n2
+                    ),y=1.05))
     fig.subplots_adjust(hspace=.3)
 
 
@@ -407,6 +430,10 @@ def plotContingency(dfpvals,dfcts,anch,cjSheet,args,plotConsensus=True):
         plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
         plt.colorbar(orientation="horizontal",pad=.2)
 
+    if useSheetCjs:
+        pval_col = 'pval_aggregated_corrected'
+    else:
+        pval_col = 'pval_random_corrected'
 
     ### outside loop, save
     plotSaveName = '{}_anchor_{}_gene_{}_cons_{}_transcript_{}_n_{}_pv_{:.0E}_eSize_{:.2F}_muLev_{:.1F}_ent_{:.1F}.pdf'.format(
@@ -416,10 +443,10 @@ def plotContingency(dfpvals,dfcts,anch,cjSheet,args,plotConsensus=True):
         shorten(pvRow.consensus_gene_mode,50),
         pvRow.transcript_gene,
         int((n1+n2)//5)*5,
-    pvRow.pv_hash_both_corrected,
-    max(pvRow['effect_size_randCjs'],np.abs(pvRow['effect_size_sheetCjs'])),
-    pvRow.mu_lev,
-    pvRow.entropy)
+    pvRow[pval_col],
+    max(pvRow['effect_size_random'],np.abs(pvRow['effect_size_samplesheet'])),
+    pvRow.mean_target_levenshtein_distance,
+    pvRow.target_entropy)
     plt.savefig(plotSaveName,bbox_inches='tight') ### plot as pdf
     plt.savefig(plotSaveName[:-3]+"png",bbox_inches='tight') ### plot as png
     plt.close()
@@ -616,6 +643,7 @@ def main():
 
     print('reading cjs')
     sheetCj = np.ones(len(sampleNames))
+    useSheetCjs = False
     if args.samplesheet!='':
         with open(args.samplesheet,'r') as f:
             cols = f.readline().split(',')
@@ -624,7 +652,7 @@ def main():
         elif len(cols)>2:
             print("Improperly formatted samplesheet")
         else:
-
+            useSheetCjs = True
             sheetdf = pd.read_csv(args.samplesheet,names=['fname','sheetCjs'])
             sheetdf['sample'] = (sheetdf.fname
                             .str.rsplit('/',1,expand=True)[1]
@@ -647,14 +675,16 @@ def main():
         print('No annotation file given, setting transcript gene to NA')
         dfpvals['transcript_gene']='NA'
 
-
     ### determining anchor list
     ### can use filters to speed up, if not all anchors are desired
     if args.heatmap_anchor_list =='':
         print('no anchor list passed in, using top {} most significant anchors'.format(args.num_heatmap_anchors))
         df= dfpvals
 
-        df = df.sort_values('pv_hash_both_corrected')
+        if useSheetCjs:
+            df = df.sort_values('pval_aggregated_corrected')
+        else:
+            df = df.sort_values('pval_random_corrected')
         anchLst = df[['anchor']].drop_duplicates().anchor.to_list()[:args.num_heatmap_anchors]
         print("Length of original anchor list is {}, reduced to {}".format(df.anchor.nunique(),len(anchLst)))
 
@@ -677,7 +707,7 @@ def main():
             print("anch {} not in dfpvals".format(anch))
             continue
 
-        plotContingency(dfpvals,ctsDf,anch,sheetCj,args,True)
+        plotContingency(dfpvals, ctsDf, anch, sheetCj, useSheetCjs, args, True)
 
     ### if something went awry, save list of skipped anchors
     if len(skippedAnchs)>0:

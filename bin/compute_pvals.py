@@ -17,7 +17,7 @@ import time #### just for testing
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument( ### input abundant_stratified_{}.txt.gz file 
+    parser.add_argument( ### input abundant_stratified_{}.txt.gz file
         "--infile",
         type=str
     )
@@ -50,7 +50,7 @@ def get_args():
         type=int,
         default=1
     )
-    parser.add_argument( ### remove all anchors with y or fewer total counts 
+    parser.add_argument( ### remove all anchors with y or fewer total counts
         "--anchor_count_threshold",
         type=int,
         default=30
@@ -166,7 +166,7 @@ def main():
     df = df.drop(columns='anchSample_cts') ### this is essentially "old" n_j
     df['M'] = df.groupby(['anchor']).counts.transform('sum')
     df['number_nonzero_samples'] = df.groupby('anchor')['sample'].nunique() ## count number of samples that this anchor appears in
-    
+
     print('starting hamming and levenshtein computation')
     #### add in handcrafted dij of distance to most frequent target
     ### find most abundant target for every anchor
@@ -217,7 +217,7 @@ def main():
     if useSheetCjs:
         sheetCj = sheetdf.set_index('sample').T[sampleNames].to_numpy().flatten()
 
-    
+
 
     #### batched computation start
     anchor_batch_size = args.anchor_batch_size
@@ -225,7 +225,7 @@ def main():
     pval_random = np.ones(Atotal)
     pval_samplesheet = np.ones(Atotal)
     effect_size_random = np.zeros(Atotal)
-    effect_size_samplesheet = np.zeros(Atotal) 
+    effect_size_samplesheet = np.zeros(Atotal)
     optHash = np.zeros(Atotal)
     fullMarr = np.zeros(Atotal)
     cjOptMat = np.zeros((Atotal,p))
@@ -334,7 +334,7 @@ def main():
 
 
     print('finished with p-value computation, {:.1F} sec'.format(time.time()-startTime))
-    
+
     outdf = pd.DataFrame({'anchor':df_pivoted_full.index.to_list(),'pval_random':pval_random, 'pval_samplesheet':pval_samplesheet,
              'effect_size_random':effect_size_random,'effect_size_samplesheet':effect_size_samplesheet,'optHash':optHash, 'num_observations':fullMarr})
 
@@ -352,7 +352,7 @@ def main():
         outdf.sort_values('pval_aggregated',inplace=True)
     else:
         outdf = outdf.drop(columns=['pval_samplesheet','effect_size_samplesheet'])
-        outdf.sort_values('pv_hash',inplace=True)
+        outdf.sort_values('pval_random',inplace=True)
 
     print('writing')
     outdf.to_csv(args.outfile_scores, sep='\t', index=False)
