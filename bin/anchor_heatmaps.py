@@ -518,9 +518,9 @@ def plotContingency(dfpvals, dfcts, anch, cjSheet, useSheetCjs, args,plotConsens
     newpv = scipy.stats.binomtest(int(binArr.sum()),numFlips,pMax).pvalue
 
 
-    if plotBySheet:
-        df['ctype_plot'] = 'capillary cell'
-        df.loc[df.cj==-1, 'ctype_plot'] = 'macrophage'
+    if plotBySheet and df.cj.nunique()==2:
+        df['ctype_plot'] = 'c_j=+1' ####kait
+        df.loc[df.cj==-1, 'ctype_plot'] = 'c_j=-1' ####kait
 
         g=sns.JointGrid(x=df.nj,y=df.normed,hue=df.ctype_plot, height=5, palette=clust_colors)
         g.plot_joint(sns.scatterplot)
