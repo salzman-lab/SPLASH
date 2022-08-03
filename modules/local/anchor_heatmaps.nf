@@ -18,8 +18,8 @@ process ANCHOR_HEATMAPS {
     path genome_annotations_anchors
 
     output:
-    path "*.png"                        , emit: png
-    path "*.tsv"                        , emit: tsv
+    path "*.png"                        , emit: png                       , optional: true
+    path "*.tsv"                        , emit: tsv                       , optional: true
 
     script:
     def heatmap_anchor_list             = (use_heatmap_anchor_list==true) ? "--heatmap_anchor_list ${heatmap_anchor_list}" : ""
