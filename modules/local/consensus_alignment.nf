@@ -18,17 +18,10 @@ process CONSENSUS_ALIGNMENT {
     path "*.mate1"  , emit: unmapped_fasta
 
     script:
-    def cores = 1
-    if (task.cpus) {
-        cores = (task.cpus as int) - 3
-        if (cores < 1) cores = 1
-        if (cores > 4) cores = 4
-    }
-
     fasta_name  = fasta.baseName
     """
     STAR \\
-        --runThreadN ${cores} \\
+        --runThreadN ${task.cpus} \\
         --genomeDir ${star_index} \\
         --readFilesIn ${fasta} \\
         --twopassMode Basic \\

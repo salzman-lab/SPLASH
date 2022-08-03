@@ -179,7 +179,7 @@ def plotContingency(dfpvals,dfcts,anch,cjSheet,args,plotConsensus=True):
     fig.set_facecolor('white')
 
     (fig.suptitle('''Dataset {}, anchor {}
-    Local gene {}, consensus gene {}, transcript gene {}
+    Gene {}, consensus gene {}, transcript gene {}
     Corrected (both rand and sheet c)hash-based p value = {:.2E}
     (rand f, rand c) p value = {:.2E}, (rand f, sheet c) p value = {:.2E}
     Cosine similarity between random c and samplesheet c = {:.2F}
@@ -188,9 +188,9 @@ def plotContingency(dfpvals,dfcts,anch,cjSheet,args,plotConsensus=True):
     Number of +1 samples = {}, number of -1 samples = {}'''
               .format(args.dataset,
                   anch,
-                      pvRow.anchor_local_gene,
+                      pvRow.gene,
                       pvRow.consensus_gene_mode,
-                      pvRow.transcript_gene,
+                      pvRow.transcript,
                       pvRow['pv_hash_both_corrected'],
                      pvRow['pv_hash'],
                      pvRow['pv_hash_sheetCjs'],
@@ -412,9 +412,9 @@ def plotContingency(dfpvals,dfcts,anch,cjSheet,args,plotConsensus=True):
     plotSaveName = '{}_anchor_{}_gene_{}_cons_{}_transcript_{}_n_{}_pv_{:.0E}_eSize_{:.2F}_muLev_{:.1F}_ent_{:.1F}.pdf'.format(
                             args.dataset,
                             anch,
-        shorten(pvRow.anchor_local_gene,20),
+        shorten(pvRow.gene,20),
         shorten(pvRow.consensus_gene_mode,50),
-        pvRow.transcript_gene,
+        pvRow.transcript,
         int((n1+n2)//5)*5,
     pvRow.pv_hash_both_corrected,
     max(pvRow['effect_size_randCjs'],np.abs(pvRow['effect_size_sheetCjs'])),
@@ -606,7 +606,7 @@ def main():
 
     else:
         ### set gene annotations to be NA
-        dfpvals['anchor_local_gene']='NA'
+        dfpvals['gene']='NA'
         dfpvals['consensus_gene_mode']='NA'
 
 
@@ -638,14 +638,13 @@ def main():
     if args.genome_annotations_anchors != '' and os.path.exists(args.genome_annotations_anchors):
         print('reading in genome_ann')
         dfgen = pd.read_csv(args.genome_annotations_anchors, sep='\t')
-        dfgen['transcript_first'] = dfgen.local_transcript.astype(str).str.split('|').str[0]
-        dfgen['transcript_gene'] = dfgen.end_to_end_transcript.astype(str).str.split('|').str[5]
+        dfgen['transcript'] = dfgen.transcript.astype(str).str.split('|').str[0]
 
-        ### merge transcript_gene into dfpvals
-        dfpvals = dfpvals.merge(dfgen[['anchor', 'transcript_gene']], how='left')
+        ### merge transcript into dfpvals
+        dfpvals = dfpvals.merge(dfgen[['anchor', 'transcript']], how='left')
     else:
         print('No annotation file given, setting transcript gene to NA')
-        dfpvals['transcript_gene']='NA'
+        dfpvals['transcript']='NA'
 
 
     ### determining anchor list

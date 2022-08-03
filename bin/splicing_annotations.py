@@ -102,7 +102,7 @@ def main():
         df[['sample', 'anchor']] = df['sample_anchor'].str.split('____', expand=True)
 
         ## read in anchor annotations and merge in
-        anchor_ann = pd.read_csv(args.genome_annotations_anchors, sep='\t', usecols=['anchor', 'local_gene', 'end_to_end_gene'])
+        anchor_ann = pd.read_csv(args.genome_annotations_anchors, sep='\t', usecols=['anchor', 'gene'])
         df = pd.merge(df, anchor_ann, on='anchor', how='left')
 
         ## try reading in reported alignments, if they exist
@@ -126,8 +126,6 @@ def main():
                 "id" : "called_exon_id",
                 "gtf_strand" : "ann_exon_strand",
                 "gtf_gene" : "ann_exon_gene",
-                "local_gene" : "anchor_local_gene",
-                "end_to_end_gene" : "anchor_end_to_end_gene",
                 "position" : "called_exon_id_position"
             },
             inplace=True
@@ -136,7 +134,7 @@ def main():
         ## reorder columns
         df = df[[
             'called_exon_chr', 'called_exon_id', 'called_exon_id_position', 'ann_exon_gene', 'ann_exon_strand',
-            'sample', 'anchor', 'consensus', 'anchor_local_gene', 'anchor_end_to_end_gene', 'consensus_gene', 'consensus_reported_alignment']]
+            'sample', 'anchor', 'consensus', 'gene', 'consensus_gene', 'consensus_reported_alignment']]
 
         ## clean up from bedtools
         df = df.drop_duplicates()
