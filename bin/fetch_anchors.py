@@ -46,27 +46,6 @@ def get_args():
     return args
 
 
-def get_anchor_target(read, lookahead, kmer_size, step_size):
-    last_base = len(read) - (lookahead + 2 * kmer_size)
-    anchor = ""
-    target = ""
-    for i in range(0, last_base, step_size):
-        # get anchor
-        anchor = read[0+i : kmer_size+i]
-
-        # get target start and end positions, as a function of anchor end
-        target_start = (kmer_size+i) + lookahead
-        target_end = target_start + kmer_size
-
-        # get target
-        target = read[target_start : target_end]
-    # return
-    if len(anchor)>1 and len(target)>1:
-        return anchor, target
-    else:
-        return 'N','N'
-
-
 def main():
     args = get_args()
 
@@ -76,7 +55,7 @@ def main():
         step_size = args.window_slide
 
     x = 0
-
+    w = 0
     file = gzip.open(args.outfile, 'wb')
     with gzip.open(args.infile, 'rt') as infile:
         for line in infile:
@@ -88,24 +67,50 @@ def main():
                 anchor, target = get_anchor_target(read, args.lookahead, args.kmer_size, step_size)
 
                 # write out anchor and target, with the cbc as sample
-                if "N" not in anchor and "N" not in target:
-                    file.write(str.encode(f'{anchor+target} {cbc}\n'))
+                read = line.strip()
+
+                last_base = len(read) - (args.lookahead + 2 * args.kmer_size)
+
+                for i in range(0, last_base, step_size):
+                    # get anchor
+                    anchor = read[0+i : args.kmer_size+i]
+
+                    # get target start and end positions, as a function of anchor end
+                    target_start = (args.kmer_size+i) + args.lookahead
+                    target_end = target_start + args.kmer_size
+
+                    # get target
+                    target = read[target_start : target_end]
+
+                    if "N" not in anchor and "N" not in target:
+                        file.write(str.encode(f'{anchor+target} {cbc}\n'))
 
             ## if this is not 10X, parse as fastq file
             else:
 
                 if args.num_lines != 0:
-                    if x > args.num_lines*4:
+                    if x > args.num_lines:
                         break
 
                 x += 1
                 if x % 4 == 2:
                     read = line.strip()
 
-                    anchor, target = get_anchor_target(read, args.lookahead, args.kmer_size, step_size)
+                    last_base = len(read) - (args.lookahead + 2 * args.kmer_size)
 
-                    if "N" not in anchor and "N" not in target:
-                        file.write(str.encode(f'{anchor+target} {args.fastq_id}\n'))
+                    for i in range(0, last_base, step_size):
+                        # get anchor
+                        anchor = read[0+i : args.kmer_size+i]
+
+                        # get target start and end positions, as a function of anchor end
+                        target_start = (args.kmer_size+i) + args.lookahead
+                        target_end = target_start + args.kmer_size
+
+                        # get target
+                        target = read[target_start : target_end]
+
+                        if "N" not in anchor and "N" not in target:
+                            file.write(str.encode(f'{anchor+target} {args.fastq_id}\n'))
     file.close()
 
 
