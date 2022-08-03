@@ -22,7 +22,7 @@ process ELEMENT_ALIGNMENT {
     rm -rf ${outfile}
     echo -e "${fasta_name}\t${fasta_name}_hits_${index_name}\t${fasta_name}_hits_pos_${index_name}" >> ${outfile}
 
-    bowtie2 -f -x ${index} -U ${fasta} --quiet \\
+    bowtie2 -f -x ${index} -U ${fasta} -p ${task.cpus} --quiet \\
         | sed '/^@/d' \\
         | cut -f1,3,4 \\
         | sort \\

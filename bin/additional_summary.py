@@ -26,16 +26,16 @@ def main():
 
     try:
         info = pd.read_csv(args.consensus_called_exons, sep='\t').drop_duplicates()
-        info = info[['anchor', 'anchor_local_gene', 'anchor_end_to_end_gene', 'consensus_gene']]
+        info = info[['anchor', 'gene', 'consensus_gene']]
         info = (
             info
-            .groupby(['anchor','anchor_local_gene', 'anchor_end_to_end_gene'])
+            .groupby(['anchor','gene'])
             .agg(pd.Series.mode)
             .reset_index()
         )
-        info.columns = ['anchor', 'anchor_local_gene', 'anchor_end_to_end_gene', 'consensus_gene_mode']
+        info.columns = ['anchor', 'gene', 'consensus_gene_mode']
     except:
-        info = pd.DataFrame(columns = ['anchor', 'anchor_local_gene', 'anchor_end_to_end_gene', 'consensus_gene_mode'])
+        info = pd.DataFrame(columns = ['anchor', 'gene', 'consensus_gene_mode'])
 
     summary = pd.read_csv(args.summary, sep='\t')
 

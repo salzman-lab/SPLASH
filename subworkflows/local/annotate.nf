@@ -21,7 +21,10 @@ workflow ANNOTATE {
     main:
 
     // create samplesheet of bowtie2 indices
-    element_annotations_samplesheet = file(params.element_annotations_samplesheet, checkIfExists: true)
+    element_annotations_samplesheet = file(
+        params.element_annotations_samplesheet,
+        checkIfExists: true
+    )
     ch_indices = Channel.fromPath(element_annotations_samplesheet)
         .splitCsv(
             header: false
@@ -29,7 +32,6 @@ workflow ANNOTATE {
         .map{ row ->
             row[0]
         }
-
 
     /*
     // Cartesian join of anchor+target fastas and all bowtie2 indices
@@ -63,20 +65,12 @@ workflow ANNOTATE {
         params.run_blast
     )
 
-    /*
-    // Make one channel containing anchor, target, and consensus fastas
-    */
-    ch_fastas = ch_anchor_target_fastas
-        .flatten()
-        .mix(ch_consensus_fastas)
-        .flatten()
-
     if (params.run_annotations) {
         /*
         // Process to align targets and anchors to genome
         */
         GENOME_ALIGNMENT(
-            ch_fastas,
+            ch_anchor_target_fastas.flatten(),
             params.genome_index,
             params.transcriptome_index
         )
@@ -103,21 +97,17 @@ workflow ANNOTATE {
             PREPARE_CONSENSUS.out.fasta.collect()
         )
 
-        fasta = MERGE_CONSENSUS.out.fasta
+        consensus_fasta = MERGE_CONSENSUS.out.fasta
         /*
         // Process to get splice junctions with STAR
         */
         CONSENSUS_ALIGNMENT(
-            fasta,
+            consensus_fasta,
             params.star_index,
             params.gtf
         )
 
-        genome_annotations_anchors = GENOME_ANNOTATIONS.out.annotations
-            .filter{
-                file ->
-                file.name.contains('genome_annotations_anchor.tsv')
-            }
+        genome_annotations_anchors = GENOME_ANNOTATIONS.out.annotated_anchors
 
         /*
         // Process to get called exons from bam file
@@ -126,7 +116,7 @@ workflow ANNOTATE {
             CONSENSUS_ALIGNMENT.out.bam,
             CONSENSUS_ALIGNMENT.out.unmapped_fasta,
             params.gene_bed,
-            fasta,
+            consensus_fasta,
             genome_annotations_anchors
         )
 
@@ -139,7 +129,8 @@ workflow ANNOTATE {
         )
 
         additional_summary = ADDITIONAL_SUMMARY.out.tsv
-        genome_annotations = genome_annotations_anchors
+
+
     } else {
         additional_summary          = null
         genome_annotations_anchors  = null
