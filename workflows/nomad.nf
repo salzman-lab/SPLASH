@@ -140,7 +140,6 @@ workflow NOMAD {
         )
         read_length = GET_READ_LENGTH.out.read_length.toInteger()
         lookahead = ((read_length - 2 * params.kmer_size) / 2).toInteger()
-
     } else {
         lookahead = params.lookahead
     }
@@ -161,6 +160,7 @@ workflow NOMAD {
 
         } else {
             anchors = file(params.anchors_file)
+
         }
 
         /*
@@ -207,23 +207,25 @@ workflow NOMAD {
             ANALYZE.out.ch_anchor_target_fastas
         )
 
-        abundant_stratified_anchors = FETCH.out.abundant_stratified_anchors
-        consensus_fractions         = ANALYZE.out.consensus_fractions
-        additional_summary          = ANNOTATE.out.additional_summary
-        genome_annotations_anchors  = ANNOTATE.out.genome_annotations_anchors
+        if (params.anchors_file == null & params.run_decoy == false) {
+            abundant_stratified_anchors = FETCH.out.abundant_stratified_anchors
+            consensus_fractions         = ANALYZE.out.consensus_fractions
+            additional_summary          = ANNOTATE.out.additional_summary
+            genome_annotations_anchors  = ANNOTATE.out.genome_annotations_anchors
 
-        // If annotations are run OR we only want to plot, run plot
-        if (params.run_annotations){
-            /*
-            // Perform plotting
-            */
-            PLOT(
-                abundant_stratified_anchors,
-                consensus_fractions,
-                anchors_pvals,
-                additional_summary,
-                genome_annotations_anchors
-            )
+            // If annotations are run OR we only want to plot, run plot
+            if (params.run_annotations){
+                /*
+                // Perform plotting
+                */
+                PLOT(
+                    abundant_stratified_anchors,
+                    consensus_fractions,
+                    anchors_pvals,
+                    additional_summary,
+                    genome_annotations_anchors
+                )
+            }
         }
 
     }
