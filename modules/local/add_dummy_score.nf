@@ -7,7 +7,7 @@ process ADD_DUMMY_SCORE {
     path anchors
 
     output:
-    path outfile    , emit: anchors_pvals
+    path outfile    , emit: anchors_scores
 
     script:
     outfile         = "anchors_pvals.tsv"
