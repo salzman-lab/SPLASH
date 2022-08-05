@@ -223,6 +223,7 @@ workflow NOMAD {
                     abundant_stratified_anchors,
                     consensus_fractions,
                     anchors_pvals,
+                    anchors_Cjs,
                     additional_summary,
                     genome_annotations_anchors
                 )
