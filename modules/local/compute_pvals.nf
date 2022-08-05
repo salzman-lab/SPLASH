@@ -14,6 +14,7 @@ process COMPUTE_PVALS {
     val anchor_unique_targets_threshold
     val anchor_samples_threshold
     val anchor_sample_counts_threshold
+    val anchor_batch_size
 
     output:
     path outfile_scores     , emit: scores      , optional: true
@@ -34,6 +35,7 @@ process COMPUTE_PVALS {
         --anchor_unique_targets_threshold ${anchor_unique_targets_threshold} \\
         --anchor_samples_threshold ${anchor_samples_threshold} \\
         --anchor_sample_counts_threshold ${anchor_sample_counts_threshold} \\
-        --outfile ${outfile_scores}
+        --outfile ${outfile_scores} \\
+        --anchor_batch_size ${anchor_batch_size}
     """
 }

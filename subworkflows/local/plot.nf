@@ -7,6 +7,7 @@ workflow PLOT {
     abundant_stratified_anchors
     consensus_fractions
     anchors_pvals
+    anchors_Cjs
     additional_summary
     genome_annotations_anchors
 
@@ -25,6 +26,7 @@ workflow PLOT {
         consensus_fractions.collect(),
         params.dataset,
         anchors_pvals,
+        anchors_Cjs,
         params.num_heatmap_anchors,
         file(params.input),
         additional_summary,
