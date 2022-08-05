@@ -131,6 +131,12 @@ The following parameters will add or remove steps from the default pipeline, the
 --run_anchor_heatmaps <true, false>         Create anchor heatmaps, using NOMAD output files.
 ```
 
+## Parallelization Parameters
+```
+--stratify_level <int>                      The number of parallelizations to utilize during p value computations, will be equal to 4^stratify_level parallelizations (default: 3)
+--anchor_batch_size <int>                   The number of anchors used in p value computation per batch, lower values will use less memory (default: 1000)
+```
+
 ## Anchor Parameters
 ```
 --is_RNAseq <true, false>                   Omit processing of anchors starting with "TTT", for RNAseq-specific analyses
