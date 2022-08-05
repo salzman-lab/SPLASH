@@ -180,7 +180,7 @@ def plotContingency(dfpvals, sampleNames, dfcts, anch, cjSheet, useSheetCjs, arg
 
     if useSheetCjs:
         (fig.suptitle('''Dataset {}, anchor {}
-        Local gene {}, consensus gene {}, transcript gene {}
+        Gene {}, consensus gene {}, transcript gene {}
         Corrected (both rand and sheet c)hash-based p value = {:.2E}
         (rand f, rand c) p value = {:.2E}, (rand f, sheet c) p value = {:.2E}
         Cosine similarity between random c and samplesheet c = {:.2F}
@@ -190,9 +190,9 @@ def plotContingency(dfpvals, sampleNames, dfcts, anch, cjSheet, useSheetCjs, arg
                 .format(
                         args.dataset,
                         anch,
-                        pvRow.anchor_local_gene,
+                        pvRow.gene,
                         pvRow.consensus_gene_mode,
-                        pvRow.transcript_gene,
+                        pvRow.transcript,
                         pvRow['pval_aggregated_corrected'],
                         pvRow['pval_random'],
                         pvRow['pval_samplesheet'],
@@ -206,7 +206,7 @@ def plotContingency(dfpvals, sampleNames, dfcts, anch, cjSheet, useSheetCjs, arg
                     ),y=1.05))
     else:
         (fig.suptitle('''Dataset {}, anchor {}
-        Local gene {}, consensus gene {}, transcript gene {}
+        Gene {}, consensus gene {}, transcript gene {}
         (rand f, rand c) p value = {:.2E}, Corrected (rand f, rand c) p value = {:.2E}
         Cosine similarity between random c and samplesheet c = {:.2F}
         Random c effect size = {:.2F}
@@ -215,9 +215,9 @@ def plotContingency(dfpvals, sampleNames, dfcts, anch, cjSheet, useSheetCjs, arg
                 .format(
                         args.dataset,
                         anch,
-                        pvRow.anchor_local_gene,
+                        pvRow.gene,
                         pvRow.consensus_gene_mode,
-                        pvRow.transcript_gene,
+                        pvRow.transcript,
                         pvRow['pval_random'],
                         pvRow['pval_random_corrected'],
                         cjOpt@cjSheet/len(cjSheet),
