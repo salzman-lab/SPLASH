@@ -182,7 +182,8 @@ workflow NOMAD {
             lookahead
         )
 
-        anchors_pvals = FETCH.out.anchors_pvals
+        anchors_pvals   = FETCH.out.anchors_pvals
+        anchors_Cjs     = FETCH.out.anchors_Cjs
 
     }
 

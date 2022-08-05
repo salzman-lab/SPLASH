@@ -7,20 +7,23 @@ process SIGNIFICANT_ANCHORS {
     input:
     path anchors
     val fdr_threshold
-    val all_anchors_pvals_file
+    path samplesheet
 
     output:
     path outfile_scores         , emit: scores
-    path "all*tsv"              , emit: all_scores
+    path "all*tsv"              , emit: all_scores  , optional: true
+    path "anchors_Cjs*"         , emit: cjs         , optional: true
 
     script:
-    def all_anchors_pvals_file  = all_anchors_pvals_file   ? "--all_anchors_pvals_file" : ""
-
     outfile_scores              = "anchors_pvals.tsv"
+    outfile_all_anchors_pvals   = "all_anchors_pvals.tsv"
+    outfile_Cjs                 = "anchors_Cjs_random_opt.tsv"
     """
     significant_anchors.py \\
         --fdr_threshold ${fdr_threshold} \\
+        --samplesheet ${samplesheet} \\
         --outfile_scores ${outfile_scores} \\
-        ${all_anchors_pvals_file}
+        --outfile_all_anchors_pvals ${outfile_all_anchors_pvals} \\
+        --outfile_Cjs ${outfile_Cjs}
     """
 }

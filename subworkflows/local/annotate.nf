@@ -61,8 +61,7 @@ workflow ANNOTATE {
         anchor_scores,
         anchor_target_counts,
         ELEMENT_ANNOTATIONS.out.annotated_anchors,
-        ELEMENT_ANNOTATIONS.out.annotated_targets,
-        params.run_blast
+        ELEMENT_ANNOTATIONS.out.annotated_targets
     )
 
     if (params.run_annotations) {

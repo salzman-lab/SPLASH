@@ -9,23 +9,18 @@ process SUMMARIZE {
     path anchor_targets_counts
     path annotated_anchors
     path annotated_targets
-    val run_blast
 
     output:
     path outfile                , emit: tsv
 
     script:
-    def run_blast = run_blast   ? "--run_blast" : ""
-
     outfile                     = "summary.tsv"
-
     """
     summarize.py \\
         --anchor_scores ${anchor_scores} \\
         --anchor_targets_counts ${anchor_targets_counts} \\
         --annotated_anchors ${annotated_anchors} \\
         --annotated_targets ${annotated_targets} \\
-        --outfile ${outfile} \\
-        ${run_blast}
+        --outfile ${outfile}
     """
 }
