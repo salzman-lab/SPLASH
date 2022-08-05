@@ -86,7 +86,8 @@ workflow FETCH {
             params.num_decoy_anchors
         )
 
-        anchors_pvals = MERGE_ABUNDANT_ANCHORS.out.seqs
+        anchors_pvals   = MERGE_ABUNDANT_ANCHORS.out.seqs
+        anchors_Cjs     = Channel.empty()
 
 
     } else {
@@ -115,15 +116,18 @@ workflow FETCH {
             file(params.input)
         )
 
-        anchors_pvals = SIGNIFICANT_ANCHORS.out.scores
+        anchors_pvals   = SIGNIFICANT_ANCHORS.out.scores
             .filter{
                 it.countLines() > 1
             }
+
+        anchors_Cjs     = SIGNIFICANT_ANCHORS.out.cjs
 
     }
 
     emit:
     anchors_pvals               = anchors_pvals
+    anchors_Cjs                 = anchors_Cjs
     abundant_stratified_anchors = abundant_stratified_anchors.collect()
 
 }

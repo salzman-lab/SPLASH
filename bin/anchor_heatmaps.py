@@ -32,6 +32,11 @@ def get_args():
         help='required: anchors_pvals.tsv file'
     )
     parser.add_argument(
+        "--anchor_Cjs",
+        type=str,
+        help='required: anchors_pvals.tsv file'
+    )
+    parser.add_argument(
         "--num_heatmap_anchors",
         type=int,
         default=100
@@ -100,15 +105,11 @@ def shorten(x,l=15):
 ###   anch: anchor to plot
 ###   cjSheet: cj values from samplesheet
 ###   args: passed in argparser
-def plotContingency(dfpvals, dfcts, anch, cjSheet, useSheetCjs, args,plotConsensus=True):
+def plotContingency(dfpvals, sampleNames, dfcts, anch, cjSheet, useSheetCjs, args,plotConsensus=True):
     start = time.time()
 
     ### check if samplesheet metadata passed in (cjSheet set to all 1s by default)
     plotBySheet = ~np.all(cjSheet==1)
-
-    ### load in list of sample names
-    sampleNames = (dfpvals.columns[dfpvals.columns.str.startswith('cj_rand')]
-              .str.lstrip('cj_rand_opt_').to_list())
 
     if anch not in dfcts.index:
         print(anch, " not in dfcts")
@@ -119,8 +120,9 @@ def plotContingency(dfpvals, dfcts, anch, cjSheet, useSheetCjs, args,plotConsens
 
     ### need to aggregate rows (different sample / anchors)
     pvRow = dfpvals[dfpvals.anchor==anch].mode(axis=0).iloc[0].copy()
+
     ### read in cjOpt
-    cjOpt = pvRow[dfpvals.columns.str.startswith('cj_rand')].to_numpy().flatten().astype('float')
+    cjOpt = pvRow[sampleNames].to_numpy().flatten().astype('float')
 
     ### if it's facing the wrong way, flip it (for visual purposes)
     if cjOpt @ cjSheet < 0 :
@@ -374,7 +376,6 @@ def plotContingency(dfpvals, dfcts, anch, cjSheet, useSheetCjs, args,plotConsens
 
         ### plotting
         maxLen = len(df.columns)-3 ### cjRand,cjSheet,consensus (sample is index)
-        print(sampleNames)
         consensi = df.loc[sampleNames,'consensus'].to_list()
         consensusMat = -1*np.ones((len(consensi),maxLen)) ### negative 1 is nan
         for i,cons in enumerate(consensi):
@@ -583,6 +584,10 @@ def main():
     print('starting')
     args = get_args()
 
+    ## If we aren't plotting any anchors, break
+    if args.num_heatmap_anchors == 0:
+        return
+
     ### read in passed in anchor list
     if args.heatmap_anchor_list!='':
         print("using passed in anchor list")
@@ -592,8 +597,12 @@ def main():
             return
         print(len(anchLst), "anchors")
 
+    ## merge in anchor statistics with anchor cjs
+    anchor_pvals = pd.read_csv(args.anchor_pvals,sep='\t')
+    anchor_Cjs = pd.read_csv(args.anchor_Cjs,sep='\t')
 
-    dfpvals = pd.read_csv(args.anchor_pvals,sep='\t') ### need this for rand cj
+    sampleNames = anchor_Cjs.drop('anchor', axis=1).columns.tolist()
+    dfpvals = pd.merge(anchor_pvals, anchor_Cjs, on='anchor')
 
     ### if we are using additional_summary.tsv file
     if args.additional_summary != '':
@@ -627,19 +636,12 @@ def main():
             ### concatenate all the streamed chunks
             dfconcat = pd.concat(dfs)
 
-        dfpvals = dfconcat.merge(dfpvals[['anchor'] +
-                            dfpvals.columns[dfpvals.columns.str.startswith('cj_rand_opt')]
-                            .to_list()])
+        dfpvals = dfconcat.merge(dfpvals[['anchor'] + sampleNames])
 
     else:
         ### set gene annotations to be NA
         dfpvals['anchor_local_gene']='NA'
         dfpvals['consensus_gene_mode']='NA'
-
-
-    ### to ensure the same ordering
-    sampleNames = (dfpvals.columns[dfpvals.columns.str.startswith('cj_rand')]
-              .str.lstrip('cj_rand_opt_').to_list())
 
     print('reading cjs')
     sheetCj = np.ones(len(sampleNames))
@@ -707,7 +709,7 @@ def main():
             print("anch {} not in dfpvals".format(anch))
             continue
 
-        plotContingency(dfpvals, ctsDf, anch, sheetCj, useSheetCjs, args, True)
+        plotContingency(dfpvals, sampleNames, ctsDf, anch, sheetCj, useSheetCjs, args, True)
 
     ### if something went awry, save list of skipped anchors
     if len(skippedAnchs)>0:

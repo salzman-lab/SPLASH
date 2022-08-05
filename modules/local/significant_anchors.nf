@@ -12,12 +12,12 @@ process SIGNIFICANT_ANCHORS {
     output:
     path outfile_scores         , emit: scores
     path "all*tsv"              , emit: all_scores  , optional: true
-    path "cjs*"                 , emit: cjs         , optional: true
+    path "anchors_Cjs*"         , emit: cjs         , optional: true
 
     script:
     outfile_scores              = "anchors_pvals.tsv"
     outfile_all_anchors_pvals   = "all_anchors_pvals.tsv"
-    outfile_Cjs                 = "cjs_rand_opt.tsv"
+    outfile_Cjs                 = "anchors_Cjs_random_opt.tsv"
     """
     significant_anchors.py \\
         --fdr_threshold ${fdr_threshold} \\
