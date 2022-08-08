@@ -315,11 +315,11 @@ def main():
         effectSize[sameLocs]=0
 
         ### comput sheetCj effect size
-        ### preserves sign, can be between -1 and 1
+        ### removes sign, only between [0,1]
         ### take fresh argmin to find minimizing hash
         tmpMat = sampSumMat[pv[1:,0,:].argmin(axis=0)+1,:,list(range(A))] * sheetCj ### A x p
-        effectSize_sheet = ((tmpMat*(sheetCj>0)).sum(axis=1)/np.maximum(1,(njMat.T*(sheetCj>0)).sum(axis=1))
-                    + (tmpMat*(sheetCj<0)).sum(axis=1)/np.maximum(1,(njMat.T*(sheetCj<0)).sum(axis=1)))
+        effectSize_sheet = np.abs(((tmpMat*(sheetCj>0)).sum(axis=1)/np.maximum(1,(njMat.T*(sheetCj>0)).sum(axis=1))
+                    + (tmpMat*(sheetCj<0)).sum(axis=1)/np.maximum(1,(njMat.T*(sheetCj<0)).sum(axis=1))))
         ### where all samples have same cluster id, set effect size to 0
         sameLocs = np.abs(((njMat.T>0)*(sheetCj)).sum(axis=1)/(njMat.T>0).sum(axis=1))==1
         effectSize_sheet[sameLocs]=0
