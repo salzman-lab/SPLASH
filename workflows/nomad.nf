@@ -38,7 +38,7 @@ include { ADD_DUMMY_SCORE           } from '../modules/local/add_dummy_score'
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
-include { FETCH_10X                 } from '../subworkflows/local/fetch_10X'
+include { PREPROCESS_10X            } from '../subworkflows/local/preprocess_10X'
 include { FETCH                     } from '../subworkflows/local/fetch'
 include { ANALYZE                   } from '../subworkflows/local/analyze'
 include { ANNOTATE                  } from '../subworkflows/local/annotate'
@@ -97,10 +97,11 @@ workflow NOMAD {
 
         ch_original_fastqs = ch_paired_fastqs
 
-        FETCH_10X(
+        PREPROCESS_10X(
+            file(params.input),
             ch_paired_fastqs
         )
-        ch_fastqs = FETCH_10X.out.fastqs
+        ch_fastqs = PREPROCESS_10X.out.fastqs
 
     } else {
         // Parse samplesheet

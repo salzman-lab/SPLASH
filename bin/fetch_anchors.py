@@ -11,7 +11,7 @@ def get_args():
         type=str
     )
     parser.add_argument(
-        "--fastq_id",
+        "--id",
         type=str
     )
     parser.add_argument(
@@ -62,12 +62,8 @@ def main():
 
             ## if this 10X, parse each line as [cbc+umi, read]
             if args.is_10X:
-                (cbc_umi, read) = line.split(" ")
-                cbc = cbc_umi[0:16]
-                anchor, target = get_anchor_target(read, args.lookahead, args.kmer_size, step_size)
-
-                # write out anchor and target, with the cbc as sample
-                read = line.strip()
+                (cbc_umi_id, read) = line.split(" ")
+                cbc, umi, id = cbc_umi_id.split("____")
 
                 last_base = len(read) - (args.lookahead + 2 * args.kmer_size)
 
@@ -83,7 +79,7 @@ def main():
                     target = read[target_start : target_end]
 
                     if "N" not in anchor and "N" not in target:
-                        file.write(str.encode(f'{anchor+target} {cbc}\n'))
+                        file.write(str.encode(f'{anchor+target} {cbc}_{args.id}\n'))
 
             ## if this is not 10X, parse as fastq file
             else:
@@ -110,7 +106,7 @@ def main():
                         target = read[target_start : target_end]
 
                         if "N" not in anchor and "N" not in target:
-                            file.write(str.encode(f'{anchor+target} {args.fastq_id}\n'))
+                            file.write(str.encode(f'{anchor+target} {args.id}\n'))
     file.close()
 
 
