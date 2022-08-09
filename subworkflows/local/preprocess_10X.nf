@@ -77,9 +77,7 @@ workflow PREPROCESS_10X {
         EXTRACT_CBC_UMI.out.seqs
     )
 
-    ch_fastqs = DEDUP_CBC_UMI.out.seqs
-
     emit:
-    fastqs = ch_fastqs
+    fastqs = DEDUP_CBC_UMI.out.seqs
 
 }
