@@ -42,10 +42,10 @@ def main():
     with open(args.samplesheet, 'r') as f:
         cols = f.readline().split(',')
 
-    if len(cols) == 1:
-        useSheetCjs = False
-    elif len(cols) == 2:
+    if len(cols) == 2:
         useSheetCjs = True
+    else:
+        useSheetCjs = False
 
     print('aggregating')
     dfs = []
