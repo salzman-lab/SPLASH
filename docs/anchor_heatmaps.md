@@ -36,6 +36,7 @@ nextflow run kaitlinchaung/nomad \
     --run_annotations true \
     --results_dir <<Full path to results directory from NOMAD run>> \
     --use_heatmap_anchor_list true \
+    --run_anchor_heatmaps true \
     --heatmap_anchor_list anchor_list.tsv
 
 ```
