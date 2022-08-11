@@ -1,12 +1,12 @@
 
 process FETCH_ANCHORS {
 
-    tag "${fastq_id}"
+    tag "${id}"
     label 'process_low'
     conda (params.enable_conda ? "conda-forge::python=3.9.5" : null)
 
     input:
-    tuple val(fastq_id), path(fastq)
+    tuple val(id), path(fastq)
     val is_10X
     val num_reads_first_pass
     val kmer_size
@@ -15,15 +15,15 @@ process FETCH_ANCHORS {
     val window_slide
 
     output:
-    tuple val(fastq_id), path(outfile), emit: seqs
+    tuple val(id), path(outfile), emit: seqs
 
     script:
     def is_10X   = (is_10X == true) ? "--is_10X" : ""
-    outfile      = "sequences_${fastq_id}.txt.gz"
+    outfile      = "sequences_${id}.txt.gz"
     """
     fetch_anchors.py \\
         --infile ${fastq} \\
-        --fastq_id ${fastq_id} \\
+        --id ${id} \\
         --num_lines ${num_reads_first_pass} \\
         --kmer_size ${kmer_size} \\
         --lookahead ${lookahead} \\

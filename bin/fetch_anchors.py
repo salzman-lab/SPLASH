@@ -11,7 +11,7 @@ def get_args():
         type=str
     )
     parser.add_argument(
-        "--fastq_id",
+        "--id",
         type=str
     )
     parser.add_argument(
@@ -110,7 +110,7 @@ def main():
                         target = read[target_start : target_end]
 
                         if "N" not in anchor and "N" not in target:
-                            file.write(str.encode(f'{anchor+target} {args.fastq_id}\n'))
+                            file.write(str.encode(f'{anchor+target} {args.id}\n'))
     file.close()
 
 
