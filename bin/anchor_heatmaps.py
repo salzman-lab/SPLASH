@@ -579,6 +579,40 @@ def constructCountsDf(anchLst):
     return ctsDf
 
 
+def parseSamplesheet(args):
+    ### read in samplsheet, and output samplesheetCj (properly ordered)
+    try:
+        sheetdf = pd.read_csv(args.samplesheet,names=['fname','sheetCjs'])
+    except:
+        sheetdf = pd.read_csv(args.samplesheet,names=['fname'])
+
+    sheetdf['sample'] = (
+        sheetdf['fname']
+        .str.rsplit('/',1,expand=True)[1]
+        .str.split('.',1,expand=True)[0]
+    )
+
+    sampleNames = sheetdf['sample'].tolist()
+
+    if len(sheetdf.columns)==2:
+        useSheetCjs = True
+
+        sheetdf = sheetdf.drop(columns='fname')
+        sheetdf['sheetCjs'] = normalizevec(sheetdf['sheetCjs'])
+        sheetCj = (
+            sheetdf
+            .set_index('sample')
+            .T[sampleNames]
+            .to_numpy()
+            .flatten()
+        )
+
+    else:
+        useSheetCjs = False
+        sheetCj = np.ones(len(sampleNames))
+
+    return sampleNames, sheetCj, useSheetCjs
+
 
 def main():
     print('starting')
@@ -601,8 +635,11 @@ def main():
     anchor_pvals = pd.read_csv(args.anchor_pvals,sep='\t')
     anchor_Cjs = pd.read_csv(args.anchor_Cjs,sep='\t')
 
-    sampleNames = anchor_Cjs.drop('anchor', axis=1).columns.tolist()
+    # sampleNames = anchor_Cjs.drop('anchor', axis=1).columns.tolist()
     dfpvals = pd.merge(anchor_pvals, anchor_Cjs, on='anchor')
+
+    # Parsing samplesheet for sampleNames and sheetCjs (if they exist)
+    sampleNames, sheetCj, useSheetCjs = parseSamplesheet(args)
 
     ### if we are using additional_summary.tsv file
     if args.additional_summary != '':
@@ -642,28 +679,6 @@ def main():
         ### set gene annotations to be NA
         dfpvals['gene']='NA'
         dfpvals['consensus_gene_mode']='NA'
-
-    print('reading cjs')
-    sheetCj = np.ones(len(sampleNames))
-    useSheetCjs = False
-    if args.samplesheet!='':
-        with open(args.samplesheet,'r') as f:
-            cols = f.readline().split(',')
-        if len(cols)==1: ### if len(cols) is 1, then only samplesheet name, no ids
-            print("Only 1 samplesheet column, using random cjs")
-        elif len(cols)>2:
-            print("Improperly formatted samplesheet")
-        else:
-            useSheetCjs = True
-            sheetdf = pd.read_csv(args.samplesheet,names=['fname','sheetCjs'])
-            sheetdf['sample'] = (sheetdf.fname
-                            .str.rsplit('/',1,expand=True)[1]
-                            .str.split('.',1,expand=True)[0])
-            sheetdf = sheetdf.drop(columns='fname')
-            sheetdf['sheetCjs'] = normalizevec(sheetdf.sheetCjs)
-
-            sheetCj = sheetdf.set_index('sample').T[sampleNames].to_numpy().flatten()
-
 
     if args.genome_annotations_anchors != '' and os.path.exists(args.genome_annotations_anchors):
         print('reading in genome_ann')
@@ -717,5 +732,6 @@ def main():
 
 
 ### run main
+print("TESTINGTESTING")
 print('running main')
 main()
