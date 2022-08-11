@@ -241,6 +241,11 @@ def main():
         A = idx_end-idx_start ### number of anchors used here
 
         dftmp = df_pivoted_full.iloc[i*anchor_batch_size : (i+1)*anchor_batch_size]
+
+        # if dftmp is empty, we're done processing
+        if dftmp.empty:
+            break
+
         print(A,len(dftmp),idx_start,idx_end,len(df_pivoted_full))
         assert A==len(dftmp)
 
