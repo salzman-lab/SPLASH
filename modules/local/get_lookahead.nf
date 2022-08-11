@@ -1,15 +1,20 @@
-process GET_READ_LENGTH {
+process GET_LOOKAHEAD {
 
     input:
     path fastq
     path samplesheet
+    val kmer_size
 
     output:
-    env read_length, emit: read_length
+    env lookahead, emit: lookahead
 
     script:
     """
     read_length=\$(zcat ${fastq} | head -n 2 | tail -n 1 | awk '{print length}' || true)
+
+    d=\$(( (\${read_length} - 2 * ${kmer_size}) / 2 ))
+
+    lookahead=\$(( \${d} > 0 ? \${d} : 0 ))
     """
 
 }

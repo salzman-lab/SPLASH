@@ -31,7 +31,7 @@ def modules = params.modules.clone()
 //
 include { GET_SOFTWARE_VERSIONS     } from '../modules/local/get_software_versions' addParams( options: [publish_files : ['tsv':'']] )
 include { SAMPLESHEET_CHECK         } from '../modules/local/samplesheet_check'
-include { GET_READ_LENGTH           } from '../modules/local/get_read_length'
+include { GET_LOOKAHEAD             } from '../modules/local/get_lookahead'
 include { ADD_DUMMY_SCORE           } from '../modules/local/add_dummy_score'
 
 
@@ -134,15 +134,20 @@ workflow NOMAD {
                 it[1]
             }
         }
-        GET_READ_LENGTH(
+
+        GET_LOOKAHEAD(
             fastq,
-            ch_samplesheet
+            ch_samplesheet,
+            params.kmer_size
         )
-        read_length = GET_READ_LENGTH.out.read_length.toInteger()
-        lookahead = ((read_length - 2 * params.kmer_size) / 2).toInteger()
+
+        lookahead = GET_LOOKAHEAD.out.lookahead.toInteger()
+
     } else {
         lookahead = params.lookahead
     }
+
+    println(lookahead)
 
     // If we are fetching counts for an input anchor file or a control run
     if (params.anchors_file || params.run_decoy) {
