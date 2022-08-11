@@ -1,12 +1,12 @@
 
 process PARSE_ANCHORS {
 
-    tag "${fastq_id}"
+    tag "${id}"
     label 'process_medium'
     conda (params.enable_conda ? "conda-forge::python=3.9.5 pandas=1.4.1 conda-forge::biopython" : null)
 
     input:
-    tuple val(fastq_id), path(fastq)
+    tuple val(id), path(fastq)
     path anchors_pvals_file
     val num_reads_second_pass
     val consensus_length
@@ -22,15 +22,15 @@ process PARSE_ANCHORS {
     path "*log"                 , emit: log
 
     script:
-    out_consensus_fasta_file    = "${fastq_id}_${direction}.fasta"
-    out_counts_file             = "${fastq_id}_${direction}_counts.tab"
-    out_fractions_file          = "${fastq_id}_${direction}_fractions.tab"
-    out_target_file             = "${fastq_id}_target_counts.tsv"
+    out_consensus_fasta_file    = "${id}_${direction}.fasta"
+    out_counts_file             = "${id}_${direction}_counts.tab"
+    out_fractions_file          = "${id}_${direction}_fractions.tab"
+    out_target_file             = "${id}_target_counts.tsv"
     """
     parse_anchors.py \\
         --num_lines ${num_reads_second_pass} \\
         --anchors_pvals_file ${anchors_pvals_file} \\
-        --fastq_id ${fastq_id} \\
+        --id ${id} \\
         --fastq_file ${fastq} \\
         --out_consensus_fasta_file ${out_consensus_fasta_file} \\
         --out_counts_file ${out_counts_file} \\
