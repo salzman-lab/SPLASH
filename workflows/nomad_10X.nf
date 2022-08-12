@@ -147,11 +147,12 @@ workflow NOMAD_10X {
         FETCH.out.anchors_pvals
     )
 
-    anchor_fasta = GET_FASTA.out.annotations
+    GET_FASTA.out.fasta
         .filter{
             file ->
             file.name.contains('anchor.fasta')
         }
+        .set { anchor_fasta }
 
     /*
     // Process to align targets and anchors to genome
