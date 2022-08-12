@@ -29,12 +29,11 @@ def modules = params.modules.clone()
 //
 // MODULE: Local to the pipeline
 //
-include { GET_SOFTWARE_VERSIONS     } from '../modules/local/get_software_versions' addParams( options: [publish_files : ['tsv':'']] )
 include { SAMPLESHEET_CHECK         } from '../modules/local/samplesheet_check'
 include { GET_READ_LENGTH           } from '../modules/local/get_read_length'
 include { GET_FASTA                 } from '../modules/local/get_fasta'
 include { GENOME_ALIGNMENT          } from '../modules/local/genome_alignment'
-include { GENOME_ANNOTATIONS        } from '../modules/local/genome_annotations '
+include { GENOME_ANNOTATIONS        } from '../modules/local/genome_annotations'
 
 
 //
