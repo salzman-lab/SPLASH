@@ -32,6 +32,7 @@ WorkflowMain.initialise(workflow, params, log)
 */
 
 include { NOMAD             } from './workflows/nomad'
+include { NOMAD_10X         } from './workflows/nomad_10X'
 include { ANCHOR_HEATMAPS   } from './modules/local/anchor_heatmaps'
 
 //
@@ -83,7 +84,15 @@ workflow RUN_NOMAD {
 
     } else {
         // Run pipeline
-        NOMAD ()
+        if (params.is_10X) {
+            // Run pipeline for 10X samples
+            NOMAD_10X ()
+
+        } else {
+            // Run pipeline for bulk RNAseq and SS2 samples
+            NOMAD ()
+
+        }
 
     }
 }

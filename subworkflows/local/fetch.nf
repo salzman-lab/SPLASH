@@ -80,50 +80,40 @@ workflow FETCH {
     abudant_seqs                    = GET_ABUNDANT_ANCHORS.out.anchor_counts
     abundant_stratified_anchors     = GET_ABUNDANT_ANCHORS.out.seqs
 
-    if (params.run_decoy) {
-        MERGE_ABUNDANT_ANCHORS(
-            abudant_seqs,
-            params.num_decoy_anchors
-        )
+    /*
+    // Process to get significant anchors and their scores
+    */
+    COMPUTE_PVALS(
+        abundant_stratified_anchors,
+        params.kmer_size,
+        file(params.barcode_samplesheet),
+        params.K_num_hashes,
+        params.L_num_random_Cj,
+        params.anchor_count_threshold,
+        params.anchor_unique_targets_threshold,
+        params.anchor_samples_threshold,
+        params.anchor_sample_counts_threshold,
+        params.anchor_batch_size,
+        params.is_10X
+    )
 
-        anchors_pvals   = MERGE_ABUNDANT_ANCHORS.out.seqs
-        anchors_Cjs     = Channel.empty()
+    /*
+    // Process to output top 5000 anchors as sorted by pvalue
+    */
+    SIGNIFICANT_ANCHORS(
+        COMPUTE_PVALS.out.scores.collect(),
+        params.fdr_threshold,
+        file(params.barcode_samplesheet),
+    )
+
+    anchors_pvals   = SIGNIFICANT_ANCHORS.out.scores
+        .filter{
+            it.countLines() > 1
+        }
+
+    anchors_Cjs     = SIGNIFICANT_ANCHORS.out.cjs
 
 
-    } else {
-        /*
-        // Process to get significant anchors and their scores
-        */
-        COMPUTE_PVALS(
-            abundant_stratified_anchors,
-            params.kmer_size,
-            file(params.input),
-            params.K_num_hashes,
-            params.L_num_random_Cj,
-            params.anchor_count_threshold,
-            params.anchor_unique_targets_threshold,
-            params.anchor_samples_threshold,
-            params.anchor_sample_counts_threshold,
-            params.anchor_batch_size
-        )
-
-        /*
-        // Process to output top 5000 anchors as sorted by pvalue
-        */
-        SIGNIFICANT_ANCHORS(
-            COMPUTE_PVALS.out.scores.collect(),
-            params.fdr_threshold,
-            file(params.input)
-        )
-
-        anchors_pvals   = SIGNIFICANT_ANCHORS.out.scores
-            .filter{
-                it.countLines() > 1
-            }
-
-        anchors_Cjs     = SIGNIFICANT_ANCHORS.out.cjs
-
-    }
 
     emit:
     anchors_pvals               = anchors_pvals

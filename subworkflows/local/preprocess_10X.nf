@@ -40,11 +40,16 @@ workflow PREPROCESS_10X {
         ch_umitools_fastqs
             .map { it ->
                 tuple(
-                    it[0], [it[1]])
+                    it[0],
+                    [it[1]]
+                )
             }
             .groupTuple()
             .map { it ->
-                tuple(it[0], it[1].flatten())
+                tuple(
+                    it[0],
+                    it[1].flatten()
+                )
             }
             .view()
             .set { ch_merged_fastqs }

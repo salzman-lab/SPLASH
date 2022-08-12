@@ -70,6 +70,10 @@ def get_args():
         type=int,
         default=1000
     )
+    parser.add_argument(
+        "--is_10X",
+        action='store_true'
+    )
     args = parser.parse_args()
     return args
 
@@ -119,12 +123,22 @@ def main():
             print("Improperly formatted samplesheet")
         else:
             useSheetCjs = True
-            sheetdf = pd.read_csv(samplesheet,names=['fname','sheetCj'])
-            sheetdf['sample'] = (sheetdf.fname
-                            .str.rsplit('/',1,expand=True)[1]
-                            .str.split('.',1,expand=True)[0])
+
+            if args.is_10X:
+                sheetdf = pd.read_csv(samplesheet,names=['sample','sheetCj'])
+            else:
+                sheetdf = pd.read_csv(samplesheet,names=['fname','sheetCj'])
+                sheetdf['sample'] = (sheetdf.fname
+                                .str.rsplit('/',1,expand=True)[1]
+                                .str.split('.',1,expand=True)[0])
+
             sheetdf['sheetCj'] = normalizevec(sheetdf['sheetCj'])
-            sheetdf = sheetdf.drop(columns='fname')
+
+            try:
+                sheetdf = sheetdf.drop(columns='fname')
+            except:
+                pass
+
             sheetdf['sheetCj'] = normalizevec(sheetdf.sheetCj) ### normalize in case time-series
             print("Successfully loaded custom cj")
 
