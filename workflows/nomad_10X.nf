@@ -63,7 +63,7 @@ include { PLOT                      } from '../subworkflows/local/plot'
 */
 
 
-workflow NOMAD {
+workflow NOMAD_10X {
 
     profile = "Project : $workflow.profile"
 
