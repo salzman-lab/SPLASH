@@ -95,8 +95,6 @@ workflow NOMAD {
             }
             .set{ ch_paired_fastqs }
 
-        ch_original_fastqs = ch_paired_fastqs
-
         FETCH_10X(
             ch_paired_fastqs
         )
@@ -117,7 +115,6 @@ workflow NOMAD {
             }
             .set{ ch_fastqs }
 
-        ch_original_fastqs = ch_fastqs
     }
 
     // Define lookahead parameter
@@ -198,7 +195,7 @@ workflow NOMAD {
         // Perform analysis
         */
         ANALYZE(
-            ch_original_fastqs,
+            ch_fastqs,
             anchors_pvals,
             lookahead
         )
