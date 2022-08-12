@@ -27,6 +27,10 @@ def get_args():
         default='dataset'
     )
     parser.add_argument(
+        "--kmer_size",
+        type=int
+    )
+    parser.add_argument(
         "--anchor_pvals",
         type=str,
         help='required: anchors_pvals.tsv file'
@@ -557,8 +561,8 @@ def plotContingency(dfpvals, sampleNames, dfcts, anch, cjSheet, useSheetCjs, arg
 
 
 ### construct anchor target counts matrix from raw abundant_stratified files
-def constructCountsDf(anchLst):
-    kmer_size = 27
+def constructCountsDf(anchLst, args):
+    kmer_size = args.kmer_size
     dfs = []
     paths = glob.glob("abundant_stratified_*.txt.gz")
     print('reading in abudant_stratified files')
@@ -706,7 +710,7 @@ def main():
 
     #### generate contingency tables from abundant_stratified_anchors files
     print('regenerating anchor target counts file from scratch')
-    ctsDf = (constructCountsDf(anchLst).set_index(['anchor','target']))
+    ctsDf = (constructCountsDf(anchLst).set_index(['anchor','target']), args)
     for samp in sampleNames:
         if samp not in ctsDf.columns:
             ctsDf[samp] = 0
@@ -732,6 +736,5 @@ def main():
 
 
 ### run main
-print("TESTINGTESTING")
 print('running main')
 main()
