@@ -14,7 +14,7 @@ process COUNT_ANCHORS {
     outfile = "counted_${fastq_id}.txt"
     """
     zcat ${fastq} \\
-        | sort \\
+        | sort -T ${workDir} \\
         | uniq -c > ${outfile}
     """
 }
