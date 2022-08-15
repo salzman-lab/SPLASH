@@ -39,11 +39,11 @@ process GENOME_ANNOTATIONS {
             | sort \\
             >  ${fasta_name}_genome_mapq.txt
         bedtools intersect -a  ${fasta_name}_genome.bed -b ${gene_bed} -wb \\
-            >> intersect_genome_genomes.bed
+            > intersect_genome_genomes.bed
 
         if [[ \$(wc -l  intersect_genome_genomes.bed | awk '{print \$1}') -gt 0 ]]
         then
-            cut -f1-4,10,6 \\
+            cut -f1-4,10,6 intersect_genome_genomes.bed \\
                 | bedtools groupby -i - -g 1,2,3,4,5 -c 6 -o collapse \\
                 | cut -f4,6 \\
                 | sort \\
