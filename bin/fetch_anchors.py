@@ -85,7 +85,7 @@ def main():
             else:
 
                 if args.num_lines != 0:
-                    if x > args.num_lines:
+                    if x > args.num_lines*4:
                         break
 
                 x += 1
