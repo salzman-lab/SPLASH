@@ -2,7 +2,7 @@
 process FETCH_ANCHORS {
 
     tag "${fastq.simpleName}"
-    label 'process_low'
+    label 'process_medium'
     conda (params.enable_conda ? "conda-forge::python=3.9.5" : null)
 
     input:
