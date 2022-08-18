@@ -15,6 +15,10 @@ def get_args():
         type=int
     )
     parser.add_argument(
+        "--id",
+        type=str
+    )
+    parser.add_argument(
         "--outfile",
         type=str
     )
@@ -38,7 +42,7 @@ def main():
             if x % 4 == 1:
                 cbc = line.split(' ')[0].split('_')[1]
                 umi = line.split(' ')[0].split('_')[2]
-                sample = cbc + umi
+                sample = f'{cbc}____{umi}____{args.id}'
 
             if x % 4 == 2:
                 read = line.strip()
