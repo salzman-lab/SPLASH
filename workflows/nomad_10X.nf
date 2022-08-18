@@ -68,51 +68,51 @@ include { PVALUES                   } from '../subworkflows/local/pvalues'
 
 workflow NOMAD_10X {
 
-    if (! params.abundant_stratified_anchors) {
-        // Parse samplesheet
-        Channel
-            .fromPath(params.input)
-            .splitCsv(
-                header: false
+    // Parse samplesheet
+    Channel
+        .fromPath(params.input)
+        .splitCsv(
+            header: false
+        )
+        .map { row ->
+            tuple(
+                row[0],
+                file(row[1]),
+                file(row[2])
             )
-            .map { row ->
-                tuple(
-                    row[0],
-                    file(row[1]),
-                    file(row[2])
-                )
+        }
+        .set{ ch_paired_fastqs }
+
+    // Define lookahead parameter
+    if (params.lookahead) {
+        lookahead = params.lookahead
+
+    } else {
+
+        // Use first fastq in sampelsheet to determine lookahead distance
+        fastq = ch_paired_fastqs
+            .first()
+            .map{
+                it[2]
             }
-            .set{ ch_paired_fastqs }
+
+        /*
+        // Process: Get read lookahead distance of dataset
+        */
+        GET_LOOKAHEAD(
+            fastq,
+            file(params.input),
+            params.kmer_size
+        )
+
+        lookahead = GET_LOOKAHEAD.out.lookahead.toInteger()
+    }
+
+    if (! params.abundant_stratified_anchors) {
 
         PREPROCESS_10X(
             ch_paired_fastqs
         )
-
-        // Define lookahead parameter
-        if (params.lookahead) {
-
-            lookahead = params.lookahead
-        } else {
-
-            // Use first fastq in sampelsheet to determine lookahead distance
-            fastq = ch_paired_fastqs
-                .first()
-                .map{
-                    it[2]
-                }
-
-            /*
-            // Process: Get read lookahead distance of dataset
-            */
-            GET_LOOKAHEAD(
-                fastq,
-                file(params.input),
-                params.kmer_size
-            )
-
-            lookahead = GET_LOOKAHEAD.out.lookahead.toInteger()
-
-        }
 
         /*
         // Subworkflow: Get abdunant anchors
