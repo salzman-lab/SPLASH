@@ -152,6 +152,7 @@ workflow NOMAD_10X {
 
     // Only proceed with anchor fasta file
     GET_FASTA.out.fasta
+        .flatten()
         .filter{
             file ->
             file.name.contains('anchor.fasta')
