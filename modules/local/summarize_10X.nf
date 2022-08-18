@@ -6,8 +6,8 @@ process SUMMARIZE_10X {
 
     input:
     path anchors_pvals
-    path genome_annotations
     path annotated_anchors
+    path genome_annotations
 
     output:
     path outfile                , emit: tsv
