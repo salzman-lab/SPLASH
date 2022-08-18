@@ -6,7 +6,6 @@ include { CONCAT_FASTQS         } from '../../modules/local/concat_fastqs'
 workflow PREPROCESS_10X {
 
     take:
-    samplesheet
     ch_paired_fastqs
 
     main:
