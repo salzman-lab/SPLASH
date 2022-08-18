@@ -38,8 +38,8 @@ include { ADD_DUMMY_SCORE           } from '../modules/local/add_dummy_score'
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
-include { FETCH_10X                 } from '../subworkflows/local/fetch_10X'
 include { FETCH                     } from '../subworkflows/local/fetch'
+include { PVALUES                   } from '../subworkflows/local/pvalues'
 include { ANALYZE                   } from '../subworkflows/local/analyze'
 include { ANNOTATE                  } from '../subworkflows/local/annotate'
 include { PLOT                      } from '../subworkflows/local/plot'
@@ -64,109 +64,76 @@ include { PLOT                      } from '../subworkflows/local/plot'
 
 workflow NOMAD {
 
-    // Skip the samplesheet check if this is test run
-    profile = "Project : $workflow.profile"
-    if (profile.contains('test')){
-        ch_samplesheet = file(params.input)
-
-    } else {
-        // Validate samplesheet
-        SAMPLESHEET_CHECK(
-            file(params.input),
-            params.is_10X
+    // Parse samplesheet
+    Channel
+        .fromPath(file(params.input))
+        .splitCsv(
+            header: false
         )
-        ch_samplesheet = SAMPLESHEET_CHECK.out.samplesheet
-
-    }
-
-    if (params.is_10X) {
-        // Parse 10X samplesheet
-        Channel
-            .fromPath(params.input)
-            .splitCsv(
-                header: false
+        .map { row ->
+            tuple(
+                file(row[0]).simpleName,
+                file(row[0])
             )
-            .map { row ->
-                tuple(
-                    row[0],
-                    file(row[1]),
-                    file(row[2])
-                )
-            }
-            .set{ ch_paired_fastqs }
+        }
+        .set{ ch_fastqs }
 
-        FETCH_10X(
-            ch_paired_fastqs
-        )
-        ch_fastqs = FETCH_10X.out.fastqs
-
-    } else {
-        // Parse samplesheet
-        Channel
-            .fromPath(params.input)
-            .splitCsv(
-                header: false
-            )
-            .map { row ->
-                tuple(
-                    file(row[0]).simpleName,
-                    file(row[0])
-                )
-            }
-            .set{ ch_fastqs }
-
-    }
 
     // Define lookahead parameter
-    if (params.use_read_length) {
-        /*
-        // Get read length of dataset
-        */
-        if (params.is_10X){
-            fastq = ch_paired_fastqs.first().map{
-                it[2]
-            }
-        } else {
-            fastq = ch_fastqs.first().map{
+    if (params.lookahead) {
+        lookahead = params.lookahead
+
+    } else {
+        // Use first fastq in sampelsheet to determine lookahead distance
+        fastq = ch_fastqs
+            .first()
+            .map{
                 it[1]
             }
-        }
 
+        /*
+        // Process: Get read lookahead distance of dataset
+        */
         GET_LOOKAHEAD(
             fastq,
-            ch_samplesheet,
+            file(params.input),
             params.kmer_size
         )
 
         lookahead = GET_LOOKAHEAD.out.lookahead.toInteger()
-
-    } else {
-        lookahead = params.lookahead
     }
 
-    println(lookahead)
+    /*
+    // Subworkflow: Get abundant anchors
+    */
+    FETCH(
+        ch_fastqs,
+        lookahead
+    )
 
-    // If we are fetching counts for an input anchor file or a control run
-    if (params.anchors_file || params.run_decoy) {
+    /*
+    // Subworkflow: Get control anchors
+    */
+    PVALUES(
+        file(params.input),
+        FETCH.out.abundant_control_seqs,
+        FETCH.out.abundant_stratified_anchors
+    )
 
-        if (params.run_decoy) {
-            /*
-            // Get abundant anchors
-            */
-            FETCH(
-                ch_fastqs,
-                lookahead
-            )
+    if (params.anchors_file || params.run_control) {
 
-            anchors = FETCH.out.anchors_pvals
+        if (params.run_control) {
+            // If decoy, use control pvalues
+            anchors = PVALUES.out.anchors_pvals
 
         } else {
+            // If using anchors file, use file from input
             anchors = file(params.anchors_file)
 
         }
 
         /*
-        // Add a dummy scores columns for postprocessing
+        // Process: Add a dummy scores columns for postprocessing
         */
         ADD_DUMMY_SCORE(
             anchors
@@ -174,25 +141,17 @@ workflow NOMAD {
 
         anchors_pvals = ADD_DUMMY_SCORE.out.anchors_pvals
 
-    // Fetch anchors by computing significance
     } else {
-        /*
-        // Get significant anchors
-        */
-        FETCH(
-            ch_fastqs,
-            lookahead
-        )
-
-        anchors_pvals   = FETCH.out.anchors_pvals
-        anchors_Cjs     = FETCH.out.anchors_Cjs
+        // Proceed with computed significant anchors
+        anchors_pvals   = PVALUES.out.anchors_pvals
+        anchors_Cjs     = PVALUES.out.anchors_Cjs
 
     }
 
     // Only proceed if we are doing more than pval caluclations
     if (! params.run_pvals_only) {
         /*
-        // Perform analysis
+        // Subworkflow: Perform analysis
         */
         ANALYZE(
             ch_fastqs,
@@ -201,7 +160,7 @@ workflow NOMAD {
         )
 
         /*
-        // Perform annotations
+        // Subworkflow: Perform annotations
         */
         ANNOTATE(
             anchors_pvals,
@@ -210,7 +169,7 @@ workflow NOMAD {
             ANALYZE.out.ch_anchor_target_fastas
         )
 
-        if (params.anchors_file == null & params.run_decoy == false) {
+        if (params.anchors_file == null & params.run_control == false) {
             abundant_stratified_anchors = FETCH.out.abundant_stratified_anchors
             consensus_fractions         = ANALYZE.out.consensus_fractions
             additional_summary          = ANNOTATE.out.additional_summary
@@ -219,7 +178,7 @@ workflow NOMAD {
             // If annotations are run OR we only want to plot, run plot
             if (params.run_annotations){
                 /*
-                // Perform plotting
+                // Subworkflow: Perform plotting
                 */
                 PLOT(
                     abundant_stratified_anchors,
@@ -231,9 +190,7 @@ workflow NOMAD {
                 )
             }
         }
-
     }
-
 }
 
 /*

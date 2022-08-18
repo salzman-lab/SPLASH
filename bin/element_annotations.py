@@ -28,37 +28,38 @@ def main():
     # read in anchor_hits
     anchor_hits_paths = glob.glob("anchor_hits*tsv")
 
-    anchor_anns = pd.read_csv(anchor_hits_paths[0].strip(), sep='\t')
-    # iteratively merge in hits on anchor column
-    for hits_path in anchor_hits_paths[1:]:
-        hits = pd.read_csv(hits_path.strip(), sep='\t')
-        anchor_anns = anchor_anns.merge(hits, on='anchor')
-        del(hits)
+    if anchor_hits_paths:
+        anchor_anns = pd.read_csv(anchor_hits_paths[0].strip(), sep='\t')
+        # iteratively merge in hits on anchor column
+        for hits_path in anchor_hits_paths[1:]:
+            hits = pd.read_csv(hits_path.strip(), sep='\t')
+            anchor_anns = anchor_anns.merge(hits, on='anchor')
+            del(hits)
 
-    anchor_anns.to_csv(
-        args.outfile_ann_anchors,
-        sep='\t',
-        index=False
-    )
+        anchor_anns.to_csv(
+            args.outfile_ann_anchors,
+            sep='\t',
+            index=False
+        )
 
-    del(anchor_anns)
+        del(anchor_anns)
 
     # read in target_hits
     target_hits_paths = glob.glob("target_hits*tsv")
 
-    target_anns = pd.read_csv(target_hits_paths[0].strip(), sep='\t')
-    # iteratively merge in hits on taret column
-    for hits_path in target_hits_paths[1:]:
-        hits = pd.read_csv(hits_path.strip(), sep='\t')
-        target_anns = target_anns.merge(hits, on='target')
-        del(hits)
+    if target_hits_paths:
+        target_anns = pd.read_csv(target_hits_paths[0].strip(), sep='\t')
+        # iteratively merge in hits on taret column
+        for hits_path in target_hits_paths[1:]:
+            hits = pd.read_csv(hits_path.strip(), sep='\t')
+            target_anns = target_anns.merge(hits, on='target')
+            del(hits)
 
-    target_anns.to_csv(
-        args.outfile_ann_targets,
-        sep='\t',
-        index=False
-    )
-
+        target_anns.to_csv(
+            args.outfile_ann_targets,
+            sep='\t',
+            index=False
+        )
 
 
 main()

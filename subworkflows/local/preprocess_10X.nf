@@ -2,7 +2,7 @@ include { UMITOOLS              } from '../../modules/local/umitools'
 include { EXTRACT_CBC_UMI       } from '../../modules/local/extract_cbc_umi'
 include { DEDUP_CBC_UMI         } from '../../modules/local/dedup_cbc_umi'
 
-workflow FETCH_10X {
+workflow PREPROCESS_10X {
 
     take:
     ch_paired_fastqs

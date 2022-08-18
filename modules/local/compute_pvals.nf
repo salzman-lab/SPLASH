@@ -6,6 +6,7 @@ process COMPUTE_PVALS {
 
     input:
     path counts
+    val is_10X
     val kmer_size
     path samplesheet
     val K_num_hashes
@@ -22,6 +23,7 @@ process COMPUTE_PVALS {
     path "*pkl"             , emit: pkl         , optional: true
 
     script:
+    def is_10X              = (is_10X == true)  ? "--is_10X" : ""
     file_id                 = counts.simpleName
     outfile_scores          = "scores_${file_id}.tsv"
     """
@@ -36,6 +38,7 @@ process COMPUTE_PVALS {
         --anchor_samples_threshold ${anchor_samples_threshold} \\
         --anchor_sample_counts_threshold ${anchor_sample_counts_threshold} \\
         --outfile ${outfile_scores} \\
-        --anchor_batch_size ${anchor_batch_size}
+        --anchor_batch_size ${anchor_batch_size} \\
+        ${is_10X}
     """
 }

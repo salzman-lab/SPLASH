@@ -1,7 +1,7 @@
 
 process FETCH_ANCHORS {
 
-    tag "${id}"
+    tag "${fastq.simpleName}"
     label 'process_low'
     conda (params.enable_conda ? "conda-forge::python=3.9.5" : null)
 
@@ -19,7 +19,7 @@ process FETCH_ANCHORS {
 
     script:
     def is_10X   = (is_10X == true) ? "--is_10X" : ""
-    outfile      = "sequences_${id}.txt.gz"
+    outfile      = "sequences_${fastq.simpleName}.txt.gz"
     """
     fetch_anchors.py \\
         --infile ${fastq} \\

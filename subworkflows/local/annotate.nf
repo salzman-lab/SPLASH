@@ -13,14 +13,14 @@ include { ADDITIONAL_SUMMARY        } from '../../modules/local/additional_summa
 workflow ANNOTATE {
 
     take:
-    anchor_scores
+    anchors_pvals
     anchor_target_counts
     ch_consensus_fastas
     ch_anchor_target_fastas
 
     main:
 
-    // create samplesheet of bowtie2 indices
+    // Parse samplesheet of bowtie2 indices
     element_annotations_samplesheet = file(
         params.element_annotations_samplesheet,
         checkIfExists: true
@@ -41,24 +41,24 @@ workflow ANNOTATE {
         .combine(ch_indices)
 
     /*
-    // Process to align anchors to each bowtie2 index
+    // Process: Align anchors to each bowtie2 index
     */
     ELEMENT_ALIGNMENT(
         ch_anchor_target_indices
     )
 
     /*
-    // Process to merge scores with hits
+    // Process: Merge scores with hits
     */
     ELEMENT_ANNOTATIONS(
         ELEMENT_ALIGNMENT.out.hits.collect()
     )
 
     /*
-    // Process to run postprocessing annotations
+    // Process: Run postprocessing annotations
     */
     SUMMARIZE(
-        anchor_scores,
+        anchors_pvals,
         anchor_target_counts,
         ELEMENT_ANNOTATIONS.out.annotated_anchors,
         ELEMENT_ANNOTATIONS.out.annotated_targets
@@ -66,7 +66,7 @@ workflow ANNOTATE {
 
     if (params.run_annotations) {
         /*
-        // Process to align targets and anchors to genome
+        // Process: Align targets and anchors to genome
         */
         GENOME_ALIGNMENT(
             ch_anchor_target_fastas.flatten(),
@@ -75,7 +75,7 @@ workflow ANNOTATE {
         )
 
         /*
-        // Process to run gene and exon annotations
+        // Process: Run gene and exon annotations
         */
         GENOME_ANNOTATIONS(
             GENOME_ALIGNMENT.out.bam_tuple,
@@ -83,14 +83,14 @@ workflow ANNOTATE {
         )
 
         /*
-        // Process to prepare consensus fastas for one STAR alignment
+        // Process: Prepare consensus fastas for one STAR alignment
         */
         PREPARE_CONSENSUS(
             ch_consensus_fastas.flatten()
         )
 
         /*
-        // Process to concatenate consensus fastas for one STAR alignment
+        // Process: Concatenate consensus fastas for one STAR alignment
         */
         MERGE_CONSENSUS(
             PREPARE_CONSENSUS.out.fasta.collect()
@@ -98,7 +98,7 @@ workflow ANNOTATE {
 
         consensus_fasta = MERGE_CONSENSUS.out.fasta
         /*
-        // Process to get splice junctions with STAR
+        // Process: Get splice junctions with STAR
         */
         CONSENSUS_ALIGNMENT(
             consensus_fasta,
@@ -109,7 +109,7 @@ workflow ANNOTATE {
         genome_annotations_anchors = GENOME_ANNOTATIONS.out.annotated_anchors
 
         /*
-        // Process to get called exons from bam file
+        // Process: Get called exons from bam file
         */
         SPLICING_ANNOTATIONS(
             CONSENSUS_ALIGNMENT.out.bam,
@@ -120,7 +120,7 @@ workflow ANNOTATE {
         )
 
         /*
-        // Process to make additional summary file
+        // Process: Make additional summary file
         */
         ADDITIONAL_SUMMARY(
             SPLICING_ANNOTATIONS.out.consensus_called_exons,
@@ -135,7 +135,6 @@ workflow ANNOTATE {
         genome_annotations_anchors  = null
 
     }
-
 
     emit:
     additional_summary          = additional_summary

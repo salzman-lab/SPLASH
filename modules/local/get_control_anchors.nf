@@ -1,5 +1,5 @@
 
-process MERGE_ABUNDANT_ANCHORS {
+process GET_CONTROL_ANCHORS {
 
     label 'process_medium'
 

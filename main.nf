@@ -32,58 +32,31 @@ WorkflowMain.initialise(workflow, params, log)
 */
 
 include { NOMAD             } from './workflows/nomad'
-include { ANCHOR_HEATMAPS   } from './modules/local/anchor_heatmaps'
+include { NOMAD_10X         } from './workflows/nomad_10X'
+include { PLOT_HEATMAPS     } from './workflows/plot_heatmaps'
+
+include { SAMPLESHEET_CHECK } from './modules/local/samplesheet_check'
 
 //
 // WORKFLOW: Run main kaitlinchaung/nomad analysis pipeline
 //
 
 workflow RUN_NOMAD {
-    // If we are only plotting,
     if (params.run_anchor_heatmaps){
-
-        // Declare file paths
-        anchors_pvals                       = file("${params.results_dir}/anchors_pvals.tsv", checkIfExists: true)
-        anchors_Cjs                         = file("${params.results_dir}/anchors_Cjs_random_opt.tsv", checkIfExists: true)
-        genome_annotations_anchors          = "${params.results_dir}/genome_annotations/genome_annotations_anchor.tsv"
-        additional_summary                  = "${params.results_dir}/additional_summary.tsv"
-        abundant_stratified_anchors_path    = "${params.results_dir}/abundant_stratified_anchors/*txt.gz"
-        consensus_fractions_path            = "${params.results_dir}/consensus_anchors/*fractions.tab"
-
-        // Create channels with files
-        Channel
-            .fromPath(abundant_stratified_anchors_path)
-            .set{ abundant_stratified_anchors}
-        Channel
-            .fromPath(consensus_fractions_path)
-            .set{ consensus_fractions }
-
-        if (params.use_heatmap_anchor_list) {
-            heatmap_anchor_list = file(params.heatmap_anchor_list)
-        } else {
-            // Set a dummy value if we are not using heatmap anchor list
-            heatmap_anchor_list = consensus_fractions.first().collectFile(name: 'dummy.txt')
-        }
-        /*
-        // Process to make heatmaps
-        */
-        ANCHOR_HEATMAPS(
-            params.use_heatmap_anchor_list,
-            heatmap_anchor_list,
-            abundant_stratified_anchors.collect(),
-            consensus_fractions.collect(),
-            params.dataset,
-            anchors_pvals,
-            anchors_Cjs,
-            params.num_heatmap_anchors,
-            file(params.input),
-            additional_summary,
-            genome_annotations_anchors
-        )
+        // Workflow to only plot heatmaps on previously-run data
+        PLOT_HEATMAPS ()
 
     } else {
-        // Run pipeline
-        NOMAD ()
+
+        if (params.is_10X) {
+            // Workflow to run NOMAD on 10X samples
+            NOMAD_10X ()
+
+        } else {
+            // Workflow to run NOMAD on bulk RNAseq and SS2 samples
+            NOMAD ()
+
+        }
 
     }
 }
@@ -100,6 +73,7 @@ workflow RUN_NOMAD {
 //
 workflow {
     RUN_NOMAD ()
+
 }
 
 /*

@@ -17,15 +17,11 @@ def get_args():
         type=str
     )
     parser.add_argument(
-        "--anchor_targets_counts",
+        "--genome_annotations",
         type=str
     )
     parser.add_argument(
-        "--annotated_anchors",
-        type=str
-    )
-    parser.add_argument(
-        "--annotated_targets",
+        "--element_annotations",
         type=str
     )
     parser.add_argument(
@@ -105,98 +101,28 @@ def add_summary(df, ann_table, seq_type):
 def main():
     args = get_args()
 
-    ## read in anchors and their scores
-    scores = (
+    ## read in anchors and their anchors_pvals
+    anchors_pvals = (
         pd.read_csv(args.anchors_pvals, sep='\t')
         .drop_duplicates()
     )
 
-    ## account for decoy scores
-    if len(scores.columns) == 2:
-        scores.columns = ['anchor', 'decoy_pvalue']
+    ## account for decoy anchors_pvals
+    if len(anchors_pvals.columns) == 2:
+        anchors_pvals.columns = ['anchor', 'control_pvalue']
 
-    scores_cols = [c for c in scores.columns if "cj_" not in c]
-    scores = scores[scores_cols]
+    anchors_pvals_cols = [c for c in anchors_pvals.columns if "cj_" not in c]
+    anchors_pvals = anchors_pvals[anchors_pvals_cols]
 
-    ## read in anchor target counts file
-    anchor_targets_counts = pd.read_csv(args.anchor_targets_counts, sep='\t')
+    genome_annotations = pd.read_csv(args.genome_annotations, sep='\t')
 
-    make_target_columns = True
-    if len(anchor_targets_counts.columns) == 2:
-        anchor_targets_counts.columns = ['anchor', 'target']
-        make_target_columns = False
+    df = pd.merge(anchors_pvals, genome_annotations, on='anchor')
 
-    ## read in annotated anchors and targets files
-    ann_anchors = pd.read_csv(args.annotated_anchors, sep='\t')
-    ann_targets = pd.read_csv(args.annotated_targets, sep='\t')
-
-    if make_target_columns:
-        # get top 5 most abundant targets per anchor by their indices
-        top_targets = (
-            anchor_targets_counts
-            .groupby('anchor')
-            .apply(
-                lambda x:
-                x.nlargest(5, ['total_anchor_target_counts'])
-            )
-            .drop('anchor', axis=1)
-            ['target']
-            .tolist()
-        )
-
-        ## make a new column of number of samples that have this specific anchor
-        anchor_targets_counts['n_samples_anchor'] = (
-            anchor_targets_counts
-            .drop(['target', 'total_anchor_target_counts'], axis=1)
-            .groupby('anchor')
-            .transform(sum)
-            .astype(bool)
-            .sum(axis=1)
-        )
-
-        ## make a new column of number of samples that have this specific anchor-target
-        anchor_targets_counts['n_samples_anchor_target'] = (
-            anchor_targets_counts
-            .drop(['anchor', 'target', 'total_anchor_target_counts'], axis=1)
-            .astype(bool)
-            .sum(axis=1)
-            .reset_index(drop=True)
-        )
-
-        anchor_targets_counts = anchor_targets_counts[['anchor', 'target', 'total_anchor_target_counts', 'n_samples_anchor', 'n_samples_anchor_target']]
-
-    df = pd.merge(anchor_targets_counts, scores, on='anchor')
-
-    if make_target_columns:
-        df['rank_target_counts'] = (
-            df
-            .groupby('anchor')['total_anchor_target_counts']
-            .rank('average', ascending=False)
-        )
-
-    df['rcAnchor'] = (
-        df['anchor']
-        .apply(
-            lambda x:
-            str(Seq(x).reverse_complement())
-        )
-    )
-    df['rcTarget'] = (
-        df['target']
-        .apply(
-            lambda x:
-            str(Seq(x).reverse_complement())
-        )
-    )
-
-    df['anchor_matches_rcTarget'] = df['rcTarget'].isin(df['anchor'])
-    df['rcAnchor_matches_target'] = df['rcAnchor'].isin(df['target'])
+    ann_anchors = pd.read_csv(args.element_annotations, sep='\t')
 
     summarized_anchors = add_summary(df, ann_anchors, 'anchor')
-    summarized_targets = add_summary(df, ann_targets, 'target')
 
     df = pd.merge(df, summarized_anchors, on='anchor', how='left')
-    df = pd.merge(df, summarized_targets, on='target', how='left')
 
     df.to_csv(args.outfile, sep='\t', index=False)
 

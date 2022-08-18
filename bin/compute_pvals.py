@@ -70,6 +70,10 @@ def get_args():
         type=int,
         default=1000
     )
+    parser.add_argument(
+        "--is_10X",
+        action='store_true'
+    )
     args = parser.parse_args()
     return args
 
@@ -119,12 +123,22 @@ def main():
             print("Improperly formatted samplesheet")
         else:
             useSheetCjs = True
-            sheetdf = pd.read_csv(samplesheet,names=['fname','sheetCj'])
-            sheetdf['sample'] = (sheetdf.fname
-                            .str.rsplit('/',1,expand=True)[1]
-                            .str.split('.',1,expand=True)[0])
+
+            if args.is_10X:
+                sheetdf = pd.read_csv(samplesheet,names=['sample','sheetCj'])
+            else:
+                sheetdf = pd.read_csv(samplesheet,names=['fname','sheetCj'])
+                sheetdf['sample'] = (sheetdf.fname
+                                .str.rsplit('/',1,expand=True)[1]
+                                .str.split('.',1,expand=True)[0])
+
             sheetdf['sheetCj'] = normalizevec(sheetdf['sheetCj'])
-            sheetdf = sheetdf.drop(columns='fname')
+
+            try:
+                sheetdf = sheetdf.drop(columns='fname')
+            except:
+                pass
+
             sheetdf['sheetCj'] = normalizevec(sheetdf.sheetCj) ### normalize in case time-series
             print("Successfully loaded custom cj")
 
@@ -165,7 +179,7 @@ def main():
     df['nj'] = df.groupby(['anchor','sample']).counts.transform('sum')
     df = df.drop(columns='anchSample_cts') ### this is essentially "old" n_j
     df['M'] = df.groupby(['anchor']).counts.transform('sum')
-    df['number_nonzero_samples'] = df.groupby('anchor')['sample'].transform('nunique') ## count number of samples that this anchor appears in
+    df['number_nonzero_samples'] = df.groupby('anchor')['sample'].nunique() ## count number of samples that this anchor appears in
 
     print('starting hamming and levenshtein computation')
     #### add in handcrafted dij of distance to most frequent target
@@ -241,11 +255,6 @@ def main():
         A = idx_end-idx_start ### number of anchors used here
 
         dftmp = df_pivoted_full.iloc[i*anchor_batch_size : (i+1)*anchor_batch_size]
-
-        # if dftmp is empty, we're done processing
-        if dftmp.empty:
-            break
-
         print(A,len(dftmp),idx_start,idx_end,len(df_pivoted_full))
         assert A==len(dftmp)
 
@@ -320,11 +329,11 @@ def main():
         effectSize[sameLocs]=0
 
         ### comput sheetCj effect size
-        ### removes sign, only between [0,1]
+        ### preserves sign, can be between -1 and 1
         ### take fresh argmin to find minimizing hash
         tmpMat = sampSumMat[pv[1:,0,:].argmin(axis=0)+1,:,list(range(A))] * sheetCj ### A x p
-        effectSize_sheet = np.abs(((tmpMat*(sheetCj>0)).sum(axis=1)/np.maximum(1,(njMat.T*(sheetCj>0)).sum(axis=1))
-                    + (tmpMat*(sheetCj<0)).sum(axis=1)/np.maximum(1,(njMat.T*(sheetCj<0)).sum(axis=1))))
+        effectSize_sheet = ((tmpMat*(sheetCj>0)).sum(axis=1)/np.maximum(1,(njMat.T*(sheetCj>0)).sum(axis=1))
+                    + (tmpMat*(sheetCj<0)).sum(axis=1)/np.maximum(1,(njMat.T*(sheetCj<0)).sum(axis=1)))
         ### where all samples have same cluster id, set effect size to 0
         sameLocs = np.abs(((njMat.T>0)*(sheetCj)).sum(axis=1)/(njMat.T>0).sum(axis=1))==1
         effectSize_sheet[sameLocs]=0

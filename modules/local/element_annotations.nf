@@ -8,8 +8,8 @@ process ELEMENT_ANNOTATIONS {
     path hits
 
     output:
-    path outfile_ann_anchors, emit: annotated_anchors
-    path outfile_ann_targets, emit: annotated_targets
+    path outfile_ann_anchors, emit: annotated_anchors           , optional: true
+    path outfile_ann_targets, emit: annotated_targets           , optional: true
 
     script:
     outfile_ann_anchors     = "element_annotations_anchors.tsv"
