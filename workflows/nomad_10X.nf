@@ -126,7 +126,7 @@ workflow NOMAD_10X {
         abundant_stratified_anchors  = FETCH.out.abundant_stratified_anchors
 
     } else {
-        abundant_control_seqs        = Channel.create()
+        abundant_control_seqs        = Channel.empty()
         abundant_stratified_anchors  = Channel
             .fromPath("${params.abundant_stratified_anchors}/*")
 
