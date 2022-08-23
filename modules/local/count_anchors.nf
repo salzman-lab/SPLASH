@@ -1,17 +1,18 @@
 
 process COUNT_ANCHORS {
 
-    tag "${fastq.simpleName}"
+    tag "${id}"
     label 'process_low'
 
     input:
-    tuple val(fastq_id), path(fastq)
+    tuple val(id), path(fastq)
 
     output:
     path outfile, emit: seqs
 
     script:
-    outfile = "counted_${fastq.simpleName}.txt"
+    fastq_id    = "${id}_${fastq.simpleName}"
+    outfile     = "counted_${fastq_id}.txt"
     """
     zcat ${fastq} \\
         | sort -T ${workDir} \\

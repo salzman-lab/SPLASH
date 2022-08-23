@@ -20,9 +20,9 @@ def main():
     ## use biopython here
     reads = []
 
-    for record in SeqIO.parse(f"{args.fasta_name}.fasta", 'fasta'):
+    for record in SeqIO.parse(f"anchor_{args.fasta_name}.fasta", 'fasta'):
         reads.append(str(record.id))
-    df = pd.DataFrame(reads, columns=[args.fasta_name])
+    df = pd.DataFrame(reads, columns=['anchor'])
 
 
     ann_tuples = [
@@ -47,7 +47,7 @@ def main():
 
     df = df.replace('*', np.nan)
 
-    df.to_csv(f"genome_annotations_{args.fasta_name}.tsv", index=False, sep='\t')
+    df.to_csv(f"genome_annotations_anchors_{args.fasta_name}.tsv", index=False, sep='\t')
 
 
 main()

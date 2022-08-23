@@ -1,7 +1,7 @@
 
 process FETCH_ANCHORS {
 
-    tag "${fastq.simpleName}"
+    tag "${id}"
     label 'process_medium'
     conda (params.enable_conda ? "conda-forge::python=3.9.5" : null)
 
@@ -18,8 +18,9 @@ process FETCH_ANCHORS {
     tuple val(id), path(outfile), emit: seqs
 
     script:
-    def is_10X   = (is_10X == true) ? "--is_10X" : ""
-    outfile      = "sequences_${fastq.simpleName}.txt.gz"
+    def is_10X  = (is_10X == true) ? "--is_10X" : ""
+    fastq_id    = "${id}_${fastq.simpleName}"
+    outfile     = "sequences_${fastq_id}.txt.gz"
     """
     fetch_anchors.py \\
         --infile ${fastq} \\

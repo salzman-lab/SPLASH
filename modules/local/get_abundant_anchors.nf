@@ -1,6 +1,7 @@
 
 process GET_ABUNDANT_ANCHORS {
 
+    tag "${stratify_substring}"
     label 'process_medium'
 
     input:
@@ -13,7 +14,8 @@ process GET_ABUNDANT_ANCHORS {
     path outfile_abundant_control_seqs  , emit: abundant_control_seqs
 
     script:
-    outfile_abundant_control_seqs        = "counts_abundant_${stratified_anchors}"
+    stratify_substring                  = "${stratified_anchors.simpleName}".replaceAll(/stratified_/, "")
+    outfile_abundant_control_seqs       = "counts_abundant_${stratified_anchors}"
     """
     ## Create third column of the anchor sequence, so that the file = 54mer-sample counts, 54mer, anchor
     ## Sort for joining later

@@ -1,14 +1,14 @@
 
 process COMPUTE_PVALS {
 
+    tag "${file_id}"
     label 'process_high'
     conda (params.enable_conda ? "conda-forge::python=3.9.5 pandas=1.4.3 numpy conda-forge::mmh3=3.0.0 anaconda::scipy=1.7.3 anaconda::nltk=3.7" : null)
 
     input:
-    path counts
+    tuple val(samplesheet_id), path(samplesheet), path(counts)
     val is_10X
     val kmer_size
-    path samplesheet
     val K_num_hashes
     val L_num_random_Cj
     val anchor_count_threshold
@@ -18,7 +18,7 @@ process COMPUTE_PVALS {
     val anchor_batch_size
 
     output:
-    path outfile_scores     , emit: scores      , optional: true
+    tuple val(samplesheet_id), path(samplesheet), path(outfile_scores), emit: scores, optional: true
     path "*extra_info*"     , emit: extra_info  , optional: true
     path "*pkl"             , emit: pkl         , optional: true
 

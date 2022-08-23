@@ -10,6 +10,7 @@ workflow PVALUES {
 
     main:
 
+
     if (params.run_control) {
         GET_CONTROL_ANCHORS(
             abundant_control_seqs,
@@ -21,14 +22,32 @@ workflow PVALUES {
 
 
     } else {
+
+        // Parse pairwise samplesheets
+        Channel
+            .fromPath(params.pairwise_samplesheets)
+            .splitCsv(
+                header: false
+            )
+            .map { row ->
+                tuple(
+                    row[0],
+                    file(row[1])
+                )
+            }
+            .set{ ch_pairwise_samplesheets}
+
+        // Carteisian product of all pairwise samplesheets and abundant stratified anchors files
+        ch_samplesheets_anchors = ch_pairwise_samplesheets
+            .combine(abundant_stratified_anchors)
+
         /*
         // Process: Compute statistics
         */
         COMPUTE_PVALS(
-            abundant_stratified_anchors,
+            ch_samplesheets_anchors,
             params.is_10X,
             params.kmer_size,
-            file(params.cell_barcode_samplesheet),
             params.K_num_hashes,
             params.L_num_random_Cj,
             params.anchor_count_threshold,
@@ -38,22 +57,32 @@ workflow PVALUES {
             params.anchor_batch_size
         )
 
+        // For each samplesheet id, map to samplesheet and all associated abudant stratified anchor files
+        // We only need to map to the first samplesheet of the groupTuple because they are all the same file but just in diff workDirs
+        ch_samplesheets_scores = COMPUTE_PVALS.out.scores
+            .groupTuple()
+            .map{ it ->
+                tuple(
+                    it[0],
+                    it[1][0],
+                    it[2]
+                )
+            }
+
         /*
         // Process: Output significant anchors
         */
         SIGNIFICANT_ANCHORS(
-            COMPUTE_PVALS.out.scores.collect(),
-            params.fdr_threshold,
-            file(params.input)
+            ch_samplesheets_scores,
+            params.fdr_threshold
         )
 
-        // Only proceed with non empty files
-        anchors_pvals   = SIGNIFICANT_ANCHORS.out.scores
+        // Only proceed with non empty pvals files
+        anchors_Cjs   = SIGNIFICANT_ANCHORS.out.cjs
+        anchors_pvals = SIGNIFICANT_ANCHORS.out.scores
             .filter{
-                it.countLines() > 1
+                it[2].countLines() > 1
             }
-
-        anchors_Cjs     = SIGNIFICANT_ANCHORS.out.cjs
 
     }
 

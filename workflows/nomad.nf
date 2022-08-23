@@ -33,17 +33,18 @@ include { GET_SOFTWARE_VERSIONS     } from '../modules/local/get_software_versio
 include { SAMPLESHEET_CHECK         } from '../modules/local/samplesheet_check'
 include { GET_LOOKAHEAD             } from '../modules/local/get_lookahead'
 include { ADD_DUMMY_SCORE           } from '../modules/local/add_dummy_score'
-
+include { GET_ANCHOR_FASTA          } from '../modules/local/get_anchor_fasta'
+include { GENOME_ALIGNMENT          } from '../modules/local/genome_alignment'
+include { GENOME_ANNOTATIONS        } from '../modules/local/genome_annotations'
+include { ELEMENT_ALIGNMENT         } from '../modules/local/element_alignment'
+include { ELEMENT_ANNOTATIONS       } from '../modules/local/element_annotations'
+include { SUMMARIZE_10X             } from '../modules/local/summarize_10X'
 
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
 include { FETCH                     } from '../subworkflows/local/fetch'
 include { PVALUES                   } from '../subworkflows/local/pvalues'
-include { ANALYZE                   } from '../subworkflows/local/analyze'
-include { ANNOTATE                  } from '../subworkflows/local/annotate'
-include { PLOT                      } from '../subworkflows/local/plot'
-
 
 /*
 ========================================================================================
@@ -72,52 +73,61 @@ workflow NOMAD {
         )
         .map { row ->
             tuple(
-                file(row[0]).simpleName,
-                file(row[0])
+                row[1],
+                file(row[2])
             )
         }
         .set{ ch_fastqs }
 
-
-    // Define lookahead parameter
-    if (params.lookahead) {
-        lookahead = params.lookahead
+    if (params.abundant_stratified_anchors) {
+        // Use previously computed abundant stratified anchors files
+        abundant_control_seqs        = Channel.empty()
+        abundant_stratified_anchors  = Channel.fromPath("${params.abundant_stratified_anchors}/*")
 
     } else {
-        // Use first fastq in sampelsheet to determine lookahead distance
-        fastq = ch_fastqs
-            .first()
-            .map{
-                it[1]
-            }
+        // Define lookahead parameter
+        if (params.lookahead) {
+            lookahead = params.lookahead
+
+        } else {
+            // Use first fastq in sampelsheet to determine lookahead distance
+            fastq = ch_fastqs
+                .first()
+                .map{
+                    it[1]
+                }
+
+            /*
+            // Process: Get read lookahead distance of dataset
+            */
+            GET_LOOKAHEAD(
+                fastq,
+                file(params.input),
+                params.kmer_size
+            )
+
+            lookahead = GET_LOOKAHEAD.out.lookahead.toInteger()
+        }
 
         /*
-        // Process: Get read lookahead distance of dataset
+        // Subworkflow: Get abundant anchors
         */
-        GET_LOOKAHEAD(
-            fastq,
-            file(params.input),
-            params.kmer_size
+        FETCH(
+            ch_fastqs,
+            lookahead
         )
 
-        lookahead = GET_LOOKAHEAD.out.lookahead.toInteger()
-    }
+        abundant_control_seqs        = FETCH.out.abundant_control_seqs
+        abundant_stratified_anchors  = FETCH.out.abundant_stratified_anchors
 
-    /*
-    // Subworkflow: Get abundant anchors
-    */
-    FETCH(
-        ch_fastqs,
-        lookahead
-    )
+    }
 
     /*
     // Subworkflow: Get control anchors
     */
     PVALUES(
-        file(params.input),
-        FETCH.out.abundant_control_seqs,
-        FETCH.out.abundant_stratified_anchors
+        abundant_control_seqs,
+        abundant_stratified_anchors
     )
 
     if (params.anchors_file || params.run_control) {
@@ -151,45 +161,92 @@ workflow NOMAD {
     // Only proceed if we are doing more than pval caluclations
     if (! params.run_pvals_only) {
         /*
-        // Subworkflow: Perform analysis
+        // Process: Make fasta from anchors
         */
-        ANALYZE(
-            ch_fastqs,
-            anchors_pvals,
-            lookahead
+        GET_ANCHOR_FASTA(
+            anchors_pvals
+        )
+
+        // Only proceed with anchor fasta file
+        anchor_fasta = GET_ANCHOR_FASTA.out.fasta
+
+        /*
+        // Process: Align anchors to genome
+        */
+        GENOME_ALIGNMENT(
+            anchor_fasta,
+            params.genome_index,
+            params.transcriptome_index
         )
 
         /*
-        // Subworkflow: Perform annotations
+        // Process: Run gene and exon annotations
         */
-        ANNOTATE(
-            anchors_pvals,
-            ANALYZE.out.anchor_target_counts,
-            ANALYZE.out.ch_consensus_fasta,
-            ANALYZE.out.ch_anchor_target_fastas
+        GENOME_ANNOTATIONS(
+            GENOME_ALIGNMENT.out.bams,
+            params.gene_bed
         )
 
-        if (params.anchors_file == null & params.run_control == false) {
-            abundant_stratified_anchors = FETCH.out.abundant_stratified_anchors
-            consensus_fractions         = ANALYZE.out.consensus_fractions
-            additional_summary          = ANNOTATE.out.additional_summary
-            genome_annotations_anchors  = ANNOTATE.out.genome_annotations_anchors
-
-            // If annotations are run OR we only want to plot, run plot
-            if (params.run_annotations){
-                /*
-                // Subworkflow: Perform plotting
-                */
-                PLOT(
-                    abundant_stratified_anchors,
-                    consensus_fractions,
-                    anchors_pvals,
-                    anchors_Cjs,
-                    additional_summary,
-                    genome_annotations_anchors
-                )
+        // Parse samplesheet of bowtie2 indices
+        element_annotations_samplesheet = file(
+            params.element_annotations_samplesheet,
+            checkIfExists: true
+        )
+        ch_indices = Channel.fromPath(element_annotations_samplesheet)
+            .splitCsv(
+                header: false
+            )
+            .map{ row ->
+                row[0]
             }
-        }
+
+        // Cartesian join of anchor fasta and all bowtie2 indices
+        ch_anchor_indices = anchor_fasta
+            .map{ it ->
+                [it[0], it[2]]
+            }
+            .combine(ch_indices)
+            .map{ it ->
+                it.flatten()
+            }
+
+        /*
+        // Process: Align anchors to each bowtie2 index
+        */
+        ELEMENT_ALIGNMENT(
+            ch_anchor_indices
+        )
+
+        // Group by anchor file
+        ch_element_alignments = ELEMENT_ALIGNMENT.out.hits
+            .groupTuple()
+
+        /*
+        // Process: Merge scores with hits
+        */
+        ELEMENT_ANNOTATIONS(
+            ch_element_alignments
+        )
+
+        anchors_pvals
+            .mix(
+                ELEMENT_ANNOTATIONS.out.annotated_anchors,
+                GENOME_ANNOTATIONS.out.annotated_anchors
+            )
+            .groupTuple()
+            .map{ it ->
+                it.flatten()
+            }
+            .view()
+            .set { ch_anchor_annotations}
+
+        /*
+        // Process: Make summary file
+        */
+        SUMMARIZE_10X(
+            ch_anchor_annotations
+        )
+
     }
 }
 

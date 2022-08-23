@@ -167,6 +167,7 @@ def main():
         (df.anchSample_cts > args.anchor_sample_counts_threshold)
     ]
     df['anch_cts'] = df.groupby('anchor').counts.transform('sum') ## number of reads per anchor
+    print(df[df['anchor']== 'CATTTATTCAACAAACTAGTTCCTGGG']['anch_cts'])
     df = df[df.anch_cts > args.anchor_count_threshold]
 
     print('done filtering')
