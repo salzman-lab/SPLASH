@@ -1,35 +1,25 @@
-Channel
-    .from(
-        [1, ["A", "a"]],
-        [1, ["B", "b"]],
-        [-1, ["C", "c"]],
-        [-1, ["D", "d"]]
+ch_fastqs = Channel
+    .fromPath(file("samplesheet_test.csv"))
+    .splitCsv(
+        header: false
     )
-
-cj = Channel.from(1, -1)
-samples = Channel
-    .from(
-        ["A", "a"],
-        ["B", "b"],
-        ["C", "c"],
-        ["D", "d"]
-    )
-
-cj
-    .combine(samples)
-    .map{ it ->
+    .map { row ->
         tuple(
-            [it[1], it[2]],
-            it[0]
+            row[1],
+            file(row[2])
         )
     }
-    .groupTuple()
-    .map{ it ->
-        tuple(
-            it[0],
-            it[1].flatten()
-        )
-    }
+
+l = ch_fastqs
+    .map{ it[1]}
+    .toSortedList()
     .view()
-    .transpose()
-    .view()
+
+Channel.fromList(l).view()
+// Channel
+//     .fromList(
+//         ch_fastqs
+//             .map{ it[1]}
+//             .toSortedList()
+//     )
+//     .view()

@@ -1,4 +1,5 @@
 include { GET_CONTROL_ANCHORS       } from '../../modules/local/get_control_anchors'
+include { MAKE_SAMPLESHEETS         } from '../../modules/local/make_samplesheets'
 include { COMPUTE_PVALS             } from '../../modules/local/compute_pvals'
 include { SIGNIFICANT_ANCHORS       } from '../../modules/local/significant_anchors'
 
@@ -23,19 +24,40 @@ workflow PVALUES {
 
     } else {
 
-        // Parse pairwise samplesheets
-        Channel
-            .fromPath(params.pairwise_samplesheets)
-            .splitCsv(
-                header: false
-            )
-            .map { row ->
-                tuple(
-                    row[0],
-                    file(row[1])
-                )
+        /*
+        // Process: Make pairwise samplesheets for pvalue computation
+        */
+        if (params.is_10X) {
+            base_samplesheet = file(params.cell_barcode_samplesheet)
+
+        } else {
+            base_samplesheet = file(params.input)
+
+        }
+
+        MAKE_SAMPLESHEETS(
+            base_samplesheet,
+            params.is_10X,
+            params.run_unsupervised_pvals
+        )
+
+        // Map a samplesheet id to each samplesheet
+        ch_pairwise_samplesheets = MAKE_SAMPLESHEETS.out.samplesheets
+            .flatten()
+            .map { it ->
+                if (params.run_unsupervised_pvals) {
+                    tuple(
+                        "unsupervised_pvalues",
+                        it
+                    )
+                } else {
+                    tuple(
+                        it.simpleName.replaceFirst(/pairwise_samplesheet_/, ''),
+                        it
+                    )
+                }
             }
-            .set{ ch_pairwise_samplesheets}
+            .view()
 
         // Carteisian product of all pairwise samplesheets and abundant stratified anchors files
         ch_samplesheets_anchors = ch_pairwise_samplesheets
@@ -46,7 +68,7 @@ workflow PVALUES {
         */
         COMPUTE_PVALS(
             ch_samplesheets_anchors,
-            params.is_10X,
+            params.run_unsupervised_pvals,
             params.kmer_size,
             params.K_num_hashes,
             params.L_num_random_Cj,

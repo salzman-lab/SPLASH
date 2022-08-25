@@ -68,7 +68,7 @@ include { PVALUES                   } from '../subworkflows/local/pvalues'
 workflow NOMAD_10X {
 
     // Parse samplesheet
-    Channel
+    ch_paired_fastqs = Channel
         .fromPath(params.input)
         .splitCsv(
             header: false
@@ -80,7 +80,6 @@ workflow NOMAD_10X {
                 file(row[2])
             )
         }
-        .set{ ch_paired_fastqs }
 
     if (params.abundant_stratified_anchors) {
         // Use previously computed abundant stratified anchors files
@@ -118,7 +117,7 @@ workflow NOMAD_10X {
         )
 
         /*
-        // Subworkflow: Get abdunant anchors
+        // Subworkflow: Get abdundant anchors
         */
         FETCH(
             PREPROCESS_10X.out.fastqs,

@@ -71,8 +71,8 @@ def get_args():
         default=1000
     )
     parser.add_argument(
-        "--is_10X",
-        action='store_true'
+        "--run_unsupervised_pvals",
+        action="store_true"
     )
     args = parser.parse_args()
     return args
@@ -111,44 +111,22 @@ def main():
 
     print("running compute_pvals script on {}".format(args.infile))
 
-    ### load samplesheet c_j's
-    useSheetCjs = False
-    samplesheet = args.samplesheet
-    if samplesheet != "":
-        with open(samplesheet,'r') as f:
-            cols = f.readline().split(',')
-        if len(cols)==1: ### if len(cols) is 1, then only samplesheet name, no ids
-            print("Only 1 samplesheet column, using random cjs")
-        elif len(cols)>2:
-            print("Improperly formatted samplesheet")
-        else:
-            useSheetCjs = True
-
-            if args.is_10X:
-                sheetdf = pd.read_csv(samplesheet,names=['sample','sheetCj'])
-            else:
-                sheetdf = pd.read_csv(samplesheet,names=['fname','sheetCj'])
-                sheetdf['sample'] = (sheetdf.fname
-                                .str.rsplit('/',1,expand=True)[1]
-                                .str.split('.',1,expand=True)[0])
-
-            sheetdf['sheetCj'] = normalizevec(sheetdf['sheetCj'])
-
-            try:
-                sheetdf = sheetdf.drop(columns='fname')
-            except:
-                pass
-
-            sheetdf['sheetCj'] = normalizevec(sheetdf.sheetCj) ### normalize in case time-series
-            print("Successfully loaded custom cj")
-
-
+    # read in counts
     df = pd.read_csv(args.infile, delim_whitespace=True, names=['counts','seq','sample'])
-    if useSheetCjs:
-        df = pd.merge(df,sheetdf)
-    else:
-        df['sheetCj']=1
     print('done reading')
+
+    ### load samplesheet
+    if args.run_unsupervised_pvals:
+        useSheetCjs = False
+        df['sheetCj']=1
+
+    else:
+        useSheetCjs = True
+
+        sheetdf = pd.read_csv(args.samplesheet, names=['sample','sheetCj'])
+        sheetdf['sheetCj'] = normalizevec(sheetdf['sheetCj'])
+
+        df = pd.merge(df, sheetdf)
 
     ### split seq into anchor and target
     ### for some reason some files have duplicates, so drop those

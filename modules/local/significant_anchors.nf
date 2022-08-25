@@ -1,7 +1,11 @@
 
 process SIGNIFICANT_ANCHORS {
 
-    label 'process_high'
+    tag "significant anchors"
+    label "process_high"
+    publishDir "${params.outdir}/${samplesheet_id}",
+        mode: "copy",
+        pattern: "*.csv"
     conda (params.enable_conda ? "conda-forge::python=3.9.5 pandas=1.4.1 anaconda::statsmodels" : null)
 
     input:

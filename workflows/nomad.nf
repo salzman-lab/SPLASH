@@ -43,6 +43,7 @@ include { SUMMARIZE_10X             } from '../modules/local/summarize_10X'
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 //
+include { PREPROCESS_10X            } from '../subworkflows/local/preprocess_10X'
 include { FETCH                     } from '../subworkflows/local/fetch'
 include { PVALUES                   } from '../subworkflows/local/pvalues'
 
@@ -65,20 +66,37 @@ include { PVALUES                   } from '../subworkflows/local/pvalues'
 
 workflow NOMAD {
 
-    // Parse samplesheet
-    Channel
-        .fromPath(file(params.input))
-        .splitCsv(
-            header: false
-        )
-        .map { row ->
-            tuple(
-                row[1],
-                file(row[2])
+    // Parse samplesheet fastq paths
+    if (params.is_10X) {
+        ch_paired_fastqs = Channel
+            .fromPath(params.input)
+            .splitCsv(
+                header: false
             )
-        }
-        .set{ ch_fastqs }
+            .map { row ->
+                tuple(
+                    row[0],
+                    file(row[1]),
+                    file(row[2])
+                )
+            }
 
+    } else {
+        ch_fastqs = Channel
+            .fromPath(file(params.input))
+            .splitCsv(
+                header: false
+            )
+            .map { row ->
+                tuple(
+                    row[1],
+                    file(row[2])
+                )
+            }
+
+    }
+
+    // Begin workflow
     if (params.abundant_stratified_anchors) {
         // Use previously computed abundant stratified anchors files
         abundant_control_seqs        = Channel.empty()
@@ -93,8 +111,12 @@ workflow NOMAD {
             // Use first fastq in sampelsheet to determine lookahead distance
             fastq = ch_fastqs
                 .first()
-                .map{
-                    it[1]
+                .map{ it ->
+                    if (params.is_10X) {
+                        it[2]
+                    } else {
+                        it[1]
+                    }
                 }
 
             /*
@@ -107,6 +129,17 @@ workflow NOMAD {
             )
 
             lookahead = GET_LOOKAHEAD.out.lookahead.toInteger()
+        }
+
+        if (params.is_10X) {
+            /*
+            // Subworkflow: Preprocess 10X fastq files
+            */
+            PREPROCESS_10X(
+                ch_fastqs
+            )
+
+            ch_fastqs = PREPROCESS_10X.out.fastqs
         }
 
         /*
@@ -149,7 +182,8 @@ workflow NOMAD {
             anchors
         )
 
-        anchors_pvals = ADD_DUMMY_SCORE.out.anchors_pvals
+        anchors_pvals   = ADD_DUMMY_SCORE.out.anchors_pvals
+        anchors_Cjs     = Channel.empty()
 
     } else {
         // Proceed with computed significant anchors
