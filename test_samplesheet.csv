@@ -1,4 +1,4 @@
-https://raw.githubusercontent.com/kaitlinchaung/nomad/main/test_data/SRX14565338_SRR18431620_1.fastq.gz
-https://raw.githubusercontent.com/kaitlinchaung/nomad/main/test_data/SRX14565342_SRR18431616_1.fastq.gz
-https://raw.githubusercontent.com/kaitlinchaung/nomad/main/test_data/SRX14565346_SRR18431612_1.fastq.gz
-https://raw.githubusercontent.com/kaitlinchaung/nomad/main/test_data/SRX14565361_SRR18431597_1.fastq.gz
+sample_A,SRX14565338_SRR18431620_1,https://raw.githubusercontent.com/kaitlinchaung/nomad/main/test_data/SRX14565338_SRR18431620_1.fastq.gz
+sample_B,SRX14565342_SRR18431616_1,https://raw.githubusercontent.com/kaitlinchaung/nomad/main/test_data/SRX14565342_SRR18431616_1.fastq.gz
+sample_A,SRX14565346_SRR18431612_1,https://raw.githubusercontent.com/kaitlinchaung/nomad/main/test_data/SRX14565346_SRR18431612_1.fastq.gz
+sample_B,SRX14565361_SRR18431597_1,https://raw.githubusercontent.com/kaitlinchaung/nomad/main/test_data/SRX14565361_SRR18431597_1.fastq.gz
