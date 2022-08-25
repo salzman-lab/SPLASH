@@ -47,7 +47,7 @@ def main():
 
     df = df.replace('*', np.nan)
 
-    df.to_csv(f"genome_annotations_anchors_{args.fasta_name}.tsv", index=False, sep='\t')
+    df.to_csv(f"genome_annotations_anchors.tsv", index=False, sep='\t')
 
 
 main()

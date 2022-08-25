@@ -2,6 +2,10 @@
 process GENOME_ANNOTATIONS {
 
     tag "${samplesheet_id}"
+    publishDir (
+        path: {"${params.outdir}/${samplesheet_id}/genome_annotations"},
+        mode: "copy",
+        pattern: "*.tsv")
     label 'process_high'
     conda (params.enable_conda ? 'bioconda::bowtie2=2.4.4 bioconda::samtools=1.15.1 conda-forge::pigz=2.6 pandas' : null)
 
@@ -13,7 +17,7 @@ process GENOME_ANNOTATIONS {
     tuple val(samplesheet_id), path(anchor_hits) , emit: annotated_anchors, optional: true
 
     script:
-    anchor_hits = "genome_annotations_anchors_${samplesheet_id}.tsv"
+    anchor_hits = "genome_annotations_anchors.tsv"
     """
     samtools view ${transcriptome_bam} \\
         | cut -f1,3 \\

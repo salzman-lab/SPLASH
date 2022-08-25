@@ -263,6 +263,12 @@ workflow NOMAD {
         )
 
         anchors_pvals
+            .map{ it ->
+                tuple(
+                    it[0],
+                    it[2]
+                )
+            }
             .mix(
                 ELEMENT_ANNOTATIONS.out.annotated_anchors,
                 GENOME_ANNOTATIONS.out.annotated_anchors

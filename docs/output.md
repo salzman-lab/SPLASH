@@ -11,20 +11,17 @@ The directories listed below will be created in the results directory after the 
 
 ### `./anchors_pvals.tsv`
 1. anchor: the anchor in question
-2. pv_hand: uncorrected p values with handcrafted di's
-3. pv_hash: uncorrected p values from random hash functions
-4. pv_hand_sheetCjs: uncorrected p values from handcrafted di’s using the samplesheet 5. c_j’s
-5. pv_hash_sheetCjs: uncorrected p values from random hash functions using the samplesheet c_j’s
-6. effectSize_randCjs: measure of effect size listed in previous section, using random cjs and corresponding maximizing random hash (paired with pv_hash)
-7. effectSize_sheetCjs: measure of effect size above, using sheet cjs and corresponding maximizing random hash (analogous to pv_hash_sheetCjs)
-8. OptHash: index of optimizing hash for pv_hash computation, mmh3 hash library with this seed
-9. M: total number of reads used in the contingency table
-10. entropy: entropy of total target distribution for this anchor (a label agnostic measure)
-11. mu_ham: mu for handcrafted di's: for each target sequence, we take di to be the target's hamming distance to the most abundant target. This yields the handcrafted d_i’s, which take values between 0 and 27 (the k-mer size). For mu_ham, we take the average of all of these over this given anchor. This measure indicates diversity of target sequences.
-12. mu_lev: same as mu_ham, but with levenshtein distance instead of hamming.
-13. pv_hash_both: 2*min(pv_hash, pv_hash_sheetCjs), Bonferonni corrected p value
-14. pv_hash_both_corrected: BY corrected q values for pv_hash_both across all anchors for this dataset (Benjamini Yekutieli, BH with correction for arbitrary dependence)
-cj_rand_${sample}: optimizing cj for pv_hash for the given sample
+2. pval_random: uncorrected p values from random hash functions
+3. pval_samplesheet: uncorrected p values from random hash functions using the samplesheet c_j’s
+4. effect_size_random: measure of effect size listed in previous section, using random cjs and corresponding maximizing random hash (paired with pv_hash)
+5. effect_size_samplesheet: measure of effect size above, using sheet cjs and corresponding maximizing random hash (analogous to pv_hash_sheetCjs)
+6. num_observations: total number of reads used in the contingency table
+7. target_entropy: entropy of total target distribution for this anchor (a label agnostic measure)
+8. mean_target_hamming_distance: mu for handcrafted di's: for each target sequence, we take di to be the target's hamming distance to the most abundant target. This yields the handcrafted d_i’s, which take values between 0 and 27 (the k-mer size). For mu_ham, we take the average of all of these over this given anchor. This measure indicates diversity of target sequences.
+9. mean_target_levenshtein_distance: same as mu_ham, but with levenshtein distance instead of hamming.
+10. number_nonzero_samples: number of samples without zero counts
+11. pval_aggregated: 2*min(pv_hash, pv_hash_sheetCjs), Bonferonni corrected p value
+12. pval_aggregated_corrected: BY corrected q values for pval_aggregated across all anchors for this dataset (Benjamini Yekutieli, BH with correction for arbitrary dependence)
 
 ### `./element_annotations/annotated_[anchors/targets].tsv`
 1. [anchor/target]: the sequence in question
@@ -34,16 +31,11 @@ cj_rand_${sample}: optimizing cj for pv_hash for the given sample
 
 ### `./genome_annotations/genome_annotations_[anchor/target/consensus_fastq_id].tsv`
 1. [anchor/target/anchor of the consensus]: the sequence in question
-2. local_strand: when aligned in bowtie2 local mode, the strand of the sequence genome alignment
-3. local_gene: when aligned in bowtie2 local mode, a unique list of annotated genes that have any intersection with the sequence genome alignment
-4. local_gene_MAPQ:  when aligned in bowtie2 local mode, the MAPQ score of the sequence genome alignment
-5. local_transcript: when aligned in bowtie2 local mode, the sequence alignment to the reference transcriptome
-6. local_transcriptome_MAPQ: when aligned in bowtie2 local mode, the MAPQ score of the sequence transcriptome alignment
-7. end_to_end_strand: when aligned in bowtie2 end-to-end mode, the strand of the sequence genome alignment
-8. end_to_end_gene: when aligned in bowtie2 end-to-end mode, a unique list of annotated genes that have any intersection with the sequence genome alignment
-9. end_to_end_gene_MAPQ: when aligned in bowtie2 end-to-end mode, the MAPQ score of the sequence genome alignment
-10. end_to_end_transcript: when aligned in bowtie2 end-to-end mode, the sequence alignment to the reference transcriptome
-11. end_to_end_transcriptome_MAPQ: when aligned in bowtie2 end-to-end mode, the MAPQ score of the sequence transcriptome alignment
+2. strand: when aligned in bowtie2 local mode, the strand of the sequence genome alignment
+3. gene: when aligned in bowtie2 local mode, a unique list of annotated genes that have any intersection with the sequence genome alignment
+4. gene_MAPQ:  when aligned in bowtie2 local mode, the MAPQ score of the sequence genome alignment
+5. transcript: when aligned in bowtie2 local mode, the sequence alignment to the reference transcriptome
+6. transcriptome_MAPQ: when aligned in bowtie2 local mode, the MAPQ score of the sequence transcriptome alignment
 
 ### `./consensus_anchors/splicing_annotations/consensus_called_exons.tsv`
 1. called_exon_chr: the chromosome of the called exon boundary
@@ -54,7 +46,7 @@ cj_rand_${sample}: optimizing cj for pv_hash for the given sample
 6. sample: sample ID, corresponding to the fastq file from which the consensus sequence was built
 7. anchor: anchor sequence of the consensus sequence
 8. consensus: consensus sequence from which the called exons are called from
-9. anchor_local_gene: when the anchor is aligned in bowtie2 end-to-end mode, a unique list of annotated genes that have any intersection with the anchor genome alignment
+9. anchor_gene: when the anchor is aligned in bowtie2 end-to-end mode, a unique list of annotated genes that have any intersection with the anchor genome alignment
 10. anchor_end_to_end_gene: when the anchor is aligned in bowtie2 local mode, a unique list of annotated genes that have any intersection with the anchor genome alignment
 11. consensus_gene: a list of unique genes that have any intersection with the consensus` called exons
 12. consensus_reported_aligment: the consensus sequence’s alignment, as reported by STAR
