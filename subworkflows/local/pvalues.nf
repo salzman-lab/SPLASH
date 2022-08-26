@@ -102,9 +102,9 @@ workflow PVALUES {
         // Only proceed with non empty pvals files
         anchors_Cjs   = SIGNIFICANT_ANCHORS.out.cjs
         anchors_pvals = SIGNIFICANT_ANCHORS.out.scores
-            .filter{
-                it[2].countLines() > 1
-            }
+            // .filter{
+            //     it[2].countLines() > 1
+            // }
 
     }
 

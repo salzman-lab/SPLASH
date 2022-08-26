@@ -230,19 +230,13 @@ workflow NOMAD {
             .splitCsv(
                 header: false
             )
-            .map{ row ->
-                row[0]
-            }
+            .map{ row -> row[0] }
 
         // Cartesian join of anchor fasta and all bowtie2 indices
         ch_anchor_indices = anchor_fasta
-            .map{ it ->
-                [it[0], it[2]]
-            }
+            .map{ it -> [it[0], it[2]] }
             .combine(ch_indices)
-            .map{ it ->
-                it.flatten()
-            }
+            .map{ it -> it.flatten() }
 
         /*
         // Process: Align anchors to each bowtie2 index
@@ -262,23 +256,18 @@ workflow NOMAD {
             ch_element_alignments
         )
 
+        GENOME_ANNOTATIONS.out.annotated_anchors.view()
+
         anchors_pvals
-            .map{ it ->
-                tuple(
-                    it[0],
-                    it[2]
-                )
-            }
+            .map{ it -> [it[0], it[2]] }
             .mix(
                 ELEMENT_ANNOTATIONS.out.annotated_anchors,
                 GENOME_ANNOTATIONS.out.annotated_anchors
             )
             .groupTuple()
-            .map{ it ->
-                it.flatten()
-            }
+            .map{ id, files -> [id, files.sort{it.name}].flatten() }
             .view()
-            .set { ch_anchor_annotations}
+            .set{ ch_anchor_annotations}
 
         /*
         // Process: Make summary file
