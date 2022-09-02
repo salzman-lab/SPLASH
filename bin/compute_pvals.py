@@ -35,6 +35,11 @@ def get_args():
         type=int,
         default=27
     )
+    parser.add_argument( ### length of target used
+        "--target_size",
+        type=int,
+        default=27
+    )
     parser.add_argument( ### number of hashes to use
         "--K",
         type=int,
@@ -139,7 +144,7 @@ def main():
     ### split seq into anchor and target
     ### for some reason some files have duplicates, so drop those
     df['anchor'] = df.seq.str[:args.kmer_size]
-    df['target'] = df.seq.str[args.kmer_size:]
+    df['target'] = df.seq.str[args.target_size:]
     df = df.drop(columns='seq').drop_duplicates()
 
     ### add in informational columns for each anchor for filtering purposes
