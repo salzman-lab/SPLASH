@@ -10,6 +10,7 @@ process FETCH_ANCHORS {
     val is_10X
     val num_reads_first_pass
     val kmer_size
+    val target_size
     val lookahead
     val anchor_mode
     val window_slide
@@ -26,6 +27,7 @@ process FETCH_ANCHORS {
         --id ${id} \\
         --num_lines ${num_reads_first_pass} \\
         --kmer_size ${kmer_size} \\
+        --target_size ${target_size} \\
         --lookahead ${lookahead} \\
         --anchor_mode ${anchor_mode} \\
         --window_slide ${window_slide} \\
