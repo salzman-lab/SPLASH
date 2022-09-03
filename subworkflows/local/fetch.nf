@@ -34,6 +34,7 @@ workflow FETCH {
         params.run_type,
         params.num_reads_first_pass,
         params.kmer_size,
+        params.target_size,
         lookahead,
         params.anchor_mode,
         params.window_slide
@@ -74,7 +75,8 @@ workflow FETCH {
     GET_ABUNDANT_ANCHORS(
         ch_stratified_anchors,
         params.anchor_count_threshold,
-        params.kmer_size
+        params.kmer_size,
+        params.target_size
     )
 
     abudant_seqs                    = GET_ABUNDANT_ANCHORS.out.anchor_counts
@@ -97,6 +99,7 @@ workflow FETCH {
         COMPUTE_PVALS(
             abundant_stratified_anchors,
             params.kmer_size,
+            params.target_size,
             file(params.input),
             params.K_num_hashes,
             params.L_num_random_Cj,
