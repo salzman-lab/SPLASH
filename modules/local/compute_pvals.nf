@@ -7,6 +7,7 @@ process COMPUTE_PVALS {
     input:
     path counts
     val kmer_size
+    val target_size
     path samplesheet
     val K_num_hashes
     val L_num_random_Cj
@@ -28,6 +29,7 @@ process COMPUTE_PVALS {
     compute_pvals.py \\
         --infile ${counts} \\
         --kmer_size ${kmer_size} \\
+        --target_size ${target_size} \\
         --samplesheet ${samplesheet} \\
         --K ${K_num_hashes} \\
         --L ${L_num_random_Cj} \\
