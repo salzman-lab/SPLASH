@@ -21,6 +21,7 @@ workflow ANALYZE {
         params.num_reads_second_pass,
         params.consensus_length,
         params.kmer_size,
+        params.target_size,
         params.direction,
         lookahead
     )
