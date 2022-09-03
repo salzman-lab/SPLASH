@@ -29,10 +29,7 @@ def get_args():
     parser.add_argument(
         "--kmer_size",
         type=int
-    )
-    parser.add_argument(
-        "--target_size",
-        type=int
+        default=27
     )
     parser.add_argument(
         "--anchor_pvals",
@@ -567,14 +564,13 @@ def plotContingency(dfpvals, sampleNames, dfcts, anch, cjSheet, useSheetCjs, arg
 ### construct anchor target counts matrix from raw abundant_stratified files
 def constructCountsDf(anchLst, args):
     kmer_size = args.kmer_size
-    target_size = args.target_size
     dfs = []
     paths = glob.glob("abundant_stratified_*.txt.gz")
     print('reading in abudant_stratified files')
     for path in paths:
         df = pd.read_csv(path.strip(), delim_whitespace=True, names=['counts','seq','sample'])
         df['anchor'] = df.seq.str[:kmer_size]
-        df['target'] = df.seq.str[target_size:]
+        df['target'] = df.seq.str[kmer_size:]
         df = df.drop(columns='seq').drop_duplicates()
         df = df[df.anchor.isin(anchLst)]
         dfs.append(df)
