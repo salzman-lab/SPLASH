@@ -7,7 +7,8 @@ process GET_ABUNDANT_ANCHORS {
     path counts
     val anchor_count_threshold
     val kmer_size
-
+    val target_size 
+    
     output:
     path "*gz"                      , emit: seqs
     path outfile_anchors_counts     , emit: anchor_counts
