@@ -11,6 +11,7 @@ process PARSE_ANCHORS {
     val num_reads_second_pass
     val consensus_length
     val kmer_size
+    val target_size
     val direction
     val lookahead
 
@@ -38,6 +39,7 @@ process PARSE_ANCHORS {
         --out_target_file ${out_target_file} \\
         --consensus_length ${consensus_length} \\
         --kmer_size ${kmer_size} \\
+        --target_size ${target_size} \\
         --direction ${direction} \\
         --lookahead ${lookahead}
     """
