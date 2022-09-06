@@ -50,7 +50,7 @@ def build_consensus(kmers, consensus_length, direction):
     return baseComp, baseCount, baseFrac
 
 
-def get_targets_consensus_seqs(fastq_file, num_lines, anchor_dict, consensus_length, kmer_size, lookahead, direction):
+def get_targets_consensus_seqs(fastq_file, num_lines, anchor_dict, consensus_length, kmer_size, target_size, lookahead, direction):
     """
     For each read, check if there are any valid targets and/or consensus sequences,
     and append them to their respective dictionaries
@@ -91,7 +91,7 @@ def get_targets_consensus_seqs(fastq_file, num_lines, anchor_dict, consensus_len
                         if direction == 'down':
                             # get downstream target start and end positions
                             target_start = anchor_end + lookahead
-                            target_end = target_start + kmer_size
+                            target_end = target_start + target_size
 
                             # get downstream consensus start and end positions
                             consensus_seq_start = anchor_end
@@ -100,7 +100,7 @@ def get_targets_consensus_seqs(fastq_file, num_lines, anchor_dict, consensus_len
                         if direction == 'up':
                             # get upstream target stand and end positions
                             target_end = anchor_start - lookahead
-                            target_start = max(0, anchor_end - (kmer_size + lookahead))
+                            target_start = max(0, target_end - target_size)
 
                             # get upstream consensus start and end positions
                             consensus_seq_end = anchor_start
@@ -111,7 +111,7 @@ def get_targets_consensus_seqs(fastq_file, num_lines, anchor_dict, consensus_len
                         consensus_seq = read[consensus_seq_start:consensus_seq_end]
 
                         # if target is large enough, add it to the target_dict
-                        if len(target) == kmer_size:
+                        if len(target) == target_size:
                             anchor_tuple = (anchor, target)
 
                             if anchor_tuple not in target_dict:
@@ -220,6 +220,11 @@ def get_args():
         help='kmer size'
     )
     parser.add_argument(
+        "--target_size",
+        type=int,
+        help='target size'
+    )
+    parser.add_argument(
         "--direction",
         type=str,
         help='up or down'
@@ -250,6 +255,7 @@ def main():
     logging.info(f'consensus_length = {args.consensus_length}')
     logging.info(f'direction        = {args.direction}')
     logging.info(f'kmer_size        = {args.kmer_size}')
+    logging.info(f'target_size      = {args.target_size}')
     logging.info(f'lookahead        = {args.lookahead}')
     logging.info("--------------------------------------Parameters--------------------------------------")
     logging.info('')
@@ -268,13 +274,14 @@ def main():
 
     logging.info(f'Starting target fetching')
 
-    # get all of the next kmers for the anchors in PREPARATION FOR BUILDING CONCENSUS
+    # get all of the next kmers for the anchors in PREPARATION FOR BUILDING CONSENSUS
     target_dict, consensus_dict = get_targets_consensus_seqs(
         args.fastq_file,
         args.num_lines,
         anchor_dict,
         args.consensus_length,
         args.kmer_size,
+        args.target_size,
         args.lookahead,
         args.direction
     )
