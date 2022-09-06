@@ -19,6 +19,7 @@ workflow FETCH {
         params.is_10X,
         params.num_reads_first_pass,
         params.kmer_size,
+        params.target_size,
         lookahead,
         params.anchor_mode,
         params.window_slide
