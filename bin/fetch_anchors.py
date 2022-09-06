@@ -23,6 +23,10 @@ def get_args():
         type=int
     )
     parser.add_argument(
+        "--target_size",
+        type=int
+    )
+    parser.add_argument(
         "--lookahead",
         type=int
     )
@@ -73,7 +77,7 @@ def main():
 
                     # get target start and end positions, as a function of anchor end
                     target_start = (args.kmer_size+i) + args.lookahead
-                    target_end = target_start + args.kmer_size
+                    target_end = target_start + args.target_size
 
                     # get target
                     target = read[target_start : target_end]
@@ -100,7 +104,7 @@ def main():
 
                         # get target start and end positions, as a function of anchor end
                         target_start = (args.kmer_size+i) + args.lookahead
-                        target_end = target_start + args.kmer_size
+                        target_end = target_start + args.target_size
 
                         # get target
                         target = read[target_start : target_end]
