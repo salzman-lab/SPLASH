@@ -51,6 +51,7 @@ workflow SKIP_GET_ANCHORS {
         params.num_parse_anchors_reads,
         params.consensus_length,
         params.kmer_size,
+        params.target_size,
         params.direction,
         lookahead
     )
