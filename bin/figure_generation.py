@@ -25,6 +25,10 @@ def get_args():
         type=str,
         default=""
     )
+    parser.add_argument(
+        "--kmer_size",
+        type=int
+    )
     parser.add_argument( ### take in additional_summary.tsv file
         "--pvals_all_file",
         type=str,
@@ -511,7 +515,7 @@ def plotContingency(dfpvals,dfcts,anch,cjSheet,args,plotConsensus=False):
     
 ### construct anchor target counts matrix from raw abundant_stratified files
 def constructCountsDf(strat_fldr,anchLst):
-    kmer_size = 27
+    kmer_size = args.kmer_size
     dfs = []
     paths = glob.glob(strat_fldr+"/abundant_stratified_*.txt.gz")
     print('reading in abudant_stratified files')
