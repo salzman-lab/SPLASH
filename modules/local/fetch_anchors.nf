@@ -8,7 +8,7 @@ process FETCH_ANCHORS {
     input:
     tuple val(id), path(fastq)
     val is_10X
-    val num_reads_first_pass
+    val num_fastq_reads
     val kmer_size
     val lookahead
     val anchor_mode
@@ -25,7 +25,7 @@ process FETCH_ANCHORS {
     fetch_anchors.py \\
         --infile ${fastq} \\
         --id ${id} \\
-        --num_lines ${num_reads_first_pass} \\
+        --num_fastq_reads ${num_fastq_reads} \\
         --kmer_size ${kmer_size} \\
         --lookahead ${lookahead} \\
         --anchor_mode ${anchor_mode} \\

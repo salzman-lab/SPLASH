@@ -10,8 +10,6 @@
             "type": "object",
             "fa_icon": "fas fa-terminal",
             "description": "Define where the pipeline should find input data and save output data.",
-            "required": [
-            ],
             "properties": {
                 "input": {
                     "type": "string",
@@ -247,40 +245,6 @@
         }
     ],
     "properties": {
-        "bowtie2_samplesheet": {
-            "type": "string",
-            "default": "/oak/stanford/groups/horence/kaitlin/bowtie2_annotations/references/bowtie2_index_samplesheet.csv"
-        },
-        "chunk_size": {
-            "type": "integer",
-            "default": 10000
-        },
-        "n_iterations": {
-            "type": "integer",
-            "default": 100
-        },
-        "consensus_length": {
-            "type": "integer",
-            "default": 200
-        },
-        "kmer_size": {
-            "type": "integer",
-            "default": 27
-        },
-        "direction": {
-            "type": "string",
-            "default": "down"
-        },
-        "adj_distance": {
-            "type": "integer",
-            "default": 0
-        },
-        "genome": {
-            "type": "string",
-            "description": "Name of iGenomes reference.",
-            "fa_icon": "fas fa-book",
-            "help_text": "If using a reference genome configured in the pipeline using iGenomes, use this parameter to give the ID for the reference. This is then used to build the full paths for all required reference genome files e.g. `--genome GRCh38`. \n\nSee the [nf-core website docs](https://nf-co.re/usage/reference_genomes) for more details."
-        },
         "fasta": {
             "type": "string",
             "format": "file-path",
@@ -289,6 +253,12 @@
             "description": "Path to FASTA genome file.",
             "help_text": "This parameter is *mandatory* if `--genome` is not specified. If you don't have a BWA index available this will be generated for you automatically. Combine with `--save_reference` to save BWA index for future runs.",
             "fa_icon": "far fa-file-code"
+        },
+        "genome": {
+            "type": "string",
+            "description": "Name of iGenomes reference.",
+            "fa_icon": "fas fa-book",
+            "help_text": "If using a reference genome configured in the pipeline using iGenomes, use this parameter to give the ID for the reference. This is then used to build the full paths for all required reference genome files e.g. `--genome GRCh38`. \n\nSee the [nf-core website docs](https://nf-co.re/usage/reference_genomes) for more details."
         },
         "igenomes_base": {
             "type": "string",
@@ -304,6 +274,143 @@
             "fa_icon": "fas fa-ban",
             "hidden": true,
             "help_text": "Do not load `igenomes.config` when running the pipeline. You may choose this option if you observe clashes between custom parameters and those supplied in `igenomes.config`."
+        },
+        "kmer_size": {
+            "type": "integer",
+            "default": 27,
+            "description": "Length of anchor and target sequences"
+        },
+        "K_num_hashes": {
+            "type": "integer",
+            "default": 10,
+            "description": "Number of random hashes in significance calculations"
+        },
+        "L_num_random_Cj": {
+            "type": "integer",
+            "default": 50,
+            "description": "Number of random c_j in significance calculations"
+        },
+        "anchor_unique_targets_threshold": {
+            "type": "integer",
+            "default": 1,
+            "description": "Minimum number of unique targets to calculate pvalues for an anchor"
+        },
+        "anchor_samples_threshold": {
+            "type": "integer",
+            "default": 1,
+            "description": "Minimum number of samples required to calculate pvalues for an anchor"
+        },
+        "anchor_sample_counts_threshold": {
+            "type": "integer",
+            "default": 5,
+            "description": "Minimum number of counts across samples required to calculate pvalues for an anchor"
+        },
+        "num_control_anchors": {
+            "type": "integer",
+            "default": 1000,
+            "description": "When running control analysis, the number of abundant anchors to use"
+        },
+        "cells_split_across_lanes": {
+            "type": "boolean",
+            "default": true,
+            "description": "If the same cells have been sequenced across many sequencing lanes"
+        },
+        "abundant_stratified_anchors": {
+            "type": "string",
+            "default": "None",
+            "description": "Path to directory containing previously-computed abundant stratified anchors files"
+        },
+        "anchors_file": {
+            "type": "string",
+            "default": "None",
+            "description": "File containing list of anchors to perform annotations for"
+        },
+        "is_10X": {
+            "type": "boolean",
+            "description": "If the input data is from 10X"
+        },
+        "is_RNAseq": {
+            "type": "boolean",
+            "description": "If the input data is RNAseq"
+        },
+        "run_unsupervised_pvals": {
+            "type": "boolean",
+            "description": "If pvalues should be calculated without samplesheet Cj's"
+        },
+        "run_control": {
+            "type": "boolean",
+            "description": "If control analysis should be run on abundant anchors"
+        },
+        "run_annotations": {
+            "type": "boolean",
+            "description": "If annotation steps should be performed on significant anchors"
+        },
+        "run_pvals_only": {
+            "type": "boolean",
+            "description": "If the pipeline should terminate after pvalue computation"
+        },
+        "cell_barcode_samplesheet": {
+            "type": "string",
+            "default": null
+        },
+        "element_annotations_samplesheet": {
+            "type": "string",
+            "default": null
+        },
+        "genome_index": {
+            "type": "string",
+            "default": null
+        },
+        "transcriptome_index": {
+            "type": "string",
+            "default": null
+        },
+        "gene_bed": {
+            "type": "string",
+            "default": null
+        },
+        "num_fastq_reads": {
+            "type": "integer",
+            "default": 4000000,
+            "description": "Number of fastq reads to parse"
+        },
+        "anchor_mode": {
+            "type": "string",
+            "default": "tile",
+            "description": "\"tile\" for overlapping anchors, \"chunk\" for adjacent disjoint anchors",
+            "enum": [
+                "chunk",
+                "tile"
+            ]
+        },
+        "window_slide": {
+            "type": "integer",
+            "default": 5,
+            "description": "If in \"tile\" anchor_mode, the intervals at which anchor sequences start"
+        },
+        "lookahead": {
+            "type": "string",
+            "default": null
+        },
+        "fdr_threshold": {
+            "type": "number",
+            "default": 0.05,
+            "description": "FDR threshold for significance calculation"
+        },
+        "stratify_level": {
+            "type": "integer",
+            "default": 3,
+            "description": "The number of parallelizations to utilize during p value computations, will be equal to 4^stratify_level parallelizations"
+        },
+        "anchor_batch_size": {
+            "type": "integer",
+            "default": 1000,
+            "description": "The number of anchors used in p value computation per batch, lower values will use less memory"
+        },
+        "anchor_count_threshold": {
+            "type": "integer",
+            "default": 50,
+            "description": "Minimum number of total counts required to calculate pvalues for an anchor"
         }
     }
 }

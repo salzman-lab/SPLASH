@@ -17,7 +17,7 @@ workflow FETCH {
     FETCH_ANCHORS(
         ch_fastqs,
         params.is_10X,
-        params.num_reads_first_pass,
+        params.num_fastq_reads,
         params.kmer_size,
         lookahead,
         params.anchor_mode,
