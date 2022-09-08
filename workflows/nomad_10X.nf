@@ -88,7 +88,7 @@ workflow NOMAD_10X {
 
     } else {
         // Define lookahead parameter
-        if (params.lookahead) {
+        if (params.lookahead != null) {
             lookahead = params.lookahead
 
         } else {
