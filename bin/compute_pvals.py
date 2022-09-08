@@ -147,13 +147,14 @@ def main():
     df['anch_uniqTargs'] = df.groupby('anchor').target.transform('nunique')
     df['anch_samples']= df.groupby('anchor')['sample'].transform('nunique')
     df['anchSample_cts'] = df.groupby(['anchor','sample']).counts.transform('sum')
+    df['anch_cts'] = df.groupby('anchor').counts.transform('sum') ## number of reads per anchor
+
     df = df[
+        (df.anch_cts > args.anchor_count_threshold) &
         (df.anch_uniqTargs > args.anchor_unique_targets_threshold) &
         (df.anch_samples > args.anchor_samples_threshold) &
         (df.anchSample_cts > args.anchor_sample_counts_threshold)
     ]
-    df['anch_cts'] = df.groupby('anchor').counts.transform('sum') ## number of reads per anchor
-    df = df[df.anch_cts > args.anchor_count_threshold]
 
     print('done filtering')
 
