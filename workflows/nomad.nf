@@ -93,7 +93,6 @@ workflow NOMAD {
                     file(row[2])
                 )
             }
-
     }
 
     // Begin workflow
@@ -104,7 +103,7 @@ workflow NOMAD {
 
     } else {
         // Define lookahead parameter
-        if (params.lookahead) {
+        if (params.lookahead != null) {
             lookahead = params.lookahead
 
         } else {

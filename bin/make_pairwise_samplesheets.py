@@ -33,11 +33,13 @@ def main():
 
     if args.is_10X:
 
-        # read in fastq samplesheet
+        # read in id and cell barcode samplesheet
         samplesheet = pd.read_csv(
             args.samplesheet,
-            names=['id', 'metadata']
+            names=['metadata', 'cbc', 'channel']
         )
+
+        samplesheet['id'] = samplesheet['cbc'] + "_" + samplesheet['channel']
 
         if args.run_unsupervised_pvals:
             # create one samplesheet without Cjs, to be assigned during computation

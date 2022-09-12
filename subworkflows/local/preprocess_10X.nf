@@ -71,7 +71,7 @@ workflow PREPROCESS_10X {
     */
     EXTRACT_CBC_UMI(
         ch_channel_fastqs,
-        params.num_reads_first_pass
+        params.num_fastq_reads
     )
 
     /*
