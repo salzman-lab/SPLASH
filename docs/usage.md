@@ -17,28 +17,40 @@ The input samplesheet should be a comma-separated file with no header.
 
 If paired end sequencing data is being used, please only use files from only Read 1 or files from only Read 2.
 
-Here is an example samplesheet for bulk RNAseq or SS2 fastq files. The first column is the sample--this is where metadata information can be incorporated. The second column is the fastq file identifier. The third column is the full path to the fastq.
+Here is an example samplesheet for bulk RNAseq or SS2 fastq files. The first column is the sample--this is where metadata information can be incorporated. The second column is the unique fastq file identifier. The third column is the full path to the fastq.
 ```
-muscle_cells,file1,/data/file1.fastq.gz
-muscle_cells,file2,/data/file2.fastq.gz
-lung_cells,file3,/data/file3.fastq.gz
-lung_cells,file4,/data/file4.fastq.gz
-```
-
-Here is an example samplesheet for 10X fastq files. The first column is sample or channel name, where channels can be used to process many fastq files as part of the same group. The second column is the R1 fastq file, and the third column is the paired R2 fastq file.
-```
-muscle,/data/file1_R1.fastq.gz,/data/file1_R1.fastq.gz
-muscle,/data/file2_R1.fastq.gz,/data/file2_R1.fastq.gz
-muscle,/data/file3_R1.fastq.gz,/data/file3_R1.fastq.gz
-muscle,/data/file4_R1.fastq.gz,/data/file4_R1.fastq.gz
+muscle_cells,sample_1,/data/sample_1.fastq.gz
+muscle_cells,sample_2,/data/sample_2.fastq.gz
+brain_cells,sample_3,/data/sample_3.fastq.gz
+brain_cells,sample_4,/data/sample_4.fastq.gz
 ```
 
-10X runs also require another parameter, `--cell_barcode_samplesheet`. The first column must contain the CBC and channel, separated by an underscore, in each row. The second column may contain the metadata information, such as cell type. Here is an example of a `--cell_barcode_samplesheet`.
+Here is an example samplesheet for 10X fastq files. The first column is sample or channel name, where channels can be used to process many fastq files as part of the same group. The second column is the R1 fastq file, and the third column is the paired R2 fastq file. In this case, `--cells_split_across_lanes true` because many FASTQ files belong to the same channel.
 ```
-muscle_AAAA,capillary
-muscle_CCCC,capillary
-muscle_GGGG,macrophage
-muscle_TTTT,macrophage
+muscle,/data/muscle_L001_R1.fastq.gz,/data/muscle_L001_R2.fastq.gz
+muscle,/data/muscle_L002_R1.fastq.gz,/data/muscle_L002_R2.fastq.gz
+muscle,/data/muscle_L003_R1.fastq.gz,/data/muscle_L003_R2.fastq.gz
+muscle,/data/muscle_L004_R1.fastq.gz,/data/muscle_L004_R2.fastq.gz
+brain,/data/brain_L001_R1.fastq.gz,/data/brain_L001_R2.fastq.gz
+brain,/data/brain_L002_R1.fastq.gz,/data/brain_L002_R2.fastq.gz
+brain,/data/brain_L003_R1.fastq.gz,/data/brain_L003_R2.fastq.gz
+brain,/data/brain_L004_R1.fastq.gz,/data/brain_L004_R2.fastq.gz
+```
+
+Here is an example samplesheet for 10X fastq files. The first column is sample or channel name, where channels can be used to process many fastq files as part of the same group. The second column is the R1 fastq file, and the third column is the paired R2 fastq file. In this case, `--cells_split_across_lanes false` because one FASTQ file correspondds to one channel.
+```
+muscle,/data/muscle_R1.fastq.gz,/data/muscle_R2.fastq.gz
+brain,/data/brain_R1.fastq.gz,/data/brain_R2.fastq.gz
+liver,/data/liver_R1.fastq.gz,/data/liver_R2.fastq.gz
+lung,/data/lung_R1.fastq.gz,/data/lung_R2.fastq.gz
+```
+
+10X runs also require another parameter, `--cell_barcode_samplesheet`. The first column must contain the metadata information, such as cell type. The second column must contain the cell barcode, and the third column must contain the channel. Here is an example of a `--cell_barcode_samplesheet`.
+```
+capillary,AAAA,muscle
+capillary,CCCC,muscle
+macrophage,GGGG,muscle
+macrophage,TTTT,muscle
 ```
 
 *`--element_annotations_samplesheet`*
