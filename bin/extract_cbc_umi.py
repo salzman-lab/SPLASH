@@ -11,10 +11,6 @@ def get_args():
         type=str
     )
     parser.add_argument(
-        "--num_lines",
-        type=int
-    )
-    parser.add_argument(
         "--id",
         type=str
     )
@@ -25,7 +21,6 @@ def get_args():
     args = parser.parse_args()
     return args
 
-
 def main():
     args = get_args()
 
@@ -34,9 +29,6 @@ def main():
     file = gzip.open(args.outfile, 'wb')
     with gzip.open(args.infile, 'rt') as infile:
         for line in infile:
-            if args.num_lines != 0:
-                if x > args.num_lines:
-                    break
 
             x += 1
             if x % 4 == 1:

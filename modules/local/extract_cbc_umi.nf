@@ -6,7 +6,6 @@ process EXTRACT_CBC_UMI {
 
     input:
     tuple val(id), path(fastq)
-    val num_fastq_reads
 
     output:
     tuple val(id), path(outfile)  , emit: seqs
@@ -16,7 +15,6 @@ process EXTRACT_CBC_UMI {
     """
     extract_cbc_umi.py \\
         --infile ${fastq} \\
-        --num_lines ${num_fastq_reads} \\
         --id ${id} \\
         --outfile ${outfile}
     """
