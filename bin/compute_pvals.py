@@ -126,6 +126,9 @@ def main():
         sheetdf = pd.read_csv(args.samplesheet, names=['sample','sheetCj'])
         sheetdf['sheetCj'] = normalizevec(sheetdf['sheetCj'])
 
+        df['sample'] = df['sample'].astype('str')
+        sheetdf['sample'] = sheetdf['sample'].astype('str')
+
         df = pd.merge(df, sheetdf)
 
     ### split seq into anchor and target
