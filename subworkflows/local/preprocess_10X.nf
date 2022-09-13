@@ -20,20 +20,35 @@ workflow PREPROCESS_10X {
             ch_paired_fastqs
         )
         ch_umitools_fastqs = UMITOOLS.out.fastqs
+            .map{ it ->
+                    tuple(
+                        it[0],
+                        it[2]
+                    )
+                }
 
     } else {
         ch_umitools_fastqs = ch_paired_fastqs
             .map{ it ->
                 tuple(
-                    it[0],
-                    it[2]
+                    it[0],  // channel
+                    it[2]   // R2
                 )
             }
 
     }
 
+    /*
+    // Process to extract CBC and UMI from fastq header, and write out CBC_UMI with read
+    */
+    EXTRACT_CBC_UMI(
+        ch_umitools_fastqs,
+        params.num_fastq_reads
+    )
+
+
     // Group files by channel, for deduplication by channel
-    ch_umitools_fastqs
+    EXTRACT_CBC_UMI.out.seqs
         .map { it ->
             tuple(
                 it[0],
@@ -54,22 +69,14 @@ workflow PREPROCESS_10X {
     // Process to concat fastqs by sample if cells are split across lanes
     */
     CONCAT_FASTQS(
-        ch_merged_fastqs,
-        params.num_fastq_reads
-    )
-
-    /*
-    // Process to extract CBC and UMI from fastq header, and write out CBC_UMI with read
-    */
-    EXTRACT_CBC_UMI(
-        CONCAT_FASTQS.out.fastqs
+        ch_merged_fastqs
     )
 
     /*
     // Process to deduplicate on sample_CBC_UMI
     */
     DEDUP_CBC_UMI(
-        EXTRACT_CBC_UMI.out.seqs
+        CONCAT_FASTQS.out.seqs
     )
 
     emit:
