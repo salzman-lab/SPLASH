@@ -1,7 +1,7 @@
 process EXTRACT_CBC_UMI {
 
     tag "${fastq.simpleName}"
-    label 'process_very_high'
+    label 'process_medium'
     conda (params.enable_conda ? "conda-forge::python=3.9.5" : null)
 
     input:
