@@ -2,7 +2,7 @@
 process FETCH_ANCHORS {
 
     tag "${id}"
-    label 'process_medium'
+    label 'process_very_high'
     conda (params.enable_conda ? "conda-forge::python=3.9.5" : null)
 
     input:
