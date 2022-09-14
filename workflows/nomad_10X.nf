@@ -214,7 +214,7 @@ workflow NOMAD_10X {
                 ELEMENT_ANNOTATIONS.out.annotated_anchors,
                 GENOME_ANNOTATIONS.out.annotated_anchors
             )
-            .groupTuple()
+            .groupTuple(sort: true)
             .map{ it ->
                 it.flatten()
             }
