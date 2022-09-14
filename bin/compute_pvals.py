@@ -144,6 +144,11 @@ def main():
     df['anchSample_cts'] = df.groupby(['anchor','sample']).counts.transform('sum')
     df['anch_cts'] = df.groupby('anchor').counts.transform('sum') ## number of reads per anchor
 
+    #### TEMP OUTPUT FOR DEBUGGING ####
+    outfile_count_matrix = "counts_" + args.infile.split('.')[0] + ".csv"
+    df.to_csv(outfile_count_matrix, index=False)
+    #### TEMP OUTPUT FOR DEBUGGING ####
+
     print(f"Size of df before filtering = {len(df)}")
 
     df = df[
@@ -185,7 +190,6 @@ def main():
     df['mean_target_levenshtein_distance'] = df['mu_0']
 
     df = mergedDf.drop(columns=['targ_cts','maxTarget'])
-
 
     #### hash based dij, randomly assign each target to 0 or 1
     for k in range(1,K):

@@ -21,6 +21,8 @@ process COMPUTE_PVALS {
     tuple val(samplesheet_id), path(samplesheet), path(outfile_scores), emit: scores, optional: true
     path "*extra_info*"         , emit: extra_info                  , optional: true
     path "*pkl"                 , emit: pkl                         , optional: true
+    // TEMP FOR DEBUGGING
+    path "*csv"
 
     script:
     def run_unsupervised_pvals  = (run_unsupervised_pvals == true)  ? "--run_unsupervised_pvals" : ""
