@@ -214,12 +214,13 @@ workflow NOMAD_10X {
                 ELEMENT_ANNOTATIONS.out.annotated_anchors,
                 GENOME_ANNOTATIONS.out.annotated_anchors
             )
-            .groupTuple(sort: true)
+            .groupTuple()
             .map{ it ->
                 it.flatten()
             }
             .view()
             .set { ch_anchor_annotations}
+
 
         /*
         // Process: Make summary file

@@ -16,14 +16,14 @@ def get_args():
         "--anchors_pvals",
         type=str
     )
-    parser.add_argument(
-        "--genome_annotations",
-        type=str
-    )
-    parser.add_argument(
-        "--element_annotations",
-        type=str
-    )
+    # parser.add_argument(
+    #     "--genome_annotations",
+    #     type=str
+    # )
+    # parser.add_argument(
+    #     "--element_annotations",
+    #     type=str
+    # )
     parser.add_argument(
         "--outfile",
         type=str
@@ -103,7 +103,7 @@ def main():
 
     ## read in anchors and their anchors_pvals
     anchors_pvals = (
-        pd.read_csv(args.anchors_pvals, sep='\t')
+        pd.read_csv("anchors_pvals.tsv", sep='\t')
         .drop_duplicates()
     )
 
@@ -114,11 +114,11 @@ def main():
     anchors_pvals_cols = [c for c in anchors_pvals.columns if "cj_" not in c]
     anchors_pvals = anchors_pvals[anchors_pvals_cols]
 
-    genome_annotations = pd.read_csv(args.genome_annotations, sep='\t')
+    genome_annotations = pd.read_csv("genome_annotations_anchors.tsv", sep='\t')
 
     df = pd.merge(anchors_pvals, genome_annotations, on='anchor')
 
-    ann_anchors = pd.read_csv(args.element_annotations, sep='\t')
+    ann_anchors = pd.read_csv("element_annotations_anchors.tsv", sep='\t')
 
     summarized_anchors = add_summary(df, ann_anchors, 'anchor')
 
