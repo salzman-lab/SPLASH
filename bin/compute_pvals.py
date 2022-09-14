@@ -144,13 +144,16 @@ def main():
     df['anchSample_cts'] = df.groupby(['anchor','sample']).counts.transform('sum')
     df['anch_cts'] = df.groupby('anchor').counts.transform('sum') ## number of reads per anchor
 
+    print(f"Size of df before filtering = {len(df)}")
+
     df = df[
-        (df.anch_cts > args.anchor_count_threshold) &
-        (df.anch_uniqTargs > args.anchor_unique_targets_threshold) &
-        (df.anch_samples > args.anchor_samples_threshold) &
-        (df.anchSample_cts > args.anchor_sample_counts_threshold)
+        (df.anch_cts >= args.anchor_count_threshold) &
+        (df.anch_uniqTargs >= args.anchor_unique_targets_threshold) &
+        (df.anch_samples >= args.anchor_samples_threshold) &
+        (df.anchSample_cts >= args.anchor_sample_counts_threshold)
     ]
 
+    print(f"Size of df after filtering = {len(df)}")
     print('done filtering')
 
     ### if no anchors left after filtering, exit

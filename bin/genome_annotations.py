@@ -32,16 +32,23 @@ def main():
         ["transcript", f"{args.fasta_name}_transcriptome_hit.txt"],
         ["transcriptome_MAPQ", f"{args.fasta_name}_transcriptome_mapq.txt"],
     ]
-
+    print(df.head())
+    print("_____")
     for ann_name, ann_file in ann_tuples:
         try:
             ann = pd.read_csv(ann_file, sep='\t', header=None, names=[args.fasta_name, ann_name])
-
+            print(ann.head())
             # clean up
             if "MAPQ" in ann_name:
                 ann = ann.replace(0.0, np.nan)
 
-            df = pd.merge(df, ann, on=args.fasta_name, how='outer')
+            df = pd.merge(
+                df,
+                ann,
+                left_on='anchor',
+                right_on=args.fasta_name,
+                how='outer'
+            )
         except:
             df[ann_name] = np.nan
 

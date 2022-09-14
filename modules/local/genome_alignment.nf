@@ -1,6 +1,6 @@
 
 process GENOME_ALIGNMENT {
-
+    tag "${samplesheet_id}"
     label 'process_medium'
     conda (params.enable_conda ? 'bioconda::bowtie2=2.4.4 bioconda::samtools=1.15.1 conda-forge::pigz=2.6' : null)
 
