@@ -38,7 +38,7 @@ include { GENOME_ALIGNMENT          } from '../modules/local/genome_alignment'
 include { GENOME_ANNOTATIONS        } from '../modules/local/genome_annotations'
 include { ELEMENT_ALIGNMENT         } from '../modules/local/element_alignment'
 include { ELEMENT_ANNOTATIONS       } from '../modules/local/element_annotations'
-include { SUMMARIZE_10X             } from '../modules/local/summarize_10X'
+include { SUMMARIZE                 } from '../modules/local/summarize'
 
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
@@ -271,7 +271,7 @@ workflow NOMAD {
         /*
         // Process: Make summary file
         */
-        SUMMARIZE_10X(
+        SUMMARIZE(
             ch_anchor_annotations
         )
 
