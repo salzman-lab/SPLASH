@@ -31,7 +31,8 @@ workflow PLOT {
         params.num_heatmap_anchors,
         file(params.input),
         additional_summary,
-        genome_annotations_anchors
+        genome_annotations_anchors,
+        params.results_dir
     )
 
 }

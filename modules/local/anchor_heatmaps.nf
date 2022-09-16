@@ -1,6 +1,7 @@
 
 process ANCHOR_HEATMAPS {
 
+    publishDir "${results_dir}/anchor_heatmaps", mode: 'copy'
     tag "heatmaps"
     label 'process_medium'
     conda (params.enable_conda ? "conda-forge::python=3.9.5 numpy conda-forge::matplotlib pandas scipy seaborn" : null)
@@ -18,6 +19,7 @@ process ANCHOR_HEATMAPS {
     path samplesheet
     path additional_summary
     path genome_annotations_anchors
+    path results_dir
 
     output:
     path "*.png"                        , emit: png                       , optional: true
