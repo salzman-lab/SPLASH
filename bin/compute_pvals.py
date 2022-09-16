@@ -7,6 +7,7 @@ import argparse
 from scipy import stats
 import scipy
 import nltk
+import math
 import time #### just for testing
 
 ### inputs:
@@ -191,6 +192,7 @@ def main():
 
     df = mergedDf.drop(columns=['targ_cts','maxTarget'])
 
+    print('computing hashes')
     #### hash based dij, randomly assign each target to 0 or 1
     for k in range(1,K):
         df['dij_'+str(k)] = (df['target'].apply(lambda x : (mmh3.hash(x,seed=k)>0) ))*1.0
@@ -236,14 +238,20 @@ def main():
 
     #### can change to something like the below?
     # anchor_batch_size = int(10**8 / len(sampleNames) / numRandomCj)
-
-    for i in range(int(Atotal//anchor_batch_size)+1):
+    print('starting batch p-value computation')
+    for i in range(int(math.ceil(Atotal/anchor_batch_size))):
         ### operate on df_pivoted_full[i*anchor_batch_size : (i+1)*anchor_batch_size]
         idx_start = i*anchor_batch_size
         idx_end = min((i+1)*anchor_batch_size,len(df_pivoted_full))
         A = idx_end-idx_start ### number of anchors used here
 
         dftmp = df_pivoted_full.iloc[i*anchor_batch_size : (i+1)*anchor_batch_size]
+
+        # if dftmp is empty, we're done processing. Should not reach this.
+        if len(dftmp)==0:
+            print('Indexing issue in batch loop')
+            break
+
         print(A,len(dftmp),idx_start,idx_end,len(df_pivoted_full))
         assert A==len(dftmp)
 
