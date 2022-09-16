@@ -710,7 +710,7 @@ def main():
 
     #### generate contingency tables from abundant_stratified_anchors files
     print('regenerating anchor target counts file from scratch')
-    ctsDf = constructCountsDf(anchLst.set_index(['anchor','target']), args)
+    ctsDf = (constructCountsDf(anchLst, args).set_index(['anchor','target']))
     for samp in sampleNames:
         if samp not in ctsDf.columns:
             ctsDf[samp] = 0
