@@ -25,6 +25,7 @@ workflow PLOT {
         abundant_stratified_anchors.collect(),
         consensus_fractions.collect(),
         params.dataset,
+        params.kmer_size,
         anchors_pvals,
         anchors_Cjs,
         params.num_heatmap_anchors,

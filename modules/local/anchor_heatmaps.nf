@@ -11,6 +11,7 @@ process ANCHOR_HEATMAPS {
     path abundant_stratified_anchors
     path consensus_fractions
     val dataset
+    val kmer_size
     path anchors_pvals
     path anchor_Cjs
     val num_heatmap_anchors
@@ -33,6 +34,7 @@ process ANCHOR_HEATMAPS {
     """
     anchor_heatmaps.py \\
         --dataset ${dataset} \\
+        --kmer_size ${kmer_size} \\
         --anchor_pvals ${anchors_pvals} \\
         --anchor_Cjs ${anchor_Cjs} \\
         --num_heatmap_anchors ${num_heatmap_anchors} \\
