@@ -8,7 +8,8 @@ from scipy import stats
 import scipy
 import nltk
 import math
-import time #### just for testing
+import time
+import logging
 
 ### inputs:
 #####  stratified anchors.txt file
@@ -106,15 +107,24 @@ def normalizevec(x):
 
 
 def main():
+
+    logging.basicConfig(
+        filename="compute_pvals.log",
+        filemode='w',
+        format='%(asctime)s %(message)s',
+        datefmt='%H:%M:%S',
+        level=logging.DEBUG
+    )
+
     args = get_args()
     K = args.K+1 ### for zero indexing of levenshtein-based
     L = args.L+1 ### for zero indexing of samplesheet-based
 
-    print("running compute_pvals script on {}".format(args.infile))
+    logging.info("running compute_pvals script on {}".format(args.infile))
 
     # read in counts
     df = pd.read_csv(args.infile, delim_whitespace=True, names=['counts','seq','sample'])
-    print('done reading')
+    logging.info('done reading')
 
     ### load samplesheet
     if args.run_unsupervised_pvals:
@@ -150,7 +160,7 @@ def main():
     df.to_csv(outfile_count_matrix, index=False)
     #### TEMP OUTPUT FOR DEBUGGING ####
 
-    print(f"Size of df before filtering = {len(df)}")
+    logging.info(f"Size of df before filtering = {len(df)}")
 
     df = df[
         (df.anch_cts >= args.anchor_count_threshold) &
@@ -159,12 +169,12 @@ def main():
         (df.anchSample_cts >= args.anchor_sample_counts_threshold)
     ]
 
-    print(f"Size of df after filtering = {len(df)}")
-    print('done filtering')
+    logging.info(f"Size of df after filtering = {len(df)}")
+    logging.info('done filtering')
 
     ### if no anchors left after filtering, exit
     if df.empty:
-        print("no anchors left in dataframe, exiting")
+        logging.info("no anchors left in dataframe, exiting")
         return
 
     df['nj'] = df.groupby(['anchor','sample']).counts.transform('sum')
@@ -172,7 +182,7 @@ def main():
     df['M'] = df.groupby(['anchor']).counts.transform('sum')
     df['number_nonzero_samples'] = df.groupby('anchor')['sample'].nunique() ## count number of samples that this anchor appears in
 
-    print('starting hamming and levenshtein computation')
+    logging.info('starting hamming and levenshtein computation')
     #### add in handcrafted dij of distance to most frequent target
     ### find most abundant target for every anchor
     df['targ_cts']=df.groupby(['anchor','target']).counts.transform('sum')
@@ -192,7 +202,7 @@ def main():
 
     df = mergedDf.drop(columns=['targ_cts','maxTarget'])
 
-    print('computing hashes')
+    logging.info('computing hashes')
     #### hash based dij, randomly assign each target to 0 or 1
     for k in range(1,K):
         df['dij_'+str(k)] = (df['target'].apply(lambda x : (mmh3.hash(x,seed=k)>0) ))*1.0
@@ -201,7 +211,7 @@ def main():
 
     df = df.copy() ## get rid of memory issues
 
-    print("starting p value computation on {} anchors".format(df.anchor.nunique()))
+    logging.info("starting p value computation on {} anchors".format(df.anchor.nunique()))
     startTime = time.time()
     #### start efficient computation of p values ####
     sjcols = ['sj_'+str(t)for t in range(K)]
@@ -238,7 +248,7 @@ def main():
 
     #### can change to something like the below?
     # anchor_batch_size = int(10**8 / len(sampleNames) / numRandomCj)
-    print('starting batch p-value computation')
+    logging.info('starting batch p-value computation')
     for i in range(int(math.ceil(Atotal/anchor_batch_size))):
         ### operate on df_pivoted_full[i*anchor_batch_size : (i+1)*anchor_batch_size]
         idx_start = i*anchor_batch_size
@@ -249,10 +259,10 @@ def main():
 
         # if dftmp is empty, we're done processing. Should not reach this.
         if len(dftmp)==0:
-            print('Indexing issue in batch loop')
+            logging.info('Indexing issue in batch loop')
             break
 
-        print(A,len(dftmp),idx_start,idx_end,len(df_pivoted_full))
+        logging.info(f"A={A},len(dftmp)={len(dftmp)},idx_start={idx_start},idx_end={idx_end},en(df_pivoted_full)={len(df_pivoted_full)}")
         assert A==len(dftmp)
 
         njMat = np.zeros((A,p))
@@ -344,7 +354,7 @@ def main():
         cjOptMat[idx_start:idx_end] = cjOpts
 
 
-    print('finished with p-value computation, {:.1F} sec'.format(time.time()-startTime))
+    logging.info('finished with p-value computation, {:.1F} sec'.format(time.time()-startTime))
 
     outdf = pd.DataFrame({'anchor':df_pivoted_full.index.to_list(),'pval_random':pval_random, 'pval_samplesheet':pval_samplesheet,
              'effect_size_random':effect_size_random,'effect_size_samplesheet':effect_size_samplesheet,'optHash':optHash, 'num_observations':fullMarr})
@@ -365,8 +375,8 @@ def main():
         outdf = outdf.drop(columns=['pval_samplesheet','effect_size_samplesheet'])
         outdf.sort_values('pval_random',inplace=True)
 
-    print('writing')
+    logging.info('writing')
     outdf.to_csv(args.outfile_scores, sep='\t', index=False)
-    print("done")
+    logging.info("done")
 
 main()
