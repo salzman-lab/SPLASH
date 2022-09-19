@@ -10,11 +10,6 @@ import nltk
 import math
 import time #### just for testing
 
-### inputs:
-#####  stratified anchors.txt file
-##### samplesheet: e.g. /oak/stanford/groups/horence/kaitlin/running_nomad/bulk_RNAseq/samplesheets/samplesheet_AA_antibody_secreting_cells.csv
-### outputs:
-##### args.outfldr+'/pvals_{}.csv'
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -169,21 +164,28 @@ def main():
     df['M'] = df.groupby(['anchor']).counts.transform('sum')
     df['number_nonzero_samples'] = df.groupby('anchor')['sample'].transform('nunique') ## count number of samples that this anchor appears in
 
-    print('starting hamming and levenshtein computation')
+    print('computing hamming distances')
     #### add in handcrafted dij of distance to most frequent target
     ### find most abundant target for every anchor
     df['targ_cts']=df.groupby(['anchor','target']).counts.transform('sum')
     tmpDf = df.sort_values('targ_cts', ascending=False).drop_duplicates(['anchor'])[['anchor','target']].rename(columns={'target':'maxTarget'}) #### keeps only the first anchor occurence
     mergedDf = pd.merge(df,tmpDf)
 
+    reducedDf = mergedDf[['target','maxTarget']].drop_duplicates() ### remove duplicates across anchors and samples for efficiency
+
     ### compute distances from each target to max target and propagate
-    ### first call is to generate hand mu (no limit)
-    mergedDf['dij_0'] = np.vectorize(lambda x,y : hamming(x,y))(mergedDf.target,mergedDf.maxTarget)
+    ### first call is to generate the mean target hamming distance
+    reducedDf['dij_0'] = np.vectorize(lambda x,y : hamming(x,y))(reducedDf.target,reducedDf.maxTarget) ## compute on reduced set
+    mergedDf = mergedDf.merge(reducedDf) ## merge back dij_0 column
+
     df = convertDijToSj(mergedDf,0)
     df['mean_target_hamming_distance'] = df['mu_0']
 
-    ### generate levenstein distance based mu
-    mergedDf['dij_0'] = np.vectorize(lambda x,y : nltk.edit_distance(x,y))(mergedDf.target,mergedDf.maxTarget)
+    print('computing levenshtein distances')
+    ### generate mean target levenshtein distance
+    reducedDf['dij_0'] = np.vectorize(lambda x,y : nltk.edit_distance(x,y))(reducedDf.target,reducedDf.maxTarget) ## compute on reduced set
+    mergedDf = mergedDf.merge(reducedDf) ## merge back dij_0 column 
+
     df = convertDijToSj(mergedDf,0)
     df['mean_target_levenshtein_distance'] = df['mu_0']
 
@@ -250,7 +252,8 @@ def main():
             print('Indexing issue in batch loop')
             break
 
-        print(A,len(dftmp),idx_start,idx_end,len(df_pivoted_full))
+        ### for debugging
+        # print(A,len(dftmp),idx_start,idx_end,len(df_pivoted_full))
         assert A==len(dftmp)
 
         njMat = np.zeros((A,p))

@@ -5,6 +5,9 @@ import os
 import glob
 import pickle
 import argparse
+import scipy
+import scipy.stats
+
 
 #### computation of spectral (optimized) p-values
 ##### work in progress to appear in upcoming submission
@@ -24,10 +27,6 @@ def get_args():
         "--strat_fldr",
         type=str
     )
-    parser.add_argument( ### input anchors_pvals.tsv file, for sample names and ordering 
-        "--anchors_pvals",
-        type=str
-    )
     parser.add_argument( ### target output folder, required
         "--outfldr",
         type=str
@@ -37,7 +36,7 @@ def get_args():
         type=str,
         default=""
     )
-    parser.add_argument( ### samplesheet file, if samplesheet-based cj are to be used
+    parser.add_argument( ### optional file indicating subset of anchors to be used
         "--anchor_list",
         type=str,
         default=""
@@ -52,10 +51,10 @@ def get_args():
 
 
 ### read in samplsheet, and output samplesheetCj (properly ordered)
-def parseSamplesheet(args,sampleNames):
+def parseSamplesheet(samplesheet,sampleNames):
     sheetCj = np.ones(len(sampleNames))
-    if args.samplesheet!='':
-        with open(args.samplesheet,'r') as f:
+    if samplesheet!='':
+        with open(samplesheet,'r') as f:
             cols = f.readline().split(',')
         if len(cols)==1: ### if len(cols) is 1, then only samplesheet name, no ids
             print("Only 1 samplesheet column, using random cjs")
@@ -63,12 +62,12 @@ def parseSamplesheet(args,sampleNames):
             print("Improperly formatted samplesheet")
         else:
 
-            sheetdf = pd.read_csv(args.samplesheet,names=['fname','sheetCjs'])
+            sheetdf = pd.read_csv(samplesheet,names=['fname','sheetCjs'])
             sheetdf['sample'] = (sheetdf.fname
                             .str.rsplit('/',1,expand=True)[1]
                             .str.split('.',1,expand=True)[0])
             sheetdf = sheetdf.drop(columns='fname')
-            sheetdf['sheetCjs'] = normalizevec(sheetdf.sheetCjs)
+            sheetdf['sheetCjs'] = normalizevec(sheetdf.sheetCjs,-1,1)
 
             sheetCj = sheetdf.set_index('sample').T[sampleNames].to_numpy().flatten()
     return sheetCj
@@ -87,6 +86,9 @@ def constructCountsDf(strat_fldr,anchLst):
         if anchLst != []:
             df = df[df.anchor.isin(anchLst)]
         dfs.append(df)
+
+        # print('short circuiting after 1 file!!!')
+        # break
 
     print('concat and pivoting')
     ctsDf = pd.concat(dfs)
@@ -136,11 +138,55 @@ def splitCounts(mat,downSampleFrac = .5): #slight modification of https://stacko
         
     return out_mat
 
+### hacky modification of above to downsample matrix columnwise, as opposed to overall
+def splitCountsColwise(mat,downSampleFrac = .5): #slight modification of https://stackoverflow.com/questions/11818215/subsample-a-matrix-python
+    out_mat = np.zeros_like(mat)
+    for j in range(mat.shape[1]):
+        if mat[:,j].sum()>0:
+            out_mat[:,j] = splitCounts(np.reshape(mat[:,j],(mat.shape[0],-1)),downSampleFrac).flatten()
+        
+    return out_mat
+
 ### shift and scale an input vector to be in the range [minval, maxval]
 def normalizevec(x,minval=0,maxval=1):
+    if x.max()==x.min():
+        return np.zeros_like(x)
     x = np.array(x)
     x01= (x-x.min())/(x.max()-x.min())
     return x01*(maxval-minval)+minval
+
+#### get spectral c,f, from simple SVD (correspondence analysis style)
+def get_spectral_cf_svd(X,tblShape):
+
+    relevantTargs = X.sum(axis=1)>0
+    relevantSamples = X.sum(axis=0)>0
+    
+    if relevantTargs.sum()<2 or relevantSamples.sum()<2:
+        print('error')
+        return
+
+    X = X[np.ix_(relevantTargs,relevantSamples)]
+
+    E = np.outer(X.sum(axis=1),X.sum(axis=0))/X.sum()
+    svdmat = (X-E)@np.diag(1.0/X.sum(axis=0))
+    u,s,vh=np.linalg.svd(svdmat,full_matrices=False) ### very important to set full_matrices to false, else memory errors
+
+    cRaw = vh[0,:]
+    fRaw = u[:,0]
+
+    cGuess = cRaw
+    fGuess = normalizevec(fRaw,0,1)
+
+
+    fElong = .5*np.ones(tblShape[0])
+    fElong[relevantTargs] = fGuess
+    fOpt = fElong
+    
+    cElong = np.zeros(tblShape[1])
+    cElong[np.arange(tblShape[1])[relevantSamples]]=cGuess ### fancy indexing
+    cOpt = cElong
+    
+    return cOpt,fOpt
 
 ### find locally-optimal (unconstrained) c and f from spectral c initialization
 def generateSpectralOptcf(X,tblShape):
@@ -150,7 +196,7 @@ def generateSpectralOptcf(X,tblShape):
     relevantSamples = X.sum(axis=0)>0
     
     if relevantTargs.sum()<2 or relevantSamples.sum()<2:
-        print('error')
+        print('too few row/col for generateSpectralOptcf')
         return
 
     X = X[np.ix_(relevantTargs,relevantSamples)]
@@ -164,7 +210,7 @@ def generateSpectralOptcf(X,tblShape):
     ### remove isolated elements
     sampleMask2= (A.sum(axis=0)>0)
     
-    if sampleMask2.sum()==0: ### graph is unconnected (I think)
+    if sampleMask2.sum()==0: ### graph is not connected (I think)
         sampleMask2 = np.ones(X.shape[1],dtype='bool')
         c = np.random.choice([-1,1],size=X.shape[1])
     else:
@@ -210,6 +256,12 @@ def generateSpectralOptcf(X,tblShape):
         
         ### find optimal c for fixed f
         Sj = np.multiply(fOpt @ (X-X@np.outer(np.ones(X.shape[1]),nj)/X.sum()),njinvSqrt)
+
+        if np.all(Sj==0): ### something went wrong
+            c = np.zeros_like(c)
+            fOpt=np.zeros_like(fOpt)
+            break
+    
         c = Sj/np.linalg.norm(Sj,2)
         
         ### compute objective value, if fixed, stop
@@ -415,7 +467,13 @@ def testPval(X,cOpt,fOpt):
     num = (cOpt**2).sum()*M 
     denom=(cOpt@np.sqrt(nj))**2
     with np.errstate(divide='ignore', invalid='ignore'):
-        a = 1.0/(np.sqrt(num/denom)+1.0)
+        if num==0:
+            a= 1
+        elif denom==0:
+            a=0
+        else:
+            a = 1.0/(np.sqrt(num/denom)+1.0)
+    
         term1HC = 2*np.exp(- 2*(1-a)**2*S**2
                        /(cOpt**2).sum())
         term2HC = 2*np.exp(-2*a**2*M*S**2
@@ -429,27 +487,87 @@ def testPval(X,cOpt,fOpt):
     return min(1,pv)
 
 
+### asymptotic pvalue
+def computeAsympNOMAD(X,cOpt,fOpt):
+    
+    if (cOpt==0).all():
+        return 1
+    
+    cOpt = np.nan_to_num(cOpt,0)
+    fOpt = np.nan_to_num(fOpt,0)
+    if not (fOpt.max()<=1) and (fOpt.min()>=0):
+        fOpt = normalizevec(np.nan_to_num(fOpt,0))
+    
+    ### only requirement for valid p-value
+    assert((fOpt.max()<=1) and (fOpt.min()>=0))
+    nj = X.sum(axis=0)
+    njinvSqrt = 1.0/np.maximum(1,np.sqrt(nj))
+    njinvSqrt[nj==0]=0
+    
+    ### compute p value
+    S = fOpt @ (X-X@np.outer(np.ones(X.shape[1]),nj)/X.sum())@(cOpt*njinvSqrt)
+
+    if S<1E-10: ### prevent edge issues
+        return 1
+
+    M=X.sum()
+    
+    muhat = (fOpt@X).sum()/M
+    
+    varF = (fOpt-muhat)**2 @ X.sum(axis=1)/X.sum()
+    totalVar = 2*varF * (np.linalg.norm(cOpt)**2 + (cOpt@np.sqrt(nj))**2)
+
+    pval = 2*np.exp(-S**2/(2*totalVar ))
+                
+    return min(np.nan_to_num(pval,0),1)
+
+
 def effectSize(X,c,f):
     ### binary effect size
-    effectBin = np.abs(f@X@(c>0) / (X@(c>0)).sum() - f@X@(c<0) / (X@(c<0)).sum())
     if (c>0).sum()==0 or (c<0).sum()==0:
         effectBin = 0
+    else:
+        effectBin = np.abs(f@X@(c>0) / (X@(c>0)).sum() - f@X@(c<0) / (X@(c<0)).sum())
+
 
     ### new effect size definition
-    effectRaw = np.abs(f@X@c / (X@np.abs(c)).sum())
+    if (X@np.abs(c)).sum() ==0:
+        effectRaw=0
+    else:
+        effectRaw = np.abs(f@X@c / (X@np.abs(c)).sum())
 
     return effectBin,effectRaw
+
+
+### compute chi2 pvalue
+def computeChi2Test(X):
+    if len(X.shape)==1:
+        return 1
+    X = X[X.sum(axis=1)>0]
+    X = X[:,X.sum(axis=0)>0]
+    _,pv,_,_= scipy.stats.contingency.chi2_contingency(X)
+    return pv
+
+### compute LRT against full null
+def computeLRT_Test(X):
+    if len(X.shape)==1:
+        return 1
+    X = X[X.sum(axis=1)>0]
+    X = X[:,X.sum(axis=0)>0]
+    _,pv,_,_ = scipy.stats.contingency.chi2_contingency(X, lambda_="log-likelihood")
+    return pv
+
+
+
 
 
 #### main function
 def main():
     args = get_args()
+    print('running main with save =', args.save_c_f)
 
     if not os.path.exists(args.outfldr):
         os.makedirs(args.outfldr)
-
-    pvalsdf = pd.read_csv(args.anchors_pvals,sep='\t')
-    print('read pvals df')
 
     if args.anchor_list!='':
         print("using passed in anchor list")
@@ -470,23 +588,27 @@ def main():
         anchLst = ctsDf.reset_index().anchor.unique()
         print('generated all anchors, ', len(anchLst))
 
-    sampleNames = (pvalsdf.columns[pvalsdf.columns.str.startswith('cj_rand')]
-                .str.lstrip('cj_rand_opt_').to_list())
+    sampleNames = ctsDf.columns[2:].to_list()
 
-    sheetCj = parseSamplesheet(args,sampleNames)
+    sheetCj = parseSamplesheet(args.samplesheet,sampleNames)
 
     useSheetCj = not np.all(sheetCj==sheetCj[0])
     ctsDf = ctsDf.loc[:,['anchor','target']+sampleNames].set_index('anchor')
     
 
-    ### new version
-    # start = time.time()
     readMinimum = 10
-    trainFrac=.5
+    trainFrac=.2
+    numRandNOMAD = 100
+
     pvalsSpectral = np.ones(len(anchLst))
     pvalsRandOpt = np.ones(len(anchLst))
     pvalsSheet=np.ones(len(anchLst))
     pvalsSheetSign=np.ones(len(anchLst))
+    chi2Arr = np.ones(len(anchLst))
+    lrtArr = np.ones(len(anchLst))
+    nomadAsympPV = np.ones(len(anchLst))
+    nomad_simpleSVD_pv = np.ones(len(anchLst))
+    nomad_normalPV = np.ones(len(anchLst))
 
     eSizeArr = np.zeros((len(anchLst),8))
     iArr = np.zeros(len(anchLst))
@@ -503,12 +625,17 @@ def main():
 
         ### load in data matrix
         ctsLoad = ctsDf.loc[anch,sampleNames].to_numpy()
+
+        chi2Arr[anch_idx] = computeChi2Test(ctsLoad)
         
         if ctsLoad.sum()<readMinimum or len(ctsLoad.shape)==1 or ctsLoad.shape[0] <=1 or ctsLoad.shape[1]<=1:
             continue
 
+        chi2Arr[anch_idx] = computeChi2Test(ctsLoad)
+        lrtArr[anch_idx] = computeLRT_Test(ctsLoad)
+
         np.random.seed(0)
-        X = splitCounts(ctsLoad,trainFrac) ## fraction to be used for "training"
+        X = splitCountsColwise(ctsLoad,trainFrac) ## fraction to be used for "training"
         Xtrain = X
         Xtest = ctsLoad-Xtrain
         
@@ -525,8 +652,7 @@ def main():
             cjArr[anch_idx,0]=cOpt
             fArr[0].append(fOpt)
         # pvalsSpectral[anch_idx]=testPval(ctsLoad,cOpt,fOpt) ##########can construct data-snooping p-values############
-
-
+        
         cOpt,fOpt,num_iters = generateRandOptcf(Xtrain,ctsLoad.shape)
         pvalsRandOpt[anch_idx]=testPval(Xtest,cOpt,fOpt)
         eSizeArr[anch_idx,[2,3]]=effectSize(ctsLoad,cOpt,fOpt)
@@ -535,6 +661,17 @@ def main():
             fArr[1].append(fOpt)
         # pvalsRandOpt[anch_idx]=testPval(ctsLoad,cOpt,fOpt) ######## can construct data-snooping p-values ###########
     
+
+        nomadpvminarr = np.zeros(numRandNOMAD)
+        for k in range(numRandNOMAD):
+            nomadpvminarr[k] = testPval(ctsLoad,np.random.choice([-1,1],size=len(cOpt)), np.random.choice([0,1],size=len(fOpt)))
+        
+        nomad_normalPV[k] = min(1,numRandNOMAD*nomadpvminarr.min())
+
+        cOpt,fOpt = get_spectral_cf_svd(Xtrain,ctsLoad.shape)
+        nomad_simpleSVD_pv[anch_idx] = testPval(Xtest,cOpt,fOpt)
+        nomadAsympPV[anch_idx] = computeAsympNOMAD(Xtest,cOpt,fOpt)
+
         if useSheetCj:
             cOpt,fOpt,num_iters = generateSignedSheetCjOptcf(Xtrain,sheetCj,ctsLoad.shape)
             pvalsSheetSign[anch_idx]=testPval(Xtest,cOpt,fOpt)
@@ -563,13 +700,17 @@ def main():
     outdf['effect_size_spectral'] =eSizeArr[:,1]
     outdf['effect_size_binary_rand_init_EM'] = eSizeArr[:,2]
     outdf['effect_size_rand_init_EM'] = eSizeArr[:,3]
+    outdf['chi2pval'] = chi2Arr
+    outdf['lrtpval']=lrtArr
+    outdf['normalpv']=nomad_normalPV
+    outdf['nomadasymppv']=nomadAsympPV
+    outdf['nomad_spectral_corrAnalysis_pv'] = nomad_simpleSVD_pv
     if useSheetCj:
         outdf['effect_size_binary_optimized_samplesheetSigned']=eSizeArr[:,4]
         outdf['effect_size_optimized_samplesheetSigned']=eSizeArr[:,5]
         outdf['effect_size_binary_optimized_samplesheet']=eSizeArr[:,6]
         outdf['effect_size_optimized_samplesheet']=eSizeArr[:,7]
 
-    print(eSizeArr[anchsUsed.astype('bool')])
 
     outdf = outdf[anchsUsed.astype('bool')]
     outdf = outdf.sort_values('minpv').drop(columns=['minpv'])
@@ -578,7 +719,6 @@ def main():
 
     if args.save_c_f:
         if not useSheetCj:
-            fArr = fArr[[0,1]]
             cjArr = cjArr[:,:4]
         cjArr = cjArr[anchsUsed]
         with open(args.outfldr+'/spectral_cj.npy', 'wb') as f:
