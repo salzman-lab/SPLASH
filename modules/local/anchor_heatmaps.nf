@@ -1,7 +1,7 @@
 
 process ANCHOR_HEATMAPS {
 
-    publishDir "${results_dir}/anchor_heatmaps", mode: 'copy'
+    publishDir "${params.results_dir}/anchor_heatmaps", mode: 'copy'
     tag "heatmaps"
     label 'process_medium'
     conda (params.enable_conda ? "conda-forge::python=3.9.5 numpy conda-forge::matplotlib pandas scipy seaborn" : null)
@@ -32,6 +32,8 @@ process ANCHOR_HEATMAPS {
 
     outfile_contingency_table           = "heatmap_anchors_contingency_table.csv"
     outfile_skipped_anchors             = "heatmap_skipped_anchors.tsv"
+
+    println("${params.results_dir}")
 
     """
     anchor_heatmaps.py \\
