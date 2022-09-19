@@ -180,7 +180,7 @@ def main():
     df['nj'] = df.groupby(['anchor','sample']).counts.transform('sum')
     df = df.drop(columns='anchSample_cts') ### this is essentially "old" n_j
     df['M'] = df.groupby(['anchor']).counts.transform('sum')
-    df['number_nonzero_samples'] = df.groupby('anchor')['sample'].nunique() ## count number of samples that this anchor appears in
+    df['number_nonzero_samples'] = df.groupby('anchor')['sample'].transform('nunique')
 
     logging.info('starting hamming and levenshtein computation')
     #### add in handcrafted dij of distance to most frequent target
