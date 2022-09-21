@@ -15,7 +15,7 @@ def get_args():
         type=str
     )
     parser.add_argument(
-        "--num_fastq_reads",
+        "--num_lines",
         type=int
     )
     parser.add_argument(
@@ -84,8 +84,8 @@ def main():
             ## if this is not 10X, parse as fastq file
             else:
 
-                if args.num_fastq_reads != 0:
-                    if x > args.num_fastq_reads * 4:
+                if args.num_lines != 0:
+                    if x > args.num_lines * 4:
                         break
 
                 x += 1

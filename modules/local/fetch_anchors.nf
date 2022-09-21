@@ -25,7 +25,7 @@ process FETCH_ANCHORS {
     fetch_anchors.py \\
         --infile ${fastq} \\
         --id ${id} \\
-        --num_fastq_reads ${num_fastq_reads} \\
+        --num_lines ${num_fastq_reads} \\
         --kmer_size ${kmer_size} \\
         --lookahead ${lookahead} \\
         --anchor_mode ${anchor_mode} \\
