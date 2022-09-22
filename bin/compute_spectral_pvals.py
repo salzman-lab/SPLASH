@@ -9,17 +9,19 @@ import scipy
 import scipy.stats
 
 
-#### computation of spectral (optimized) p-values
 ##### work in progress to appear in upcoming submission
+
+
+#### computation of many different p-values
+###### spectral (optimized)
+###### chi-squared and lrt-based (only asymptotically valid)
+###### NOMAD asymptotically valid p-values
+###### NOMAD p-values for continuous random c and f
 
 
 ## Outputs:
 ### p-values tsv file at args.outfldr+'/spectral_pvalues.tsv'
-### if save_c_f flag, then can read in optimizing c and f as below:
-#### with open(args.outfldr+'/spectral_cj.npy','rb') as f:
-####     a = np.load(f)
-#### with open(args.outfldr+'/spectral_f.pkl', 'rb') as handle:
-####     b = pickle.load(handle)
+
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -31,7 +33,7 @@ def get_args():
         "--outfldr",
         type=str
     )
-    parser.add_argument( ### samplesheet file, if samplesheet-based cj are to be used
+    parser.add_argument( ### samplesheet file, if samplesheet-based cj (metadata) are to be used
         "--samplesheet",
         type=str,
         default=""
@@ -45,6 +47,11 @@ def get_args():
         "--save_c_f",
         type=bool,
         default=False
+        ### if save_c_f flag, then can read in optimizing c and f as below:
+        #### with open(args.outfldr+'/spectral_cj.npy','rb') as f:
+        ####     a = np.load(f)
+        #### with open(args.outfldr+'/spectral_f.pkl', 'rb') as handle:
+        ####     b = pickle.load(handle)
     )
     args = parser.parse_args()
     return args
@@ -70,6 +77,7 @@ def parseSamplesheet(samplesheet,sampleNames):
             sheetdf['sheetCjs'] = normalizevec(sheetdf.sheetCjs,-1,1)
 
             sheetCj = sheetdf.set_index('sample').T[sampleNames].to_numpy().flatten()
+            print('using samplesheet metadata: not fully tested, be warned')
     return sheetCj
 
 ### construct contingency tables, only for anchors in anchLst
@@ -86,9 +94,6 @@ def constructCountsDf(strat_fldr,anchLst):
         if anchLst != []:
             df = df[df.anchor.isin(anchLst)]
         dfs.append(df)
-
-        # print('short circuiting after 1 file!!!')
-        # break
 
     print('concat and pivoting')
     ctsDf = pd.concat(dfs)
@@ -138,7 +143,7 @@ def splitCounts(mat,downSampleFrac = .5): #slight modification of https://stacko
         
     return out_mat
 
-### hacky modification of above to downsample matrix columnwise, as opposed to overall
+### simple wrapper of the above to downsample matrix columnwise, as opposed to overall
 def splitCountsColwise(mat,downSampleFrac = .5): #slight modification of https://stackoverflow.com/questions/11818215/subsample-a-matrix-python
     out_mat = np.zeros_like(mat)
     for j in range(mat.shape[1]):
@@ -154,6 +159,7 @@ def normalizevec(x,minval=0,maxval=1):
     x = np.array(x)
     x01= (x-x.min())/(x.max()-x.min())
     return x01*(maxval-minval)+minval
+
 
 #### get spectral c,f, from simple SVD (correspondence analysis style)
 def get_spectral_cf_svd(X,tblShape):
@@ -187,6 +193,7 @@ def get_spectral_cf_svd(X,tblShape):
     cOpt = cElong
     
     return cOpt,fOpt
+
 
 ### find locally-optimal (unconstrained) c and f from spectral c initialization
 def generateSpectralOptcf(X,tblShape):
@@ -348,9 +355,9 @@ def generateRandOptcf(X,tblShape,randSeed=0):
     
     return cOpt,fOpt,i
 
+
 ### find locally-optimal c and f from random initialization
 #### constrained to c having the same sign as sheetCj
-
 def generateSignedSheetCjOptcf(X,sheetCj,tblShape):
     np.random.seed(0)### for filling in f
     
@@ -362,7 +369,6 @@ def generateSignedSheetCjOptcf(X,sheetCj,tblShape):
     cSign = sheetCj[relevantSamples]
     c = cSign
 
-    
     nj = X.sum(axis=0)
     njinvSqrt = 1.0/np.maximum(1,np.sqrt(nj)) ### avoid divide by 0 errors
     njinvSqrt[nj==0]=0
@@ -380,7 +386,6 @@ def generateSignedSheetCjOptcf(X,sheetCj,tblShape):
         
         ### find optimal c for fixed f
         Sj = np.multiply(fOpt @ (X-X@np.outer(np.ones(X.shape[1]),nj)/X.sum()),njinvSqrt)
-#         c = Sj/np.abs(Sj).sum()
         ### construct plus and minus variants of Sj
         cplus = Sj * ((Sj*cSign) >0)
         cplus /= np.maximum(1,np.linalg.norm(cplus,2))
@@ -418,6 +423,7 @@ def generateSignedSheetCjOptcf(X,sheetCj,tblShape):
     cOpt = cElong
     return cOpt,fOpt,i
 
+
 ### find optimal f for given input sheetCj
 def generateSheetCjOptcf(X,sheetCj,tblShape):
     np.random.seed(0) ### for filling in f
@@ -444,8 +450,8 @@ def generateSheetCjOptcf(X,sheetCj,tblShape):
     cOpt = c ### sheetCj
     return cOpt,fOpt
 
-### for split data matrix, test p-value
-### Xtest passed in
+
+### test p-value for fixed c and f on contingency table
 def testPval(X,cOpt,fOpt):
     if (cOpt==0).all():
         return 1
@@ -488,8 +494,9 @@ def testPval(X,cOpt,fOpt):
 
 
 ### asymptotic pvalue
+### NOMAD is asymptotically normal with variance upper bounded by totalVar under the null
+###   allowing is to provide asymptotically valid p-values
 def computeAsympNOMAD(X,cOpt,fOpt):
-    
     if (cOpt==0).all():
         return 1
     
@@ -515,11 +522,10 @@ def computeAsympNOMAD(X,cOpt,fOpt):
     muhat = (fOpt@X).sum()/M
     
     varF = (fOpt-muhat)**2 @ X.sum(axis=1)/X.sum()
-    totalVar = 2*varF * (np.linalg.norm(cOpt)**2 + (cOpt@np.sqrt(nj))**2)
-
+    totalVar = varF * (np.linalg.norm(cOpt)**2 - (cOpt@np.sqrt(nj))**2/M)
     pval = 2*np.exp(-S**2/(2*totalVar ))
                 
-    return min(np.nan_to_num(pval,0),1)
+    return min(np.nan_to_num(pval,1),1)
 
 
 def effectSize(X,c,f):
@@ -569,6 +575,7 @@ def main():
     if not os.path.exists(args.outfldr):
         os.makedirs(args.outfldr)
 
+    ### read in anchor list file
     if args.anchor_list!='':
         print("using passed in anchor list")
         anchLst = pd.read_csv(args.anchor_list,names=['anchor']).anchor.to_list()
@@ -589,26 +596,31 @@ def main():
         print('generated all anchors, ', len(anchLst))
 
     sampleNames = ctsDf.columns[2:].to_list()
-
     sheetCj = parseSamplesheet(args.samplesheet,sampleNames)
-
     useSheetCj = not np.all(sheetCj==sheetCj[0])
     ctsDf = ctsDf.loc[:,['anchor','target']+sampleNames].set_index('anchor')
     
-
+    #### some ad-hoc choices: can be made command line arguments eventually
     readMinimum = 10
     trainFrac=.2
-    numRandNOMAD = 100
+    numRandNOMAD = 20
 
-    pvalsSpectral = np.ones(len(anchLst))
-    pvalsRandOpt = np.ones(len(anchLst))
-    pvalsSheet=np.ones(len(anchLst))
-    pvalsSheetSign=np.ones(len(anchLst))
-    chi2Arr = np.ones(len(anchLst))
-    lrtArr = np.ones(len(anchLst))
-    nomadAsympPV = np.ones(len(anchLst))
-    nomad_simpleSVD_pv = np.ones(len(anchLst))
-    nomad_normalPV = np.ones(len(anchLst))
+
+    #### all of the arrays to fill
+    pvalsSpectral = np.ones(len(anchLst)) ### train test split, spectral initialization on train, then EM optimizaiton
+    pvalsRandOpt = np.ones(len(anchLst)) ### train test split, random initialization, EM optimization
+    pvalsSheet=np.ones(len(anchLst)) ### train test split, fixed samplesheet cj, optimized f
+    pvalsSheetSign=np.ones(len(anchLst)) ### train test split, samplesheet cj initialization, EM optimization (with cj sign constraint)
+    chi2Arr = np.ones(len(anchLst)) ### chi-squared test
+    lrtArr = np.ones(len(anchLst)) ### likelihood ratio test
+    nomad_simpleSVD_pv = np.ones(len(anchLst)) ### train test split, simple correspondence analysis style SVD to compute c and f
+    nomad_asympSVD_pv = np.ones(len(anchLst)) ### train test split, simple correspondence analysis style SVD to compute c and f, asymptotic p-value
+    nomad_normalPV = np.ones(len(anchLst)) ### normal NOMAD p-value, ${numRandNOMAD} random {-1,1} valued c and {0,1} valued f used
+    nomadAsympPV = np.ones(len(anchLst)) ### NOMAD asymptotic p-value, ${numRandNOMAD} random {-1,1} valued c and {0,1} valued f used
+    nomad_cts_pv = np.ones_like(chi2Arr) ### NOMAD p-value, ${numRandNOMAD} random [-1,1] valued c and [0,1] valued f used (uniform)
+    nomad_asymp_rand_cts = np.ones_like(chi2Arr) ### NOMAD asymptotic p-value, ${numRandNOMAD} random [-1,1] valued c and [0,1] valued f used (uniform)
+
+
 
     eSizeArr = np.zeros((len(anchLst),8))
     iArr = np.zeros(len(anchLst))
@@ -623,63 +635,80 @@ def main():
             anchsUsed[anch_idx]=False
             continue
 
-        ### load in data matrix
+        ### load in data matrix (counts matrix)
         ctsLoad = ctsDf.loc[anch,sampleNames].to_numpy()
-
-        chi2Arr[anch_idx] = computeChi2Test(ctsLoad)
         
         if ctsLoad.sum()<readMinimum or len(ctsLoad.shape)==1 or ctsLoad.shape[0] <=1 or ctsLoad.shape[1]<=1:
             continue
 
+        ### compute asymptotically valid comparison tests
         chi2Arr[anch_idx] = computeChi2Test(ctsLoad)
         lrtArr[anch_idx] = computeLRT_Test(ctsLoad)
 
-        np.random.seed(0)
-        X = splitCountsColwise(ctsLoad,trainFrac) ## fraction to be used for "training"
+        np.random.seed(0) #### to make it deterministic 
+
+        X = splitCountsColwise(ctsLoad,trainFrac)
         Xtrain = X
         Xtest = ctsLoad-Xtrain
         
         relevantTargs = Xtrain.sum(axis=1)>0
         relevantSamples = Xtrain.sum(axis=0)>0
         
-        if relevantTargs.sum()<2 or relevantSamples.sum()<2:
+        if relevantTargs.sum()<2 or relevantSamples.sum()<2: ### can't compute anything valuable on this table, declare p-value bound of 1 and continue
             continue
-            
+        
+        ### compute pvalsSpectral
         cOpt,fOpt,num_iters = generateSpectralOptcf(Xtrain,ctsLoad.shape)
         pvalsSpectral[anch_idx]=testPval(Xtest,cOpt,fOpt)
         eSizeArr[anch_idx,[0,1]]=effectSize(ctsLoad,cOpt,fOpt)
         if args.save_c_f:
             cjArr[anch_idx,0]=cOpt
             fArr[0].append(fOpt)
-        # pvalsSpectral[anch_idx]=testPval(ctsLoad,cOpt,fOpt) ##########can construct data-snooping p-values############
         
+        ### compute pvalsRandOpt
         cOpt,fOpt,num_iters = generateRandOptcf(Xtrain,ctsLoad.shape)
         pvalsRandOpt[anch_idx]=testPval(Xtest,cOpt,fOpt)
         eSizeArr[anch_idx,[2,3]]=effectSize(ctsLoad,cOpt,fOpt)
         if args.save_c_f:
             cjArr[anch_idx,1]=cOpt
-            fArr[1].append(fOpt)
-        # pvalsRandOpt[anch_idx]=testPval(ctsLoad,cOpt,fOpt) ######## can construct data-snooping p-values ###########
-    
-
-        nomadpvminarr = np.zeros(numRandNOMAD)
-        for k in range(numRandNOMAD):
-            nomadpvminarr[k] = testPval(ctsLoad,np.random.choice([-1,1],size=len(cOpt)), np.random.choice([0,1],size=len(fOpt)))
+            fArr[1].append(fOpt)        
         
-        nomad_normalPV[k] = min(1,numRandNOMAD*nomadpvminarr.min())
-
+        ### compute simple c,f from spectral approach (correspondence analysis style)
+        ###   and compute nomad_simpleSVD_pv
         cOpt,fOpt = get_spectral_cf_svd(Xtrain,ctsLoad.shape)
         nomad_simpleSVD_pv[anch_idx] = testPval(Xtest,cOpt,fOpt)
-        nomadAsympPV[anch_idx] = computeAsympNOMAD(Xtest,cOpt,fOpt)
+        nomad_asympSVD_pv[anch_idx] = computeAsympNOMAD(Xtest,cOpt,fOpt)
 
-        if useSheetCj:
+        ### compute nomad_normalPV
+        nomadpvminarr = np.zeros(numRandNOMAD)
+        nomadasympArr = np.zeros(numRandNOMAD)
+        randCs = np.random.choice([-1,1],size=(numRandNOMAD,len(cOpt)))
+        randFs = np.random.choice([0,1],size=(numRandNOMAD, len(fOpt)))
+        for k in range(numRandNOMAD):
+            nomadpvminarr[k] = testPval(ctsLoad,randCs[k], randFs[k])
+            nomadasympArr[k] = computeAsympNOMAD(Xtest,cOpt,fOpt)
+        nomad_normalPV[anch_idx] = min(1,numRandNOMAD*nomadpvminarr.min())
+        nomadAsympPV[anch_idx] = min(1,numRandNOMAD*nomadasympArr.min())
+
+        ### compute for continuous c,f: nomad_cts_pv, nomad_asymp_rand_cts
+        nomadasympArr = np.zeros(numRandNOMAD)
+        nomadctsArr = np.zeros(numRandNOMAD)
+        randCs = np.random.uniform(low=-1,high=1,size=(numRandNOMAD,len(cOpt)))
+        randFs = np.random.uniform(size=(numRandNOMAD, len(fOpt)))
+        for k in range(numRandNOMAD):
+            nomadctsArr[k] = testPval(ctsLoad,randCs[k], randFs[k])
+            nomadasympArr[k] = computeAsympNOMAD(ctsLoad,randCs[k],randFs[k])
+        nomad_asymp_rand_cts[anch_idx] = min(1,numRandNOMAD*nomadasympArr.min())
+        nomad_cts_pv[anch_idx] = min(1,numRandNOMAD*nomadctsArr.min())
+
+
+        if useSheetCj: ### not fully tested, use with caution
             cOpt,fOpt,num_iters = generateSignedSheetCjOptcf(Xtrain,sheetCj,ctsLoad.shape)
             pvalsSheetSign[anch_idx]=testPval(Xtest,cOpt,fOpt)
             eSizeArr[anch_idx,[4,5]]=effectSize(ctsLoad,cOpt,fOpt)
             if args.save_c_f:
                 cjArr[anch_idx,2]=cOpt
                 fArr[2].append(fOpt)
-            print(cOpt,eSizeArr[anch_idx,[4,5]])
             
             cOpt,fOpt = generateSheetCjOptcf(Xtrain,sheetCj,ctsLoad.shape)
             pvalsSheet[anch_idx]=testPval(Xtest,cOpt,fOpt)
@@ -696,15 +725,21 @@ def main():
         outdf = pd.DataFrame({'anchor':anchLst, 'pvalsSpectral':pvalsSpectral, 'pvalsRandOpt':pvalsRandOpt})
         outdf['minpv'] = np.asarray([pvalsSpectral,pvalsRandOpt]).min(axis=0)
 
+
+    outdf['chi2pval'] = chi2Arr
+    outdf['lrtpval']=lrtArr
+    outdf['nomad_spectral_corrAnalysis_pv'] = nomad_simpleSVD_pv
+    outdf['nomad_spectral_corrAnalysis_asymp_pv'] = nomad_asympSVD_pv
+    outdf['nomad_pv']=nomad_normalPV
+    outdf['nomad_asymp_pv']=nomadAsympPV
+    outdf['nomad_asymp_cts_pv'] = nomad_asymp_rand_cts
+    outdf['nomad_cts_pv'] = nomad_cts_pv
+
+    ### add in effect size measures
     outdf['effect_size_binary_spectral'] = eSizeArr[:,0]
     outdf['effect_size_spectral'] =eSizeArr[:,1]
     outdf['effect_size_binary_rand_init_EM'] = eSizeArr[:,2]
     outdf['effect_size_rand_init_EM'] = eSizeArr[:,3]
-    outdf['chi2pval'] = chi2Arr
-    outdf['lrtpval']=lrtArr
-    outdf['normalpv']=nomad_normalPV
-    outdf['nomadasymppv']=nomadAsympPV
-    outdf['nomad_spectral_corrAnalysis_pv'] = nomad_simpleSVD_pv
     if useSheetCj:
         outdf['effect_size_binary_optimized_samplesheetSigned']=eSizeArr[:,4]
         outdf['effect_size_optimized_samplesheetSigned']=eSizeArr[:,5]
