@@ -626,7 +626,7 @@ def main():
     #### some ad-hoc choices: can be made command line arguments eventually
     readMinimum = 10
     trainFrac=.2
-    numRandNOMAD = 1
+    numRandNOMAD = 20
 
 
     #### all of the arrays to fill
