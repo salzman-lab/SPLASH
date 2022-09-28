@@ -217,7 +217,7 @@ workflow NOMAD {
             genome_annotations_anchors  = ANNOTATE.out.genome_annotations_anchors
 
             // If annotations are run OR we only want to plot, run plot
-            if (params.run_annotations){
+            if (params.run_anchor_heatmaps){
                 /*
                 // Perform plotting
                 */
