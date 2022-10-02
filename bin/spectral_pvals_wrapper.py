@@ -47,6 +47,7 @@ def main():
     args = get_args()
 
     print('running main')
+    #### Loop over abundant stratified files and call compute_spectral_pvals
     for f_seq in itertools.product(['A','T','C','G'],repeat=3):
         f_seq = "".join(f_seq)
         command = """python /oak/stanford/groups/horence/tavorb/stringstats_tavor/stringstats/bin/compute_spectral_pvals.py --outfile_scores {}/int_pvals_{}.tsv --samplesheet {} --infile {}/abundant_stratified_{}.txt.gz --output_verbosity {}""".format(args.intermediate_fldr,f_seq
@@ -58,32 +59,26 @@ def main():
 
 
     print('aggregating')
+    ### Loop over intermediate folder, read in all files, correct and save
     dfs = []
     for df_path in glob.glob(args.intermediate_fldr+"/*.tsv"):
         try:
             dfs.append(pd.read_csv(df_path.strip(), sep='\t'))
         except pd.errors.EmptyDataError:
             pass
-
-
     df = pd.concat(dfs)
 
     ## if it's an empty df, just output the df
     outdf = df.copy()
 
     if not df.empty:
-
         ### create corrected pvalues
         newDF = outdf[outdf.columns[~outdf.columns.str.startswith('pval')]]
 
         for c in outdf.columns[outdf.columns.str.startswith('pval')]:
             _, c_corrected, _, _ = sm.stats.multipletests(outdf[c], method='fdr_by')
-            newDF.loc[:,c+'_corrected'] = c_corrected
+            newDF.loc[:,c+'_corrected'] = c_corrected #### raises pandas error, but is fine
             
         newDF.sort_values('pval_SVD_corrAnalysis_corrected').to_csv(args.outfile_scores, sep='\t', index=False)
-
-
-
-
 
 main()

@@ -10,7 +10,7 @@ import nltk
 
 
 #### Usage:
-## This file provides the statistical analysis behind NOMAD
+## This file provides statistically functionality for NOMAD.
 ## There are 4 sets of functions in this file: 
 ### 1. General utility files: samplesheet parsing, abundant stratified parsing, splitting counts matrices, etc.
 ### 2. c,f construction: These take as input a contingency table, and output c and f that are predicted to perform well on them

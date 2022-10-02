@@ -12,20 +12,7 @@ from pathlib import Path
 
 from stats_utils import *
 
-##### work in progress to appear in upcoming submission
-
-
-# README.md
-# Two knobs which have not been made programatically settable are *trainFrac* and *numRandNOMAD*.
-# The former indicates what fraction of data is to be randomly split for the training portion, and the second indicates how many random *c,f* are to be simulated for the traditional NOMAD p-value.
-# These are currently hardcoded as .2 and 20 respectively, where *numRandNOMAD* significantly impacts the overall runtime (setting it to 100 vs 0 increases overall runtime by a factor of >10), as this is not tensor-optimized as in compute_pvals.py.
-
-
-
-
-## Outputs:
-### args.outfile_scores': tsv of raw p-values
-### args.outfile_scores[:-4]+'_corrected.tsv': tsv of BY-corrected q-values
+##### Additional details / theory will appear in an upcoming submission
 
 
 def get_args():
@@ -78,6 +65,7 @@ def get_args():
         type=int,
         default=1
     )
+    ############### This option is currently not supported
     parser.add_argument( ### flag, whether to save cj or not
         "--save_c_f",
         type=bool,
@@ -112,6 +100,10 @@ def main():
         print('invalid option for output_verbosity')
         return
 
+    if args.save_c_f:
+        print('save_c_f not supported')
+        return
+
     ### read in anchor list file
     if len(args.anchor_list)>0:
         print("using passed in anchor list")
@@ -123,20 +115,21 @@ def main():
 
     print('constructing counts dataframe')
     countsDf = constructCountsDf(args,anchLst)
-    print('done with counts dataframe')
 
     if anchLst == []:
         anchLst = countsDf.anchor.unique()
         print('generated all anchors, ', len(anchLst))
 
+    print("parsing samplesheet")
     useSheetCj, samplesheetDf = parseSamplesheet(args.samplesheet)
-    ############### need to test this
+
 
     anchLst = set(anchLst)
     nuniqueAnchors = countsDf.anchor.nunique()
     anchsUsed = np.ones(nuniqueAnchors,dtype='bool')
     resultsDf = pd.DataFrame()
 
+    print("Starting loop over anchors")
     for anch_idx,(anch,anch_table) in tqdm(enumerate(countsDf.groupby('anchor')), total = nuniqueAnchors):
         if anch not in anchLst:
             anchsUsed[anch_idx]=False
@@ -261,15 +254,15 @@ def main():
 
 
 
-    if args.save_c_f:
-        if not useSheetCj:
-            cjArr = cjArr[:,:4]
-        cjArr = cjArr[anchsUsed]
-        with open(args.outfile_scores[:-4]+'_spectral_cj.npy', 'wb') as f:
-            np.save(f,cjArr)
+    # if args.save_c_f:
+    #     if not useSheetCj:
+    #         cjArr = cjArr[:,:4]
+    #     cjArr = cjArr[anchsUsed]
+    #     with open(args.outfile_scores[:-4]+'_spectral_cj.npy', 'wb') as f:
+    #         np.save(f,cjArr)
 
-        with open(args.outfile_scores[:-4]+'_spectral_f.pkl', 'wb') as handle:
-            pickle.dump(fArr, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    #     with open(args.outfile_scores[:-4]+'_spectral_f.pkl', 'wb') as handle:
+    #         pickle.dump(fArr, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
         #### to be read in as below
         # with open(args.outfile_scores[:-4]+'_spectral_cj.npy','rb') as f:
