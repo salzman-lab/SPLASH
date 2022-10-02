@@ -214,10 +214,9 @@ def main():
             newRow['pval_spectral_EM']=testPval(Xtest,cOpt,fOpt)
 
 
+        ##### hasn't been thoroughly tested, but seems to be working as expected
         if args.output_verbosity == 'metadata' or (useSheetCj and args.output_verbosity=='experimental'): ### not fully tested, use with caution
-            print('not yet tested')
-            ########## need to test
-            sheetCj = samplesheetDf[anch_pivot_table.columns]
+            sheetCj = samplesheetDf[anch_pivot_table.columns].to_numpy().flatten()
 
             cOpt,fOpt,_ = generateSignedSheetCjOptcf(Xtrain,sheetCj,Xtest.shape)
             newRow['pval_metadata_EM']=testPval(Xtest,cOpt,fOpt)
@@ -227,7 +226,7 @@ def main():
 
             nomadasympArr = np.zeros(args.num_rand_cf)
             nomadpvArr = np.zeros(args.num_rand_cf)
-            randFs = np.random.choice([-1,1], size=(args.num_rand_cf, len(fOpt)))
+            randFs = np.random.choice([0,1], size=(args.num_rand_cf, len(fOpt)))
             for k in range(args.num_rand_cf):
                 nomadpvArr[k] = testPval(anch_contingency_table,sheetCj, randFs[k])
                 nomadasympArr[k] = computeAsympNOMAD(anch_contingency_table,sheetCj,randFs[k])
@@ -235,9 +234,16 @@ def main():
             newRow['pval_metadata_asymp_base'] = min(1,args.num_rand_cf*nomadasympArr.min())
             newRow['pval_metadata_base'] = min(1,args.num_rand_cf*nomadpvArr.min())
 
-             ### compute effect size for 
+             ### compute effect size for base nomad with sheetCj
             minimizerIdx = nomadpvminarr.argmin()
             newRow['effect_size_metadata_base'] = effectSize_bin(anch_contingency_table,sheetCj,randFs[minimizerIdx])
+
+
+        ### compute additional quantities (e.g. M, number of unique targets, etc)
+        rowMetadata = computeBaseQuantities(anch_contingency_table)
+        newRow = newRow | rowMetadata
+        newRow['mean_target_levenshtein_distance'] = computeAverageDist(anch_pivot_table,nltk.edit_distance)
+        newRow['mean_target_hamming_distance'] = computeAverageDist(anch_pivot_table,hamming)
 
         resultsDf = resultsDf.append(newRow,ignore_index=True)
 
