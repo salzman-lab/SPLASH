@@ -6,8 +6,8 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
 # NOMAD
 A statistical, reference-free algorithm subsumes myriad problems in genome science and enables novel discovery
 
-![nomad_1](https://github.com/kaitlinchaung/nomad/blob/main/assets/nomad_1.png?raw=true "Title")
-![nomad_2](https://github.com/kaitlinchaung/nomad/blob/main/assets/nomad_2.png?raw=true "Title2")
+![nomad_1](https://github.com/salzmanlab/nomad/blob/main/assets/nomad_1.png?raw=true "Title")
+![nomad_2](https://github.com/salzmanlab/nomad/blob/main/assets/nomad_2.png?raw=true "Title2")
 
 # Prerequisites
 
@@ -20,7 +20,7 @@ To test this pipeine, use the command below. The `test` profile will launch a pi
 
 How to run with singularity:
 ```bash
-nextflow run kaitlinchaung/nomad \
+nextflow run salzmanlab/nomad \
     -profile test,singularity \
     -r main \
     -latest
@@ -28,7 +28,7 @@ nextflow run kaitlinchaung/nomad \
 
 How to run with docker:
 ```bash
-nextflow run kaitlinchaung/nomad \
+nextflow run salzmanlab/nomad \
     -profile test,docker \
     -r main \
     -latest
@@ -36,16 +36,16 @@ nextflow run kaitlinchaung/nomad \
 
 How to run with conda:
 ```bash
-nextflow run kaitlinchaung/nomad \
+nextflow run salzmanlab/nomad \
     -profile test,conda \
     -r main \
     -latest
 ```
 
 # Usage
-Please see this [document](https://github.com/kaitlinchaung/nomad/blob/main/docs/usage.md) for descriptions of NOMAD inputs and parameters.
+Please see this [document](https://github.com/salzmanlab/nomad/blob/main/docs/usage.md) for descriptions of NOMAD inputs and parameters.
 # Outputs
-Please see this [document](https://github.com/kaitlinchaung/nomad/blob/main/docs/output.md) for descriptions of NOMAD output.
+Please see this [document](https://github.com/salzmanlab/nomad/blob/main/docs/output.md) for descriptions of NOMAD output.
 
 
 # Citations
