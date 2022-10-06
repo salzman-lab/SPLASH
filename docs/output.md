@@ -1,4 +1,3 @@
-# kaitlinchaung/nomad: Output
 
 ## Introduction
 
