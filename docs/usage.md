@@ -1,7 +1,7 @@
 # Running on your own data
 To run this pipeline on your own samplesheet, use a command similar to:
 ```bash
-nextflow run kaitlinchaung/nomad \
+nextflow run salzmanlab/nomad \
     -profile <<singularity/conda/docker>> \
     -r main \
     -latest \
