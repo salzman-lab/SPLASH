@@ -11,6 +11,11 @@ import math
 import time #### just for testing
 
 
+# print('****************************')
+# print('Deprecated; use compute_spectral_pvals.py for better / more general p-values')
+# print('This file can be used for more efficient / batched p-value computation, but is limited to using the same c and f')
+# print('****************************')
+
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument( ### input abundant_stratified_{}.txt.gz file

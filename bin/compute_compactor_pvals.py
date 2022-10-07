@@ -6,18 +6,21 @@ import glob
 import pickle
 import argparse
 import scipy
+import sys
 import scipy.stats
 import statsmodels.api as sm
 from pathlib import Path 
 
+
 from stats_utils import *
 
-##### Additional details / theory will appear in an upcoming submission
 
+##### Additional details / theory will appear in an upcoming submission
+## For analysis of compactor files: "sample_specificity.tsv"
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument( ### input abundant_stratified_{}.txt.gz file
+    parser.add_argument( ### input sample_specificity.tsv file
         "--infile",
         type=str
     )
@@ -40,30 +43,15 @@ def get_args():
         type=str,
         default=""
     )
-    parser.add_argument( ### optional file indicating subset of anchors to be used
-        "--kmer_size",
-        type=int,
-        default=27
+    parser.add_argument( ### fraction of data partitioned for training
+        "--train_fraction",
+        type=float,
+        default=.25
     )
-    parser.add_argument( ### remove all anchors with y or fewer unique targets
-        "--anchor_unique_targets_threshold",
+    parser.add_argument( ### fraction of data partitioned for training
+        "--num_rand_cf",
         type=int,
-        default=1
-    )
-    parser.add_argument( ### remove all anchors with y or fewer total counts
-        "--anchor_count_threshold",
-        type=int,
-        default=30
-    )
-    parser.add_argument( ### remove all anchors that only appear in y or fewer samples
-        "--anchor_samples_threshold",
-        type=int,
-        default=1
-    )
-    parser.add_argument( ### remove all (anchor,sample) pairs with y or fewer counts
-        "--anchor_sample_counts_threshold",
-        type=int,
-        default=1
+        default=50
     )
     ############### This option is currently not supported
     parser.add_argument( ### flag, whether to save cj or not
@@ -75,16 +63,6 @@ def get_args():
         ####     a = np.load(f)
         #### with open(args.outfile_scores+'/spectral_f.pkl', 'rb') as handle:
         ####     b = pickle.load(handle)
-    )
-    parser.add_argument( ### fraction of data partitioned for training
-        "--train_fraction",
-        type=float,
-        default=.25
-    )
-    parser.add_argument( ### fraction of data partitioned for training
-        "--num_rand_cf",
-        type=int,
-        default=50
     )
     args = parser.parse_args()
     return args
@@ -114,7 +92,7 @@ def main():
         anchLst = []
 
     print('constructing counts dataframe')
-    countsDf = constructCountsDf(args,anchLst)
+    countsDf = pd.read_csv(args.infile,sep='\t') 
 
     if anchLst == []:
         anchLst = countsDf.anchor.unique()
@@ -139,13 +117,14 @@ def main():
         newRow = {'anchor':anch}
 
         ### Get the relevant data from the table, pivot it
-        anch_pivot_table = (anch_table.drop(columns='anchor')
-                            .pivot(index=['target'], columns='sample', values='counts')
-                            .fillna(0)) ### index is targets, for levenshtein / etc computation
+        anch_pivot_table = anch_table.drop(columns='anchor').set_index('compactor').fillna(0) ### index is targets, for levenshtein / etc computation
         
         ### this is the contingency table to operate on
         anch_contingency_table = anch_pivot_table.to_numpy()
 
+        # print(anch_pivot_table)
+        
+        # print(anch_contingency_table)
 
         ### compute asymptotically valid comparison tests
         if args.output_verbosity=="experimental":
@@ -235,8 +214,8 @@ def main():
         ### compute additional quantities (e.g. M, number of unique targets, etc)
         rowMetadata = computeBaseQuantities(anch_contingency_table)
         newRow = newRow | rowMetadata
-        newRow['mean_target_levenshtein_distance'] = computeAverageDist(anch_pivot_table,nltk.edit_distance)
-        newRow['mean_target_hamming_distance'] = computeAverageDist(anch_pivot_table,hamming)
+        # newRow['mean_target_levenshtein_distance'] = computeAverageDist(anch_pivot_table,nltk.edit_distance)
+        # newRow['mean_target_hamming_distance'] = computeAverageDist(anch_pivot_table,hamming)
 
         resultsDf = resultsDf.append(newRow,ignore_index=True)
 

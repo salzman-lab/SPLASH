@@ -11,6 +11,7 @@ import nltk
 
 #### Usage:
 ## This file provides statistically functionality for NOMAD.
+## Theoretical analysis and additional details to appear in an upcoming preprint
 ## There are 4 sets of functions in this file: 
 ### 1. General utility files: samplesheet parsing, abundant stratified parsing, splitting counts matrices, etc.
 ### 2. c,f construction: These take as input a contingency table, and output c and f that are predicted to perform well on them
@@ -547,6 +548,7 @@ def effectSize_cts(X,c,f):
 
 #### compute mean entropy difference to detect V(D)J type events
 def simple_ent_dif(X):
+    X = X[:,X.sum(axis=0)>0] ### avoid 0 count samples
     normalizedMat = X/X.sum(axis=0)
     agg_ent = scipy.stats.entropy(normalizedMat.mean(axis=1),base=2)
     meanEnt = np.mean([scipy.stats.entropy(normalizedMat[:,j],base=2) for j in range(X.shape[1])])
