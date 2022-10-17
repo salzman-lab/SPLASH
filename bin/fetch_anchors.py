@@ -69,7 +69,7 @@ def main():
                 # write out anchor and target, with the cbc as sample
                 read = line.strip()
 
-                last_base = len(read) - (args.lookahead + 2 * args.kmer_size)
+                last_base = len(read) - (args.lookahead + 2 * args.kmer_size) + 1
 
                 for i in range(0, last_base, step_size):
                     # get anchor
@@ -96,7 +96,7 @@ def main():
                 if x % 4 == 2:
                     read = line.strip()
 
-                    last_base = len(read) - (args.lookahead + 2 * args.kmer_size)
+                    last_base = len(read) - (args.lookahead + 2 * args.kmer_size) + 1
 
                     for i in range(0, last_base, step_size):
                         # get anchor
