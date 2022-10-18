@@ -55,6 +55,7 @@ workflow RUN_NOMAD {
             .fromPath(params.samplesheet_abundant_stratified_anchors)
             .splitCsv(header: false)
             .map{ row -> file(row[0])}
+            .view()
 
         Channel
             .fromPath(consensus_fractions_path)
