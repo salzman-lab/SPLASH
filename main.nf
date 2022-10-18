@@ -51,9 +51,11 @@ workflow RUN_NOMAD {
         consensus_fractions_path            = "${params.results_dir}/consensus_anchors/*fractions.tab"
 
         // Create channels with files
-        Channel
-            .fromPath(abundant_stratified_anchors_path)
-            .set{ abundant_stratified_anchors}
+        abundant_stratified_anchors = Channel
+            .fromPath(params.samplesheet_abundant_stratified_anchors)
+            .splitCsv(header: false)
+            .map{ row -> file(row[0])}
+
         Channel
             .fromPath(consensus_fractions_path)
             .set{ consensus_fractions }
