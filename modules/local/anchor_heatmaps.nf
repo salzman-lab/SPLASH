@@ -1,7 +1,7 @@
 
 process ANCHOR_HEATMAPS {
 
-    publishDir "${params.results_dir}/anchor_heatmaps", mode: 'copy'
+    publishDir "${params.outdir}/anchor_heatmaps", mode: 'copy'
     tag "heatmaps"
     label 'process_high'
     conda (params.enable_conda ? "conda-forge::python=3.9.5 numpy conda-forge::matplotlib pandas scipy seaborn" : null)
@@ -17,7 +17,6 @@ process ANCHOR_HEATMAPS {
     path anchor_Cjs
     val num_heatmap_anchors
     path samplesheet
-    path additional_summary
     path genome_annotations_anchors
     path results_dir
 
@@ -27,7 +26,6 @@ process ANCHOR_HEATMAPS {
 
     script:
     def heatmap_anchor_list             = (use_heatmap_anchor_list==true) ? "--heatmap_anchor_list ${heatmap_anchor_list}" : ""
-    def use_additional_summary          = (additional_summary)            ? "--additional_summary ${additional_summary}" : ""
     def use_genome_annotations_anchors  = (genome_annotations_anchors)    ? "--genome_annotations_anchors ${genome_annotations_anchors}" : ""
 
     outfile_contingency_table           = "heatmap_anchors_contingency_table.csv"
