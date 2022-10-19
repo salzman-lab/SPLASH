@@ -380,7 +380,7 @@ def plotContingency(dfpvals, sampleNames, dfcts, anch, cjSheet, useSheetCjs, arg
 
         ### plotting
         maxLen = len(df.columns)-3 ### cjRand,cjSheet,consensus (sample is index)
-        consensi = df.loc[sampleNames,'consensus'].to_list()
+        consensi = df.loc[sampleNames,'consensus'].dropna().to_list()
         consensusMat = -1*np.ones((len(consensi),maxLen)) ### negative 1 is nan
         for i,cons in enumerate(consensi):
             consensusMat[i,:len(cons)] = [bpToInt(x) for x in cons]
