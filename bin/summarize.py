@@ -36,7 +36,19 @@ def get_args():
     return args
 
 
-def get_ann(row, seq_type):
+def get_ann(row, seq_type, priority_list):
+
+    for ref in priority_list:
+        if row.loc[ref] != '*':
+            row.loc[f"{seq_type}_top_ann"] = ref
+            row.loc[f"{seq_type}_top_ann_hit"] = row.loc[ref]
+            row.loc[f"{seq_type}_top_ann_hit_pos"] = row.loc[ref.replace("hits", "hits_pos")]
+            break
+    return row
+
+
+def add_summary(ann_table, seq_type):
+
     priority_list = [
         f'{seq_type}_hits_UniVec',
         f'{seq_type}_hits_illumina_adapters',
@@ -55,16 +67,6 @@ def get_ann(row, seq_type):
         f'{seq_type}_hits_grch38_1kgmaj'
     ]
 
-    for ref in priority_list:
-        if row.loc[ref] != '*':
-            row.loc[f"{seq_type}_top_ann"] = ref
-            row.loc[f"{seq_type}_top_ann_hit"] = row.loc[ref]
-            row.loc[f"{seq_type}_top_ann_hit_pos"] = row.loc[ref.replace("hits", "hits_pos")]
-            break
-    return row
-
-
-def add_summary(df, ann_table, seq_type):
     c_list = [c for c in ann_table.columns if 'hits_pos' not in c]
 
     ann_table['all_unannotated'] = (
@@ -82,10 +84,13 @@ def add_summary(df, ann_table, seq_type):
     ann_df[f"{seq_type}_top_ann_hit"] = None
     ann_df[f"{seq_type}_top_ann_hit_pos"] = None
 
-    ann_df = ann_df.apply(
-        lambda row:
-        get_ann(row, seq_type), axis=1
-    )
+    # only assign "*_top_ann" columns if we used the default element annotations
+    num_default_ann = len([c for c in ann_df.columns if c in priority_list])
+    if num_default_ann == len(priority_list):
+        ann_df = ann_df.apply(
+            lambda row:
+            get_ann(row, seq_type, priority_list), axis=1
+        )
 
     ann_df[f"{seq_type}_num_ann"] = (
             ann_df[c_list]
@@ -97,7 +102,10 @@ def add_summary(df, ann_table, seq_type):
         )
 
     ann_df[f"{seq_type}_annotation_source"] = "bowtie2"
-    bowtie_df = ann_df[[seq_type, f"{seq_type}_top_ann", f"{seq_type}_top_ann_hit", f"{seq_type}_top_ann_hit_pos", f"{seq_type}_num_ann", f"{seq_type}_annotation_source"]]
+    bowtie_df = ann_df[[
+        seq_type, f"{seq_type}_top_ann", f"{seq_type}_top_ann_hit", f"{seq_type}_top_ann_hit_pos",
+        f"{seq_type}_num_ann", f"{seq_type}_annotation_source"
+    ]]
 
     return bowtie_df
 
@@ -192,8 +200,8 @@ def main():
     df['anchor_matches_rcTarget'] = df['rcTarget'].isin(df['anchor'])
     df['rcAnchor_matches_target'] = df['rcAnchor'].isin(df['target'])
 
-    summarized_anchors = add_summary(df, ann_anchors, 'anchor')
-    summarized_targets = add_summary(df, ann_targets, 'target')
+    summarized_anchors = add_summary(ann_anchors, 'anchor')
+    summarized_targets = add_summary(ann_targets, 'target')
 
     df = pd.merge(df, summarized_anchors, on='anchor', how='left')
     df = pd.merge(df, summarized_targets, on='target', how='left')
