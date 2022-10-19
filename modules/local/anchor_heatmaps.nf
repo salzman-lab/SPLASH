@@ -17,6 +17,7 @@ process ANCHOR_HEATMAPS {
     path anchor_Cjs
     val num_heatmap_anchors
     path samplesheet
+    path additional_summary
     path genome_annotations_anchors
     path results_dir
 
@@ -26,12 +27,12 @@ process ANCHOR_HEATMAPS {
 
     script:
     def heatmap_anchor_list             = (use_heatmap_anchor_list==true) ? "--heatmap_anchor_list ${heatmap_anchor_list}" : ""
+    def use_additional_summary          = (additional_summary)            ? "--additional_summary ${additional_summary}" : ""
     def use_genome_annotations_anchors  = (genome_annotations_anchors)    ? "--genome_annotations_anchors ${genome_annotations_anchors}" : ""
 
     outfile_contingency_table           = "heatmap_anchors_contingency_table.csv"
     outfile_skipped_anchors             = "heatmap_skipped_anchors.tsv"
 
-    println("${params.results_dir}")
 
     """
     anchor_heatmaps.py \\
@@ -44,7 +45,7 @@ process ANCHOR_HEATMAPS {
         --outfile_contingency_table ${outfile_contingency_table} \\
         --outfile_skipped_anchors ${outfile_skipped_anchors} \\
         ${heatmap_anchor_list} \\
-        --additional_summary '' \\
+        ${use_additional_summary} \\
         ${use_genome_annotations_anchors} \\
     """
 }
