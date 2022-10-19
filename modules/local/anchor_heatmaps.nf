@@ -3,7 +3,7 @@ process ANCHOR_HEATMAPS {
 
     publishDir "${params.results_dir}/anchor_heatmaps", mode: 'copy'
     tag "heatmaps"
-    label 'process_medium'
+    label 'process_high'
     conda (params.enable_conda ? "conda-forge::python=3.9.5 numpy conda-forge::matplotlib pandas scipy seaborn" : null)
 
     input:
