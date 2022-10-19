@@ -46,7 +46,7 @@ process ANCHOR_HEATMAPS {
         --outfile_contingency_table ${outfile_contingency_table} \\
         --outfile_skipped_anchors ${outfile_skipped_anchors} \\
         ${heatmap_anchor_list} \\
-        ${use_additional_summary} \\
+        --additional_summary '' \\
         ${use_genome_annotations_anchors} \\
     """
 }
