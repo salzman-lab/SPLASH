@@ -146,7 +146,11 @@ def normalizevec(x,minval=0,maxval=1):
 ######### 2: c,f generation
 
 #### get spectral c,f, from simple SVD (correspondence analysis style)
-def get_spectral_cf_svd(X,tblShape):
+def get_spectral_cf_svd(X,tblShape=-1):
+
+    ### for backwards comaptability 
+    if tblShape==-1:
+        tblShape=X.shape
 
     relevantTargs = X.sum(axis=1)>0
     relevantSamples = X.sum(axis=0)>0
@@ -180,9 +184,55 @@ def get_spectral_cf_svd(X,tblShape):
     return cOpt,fOpt
 
 
+### starting at c, run alternating maximization
+def altMaximize(X,c):
+    #### if clustering put all in same cluster, perturb
+    if np.all(c==c[0]):
+        c[0] = -1*c[0]
+        
+    nj = X.sum(axis=0)
+    njinvSqrt = 1.0/np.maximum(1,np.sqrt(nj)) ### avoid divide by 0 errors
+    njinvSqrt[nj==0]=0
+    
+    Xtild = (X - 1.0/X.sum()*np.outer(X@np.ones(X.shape[1]), X.T@np.ones(X.shape[0]))) @ np.diag(njinvSqrt)
+    
+    Sold = 0
+    i=0
+    while True:
+        ### find optimal f for fixed c
+        f = np.sign(Xtild @ c)
+        f1 = (f+1)/2 ### to rescale f to be [0,1] valued
+        f2 = (1-f)/2
+        f = f1
+        if np.abs(f2@Xtild@c) > np.abs(f1@Xtild@c):
+            f = f2
+        
+        ### find optimal c for fixed f
+        c = Xtild.T @ f
+        if np.linalg.norm(c)>0:
+            c /= np.linalg.norm(c)
+        
+        ### compute objective value, if fixed, stop
+        S = f @ Xtild @ c
+        if S==Sold: ### will terminate once fOpt is fixed over 2 iterations
+            break
+        Sold = S
+        i+=1
+        if i>50:
+            c = np.zeros_like(c)
+            f=np.zeros_like(f)
+            S=0
+            break
+    return c,f,np.abs(S)
+
+
 ### find locally-optimal (unconstrained) c and f from spectral c initialization
-def generateSpectralOptcf(X,tblShape):
+def generateSpectralOptcf(X,tblShape=-1):
     np.random.seed(0)### for filling in f
+
+    ### for backwards comaptability 
+    if tblShape==-1:
+        tblShape=X.shape
     
     relevantTargs = X.sum(axis=1)>0
     relevantSamples = X.sum(axis=0)>0
@@ -190,7 +240,7 @@ def generateSpectralOptcf(X,tblShape):
     r,c=X.shape
     
     if relevantTargs.sum()<2 or relevantSamples.sum()<2:
-        return np.zeros(c),np.zeros(r),0
+        return np.zeros(c),np.zeros(r)
 
     X = X[np.ix_(relevantTargs,relevantSamples)]
 
@@ -231,42 +281,7 @@ def generateSpectralOptcf(X,tblShape):
     if np.all(c==c[0]):
         c[0] = -1*c[0]
     
-    nj = X.sum(axis=0)
-    njinvSqrt = 1.0/np.maximum(1,np.sqrt(nj)) ### avoid divide by 0 errors
-    njinvSqrt[nj==0]=0
-    
-    fOpt = np.sign((X-X@np.outer(np.ones(X.shape[1]),nj)/np.maximum(1,X.sum()))@(c*njinvSqrt))
-    fOpt = (fOpt+1)/2 ### to rescale f to be [0,1] valued
-    
-    Sold = 0
-    i=0
-    while True:
-        
-        ### find optimal f for fixed c
-        fOpt = np.sign((X-X@np.outer(np.ones(X.shape[1]),nj)/np.maximum(1,X.sum()))@(c*njinvSqrt))
-        fOpt = (fOpt+1)/2 ### to rescale f to be [0,1] valued
-        fOpt=normalizevec(fOpt)
-        
-        ### find optimal c for fixed f
-        Sj = np.multiply(fOpt @ (X-X@np.outer(np.ones(X.shape[1]),nj)/X.sum()),njinvSqrt)
-
-        if np.all(Sj==0): ### something went wrong
-            c = np.zeros_like(c)
-            fOpt=np.zeros_like(fOpt)
-            break
-    
-        c = Sj/np.linalg.norm(Sj,2)
-        
-        ### compute objective value, if fixed, stop
-        S = fOpt @ (X-X@np.outer(np.ones(X.shape[1]),nj)/X.sum())@(c*njinvSqrt)/np.linalg.norm(c,2)
-        if S==Sold: ### will terminate once fOpt is fixed over 2 iterations
-            break
-        Sold = S
-        i+=1
-        if i>50: ### something went wrong
-            c = np.zeros_like(c)
-            fOpt=np.zeros_like(fOpt)
-            break
+    c,fOpt,S=altMaximize(X,c)
     
     ## extend to targets and samples that didn't occur in training data
     fElong = np.random.choice([0,1],size=tblShape[0])
@@ -277,77 +292,60 @@ def generateSpectralOptcf(X,tblShape):
     cElong[np.arange(tblShape[1])[relevantSamples][sampleMask2]]=c ### fancy indexing
     cOpt = cElong
     
-    return np.nan_to_num(cOpt,0),np.nan_to_num(normalizevec(fOpt),0),i
+    return np.nan_to_num(cOpt,0),np.nan_to_num(normalizevec(fOpt),0)
 
 
 ### find locally-optimal (unconstrained) c and f from random initialization
-def generateRandOptcf(X,tblShape,randSeed=0):
+### v2
+def generate_alt_max_cf(X,tblShape=-1, randSeed=0,numRandInits=10):
     np.random.seed(randSeed) ### random initialization and extension
     
+    ### for backwards comaptability 
+    if tblShape==-1:
+        tblShape=X.shape
+
     relevantTargs = X.sum(axis=1)>0
     relevantSamples = X.sum(axis=0)>0
 
-    r,c=X.shape
+    nrows,ncols=X.shape
     
     if relevantTargs.sum()<2 or relevantSamples.sum()<2:
-        return np.zeros(c),np.zeros(r),0
+        return np.zeros(ncols),np.zeros(nrows)
 
     X = X[np.ix_(relevantTargs,relevantSamples)]
     
-    c = np.random.choice([-1,1],size=X.shape[1])
-    #### if clustering put all in same cluster, perturb
-    
-    if np.all(c==c[0]):
-        c[0] = -1*c[0]
-    
-    nj = X.sum(axis=0)
-    njinvSqrt = 1.0/np.maximum(1,np.sqrt(nj)) ### avoid divide by 0 errors
-    njinvSqrt[nj==0]=0
-    
-    fOpt = np.sign((X-X@np.outer(np.ones(X.shape[1]),nj)/np.maximum(1,X.sum()))@(c*njinvSqrt))
-    fOpt = (fOpt+1)/2 ### to rescale f to be [0,1] valued
-    
-    Sold = 0
-    i=0
-    while True:
-        
-        ### find optimal f for fixed c
-        fOpt = np.sign((X-X@np.outer(np.ones(X.shape[1]),nj)/np.maximum(1,X.sum()))@(c*njinvSqrt))
-        fOpt = (fOpt+1)/2 ### to rescale f to be [0,1] valued
-        
-        ### find optimal c for fixed f
-        Sj = np.multiply(fOpt @ (X-X@np.outer(np.ones(X.shape[1]),nj)/X.sum()),njinvSqrt)
-        c = Sj/np.linalg.norm(Sj,2)
-        
-        ### compute objective value, if fixed, stop
-        S = fOpt @ (X-X@np.outer(np.ones(X.shape[1]),nj)/X.sum())@(c*njinvSqrt)/np.linalg.norm(c,2)
-        if S==Sold: ### will terminate once fOpt is fixed over 2 iterations
-            break
-        Sold = S
-        i+=1
-        if i>50:
-            c = np.zeros_like(c)
-            fOpt=np.zeros_like(fOpt)
-            break
-    
-    
+    Sbase=0
+    fMax=0
+    cMax=0
+    for _ in range(numRandInits):
+        c = np.random.choice([-1,1],size=X.shape[1])
+        c,f,S = altMaximize(X,c)
+        if S > Sbase:
+            fMax = f
+            cMax = c
+            
+
     ## extend to targets and samples that didn't occur previously
-    fElong = np.random.choice([0,1],size=tblShape[0])
-    fElong[relevantTargs] = fOpt
+    fElong = np.random.choice([0,1],size=nrows)
+    fElong[relevantTargs] = fMax
     fOpt = fElong
     
-    cElong = np.zeros(tblShape[1])
-    cElong[np.arange(tblShape[1])[relevantSamples]]=c ### fancy indexing
+    cElong = np.zeros(ncols)
+    cElong[np.arange(ncols)[relevantSamples]]=cMax ### fancy indexing
     cOpt = cElong
     
-    return cOpt,fOpt,i
-
+    return cOpt,fOpt
 
 ### find locally-optimal c and f from random initialization
 #### constrained to c having the same sign as sheetCj
-def generateSignedSheetCjOptcf(X,sheetCj,tblShape):
+def generateSignedSheetCjOptcf(X,sheetCj,tblShape = -1):
     np.random.seed(0)### for filling in f
     
+    ### for backwards comaptability 
+    if tblShape==-1:
+        tblShape=X.shape
+
+
     relevantTargs = X.sum(axis=1)>0
     relevantSamples = X.sum(axis=0)>0
 
@@ -408,12 +406,16 @@ def generateSignedSheetCjOptcf(X,sheetCj,tblShape):
     cElong = np.zeros(tblShape[1])
     cElong[np.arange(tblShape[1])[relevantSamples]]=c ### fancy indexing
     cOpt = cElong
-    return cOpt,fOpt,i
+    return cOpt,fOpt
 
 
 ### find optimal f for given input sheetCj
-def generateSheetCjOptcf(X,sheetCj,tblShape):
+def generateSheetCjOptcf(X,sheetCj,tblShape=-1):
     np.random.seed(0) ### for filling in f
+
+    ### for backwards comaptability 
+    if tblShape==-1:
+        tblShape=X.shape
     
     relevantTargs = X.sum(axis=1)>0
     X = X[relevantTargs]

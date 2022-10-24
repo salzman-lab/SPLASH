@@ -188,11 +188,11 @@ def main():
 
     print('computing levenshtein distances')
     ### generate mean target levenshtein distance
-    reducedDf['dij_0'] = np.vectorize(lambda x,y : nltk.edit_distance(x,y))(reducedDf.target,reducedDf.maxTarget) ## compute on reduced set
+    reducedDf['dij_l'] = np.vectorize(lambda x,y : nltk.edit_distance(x,y))(reducedDf.target,reducedDf.maxTarget) ## compute on reduced set
     mergedDf = mergedDf.merge(reducedDf) ## merge back dij_0 column 
 
-    df = convertDijToSj(mergedDf,0)
-    df['mean_target_levenshtein_distance'] = df['mu_0']
+    df = convertDijToSj(mergedDf,'l')
+    df['mean_target_levenshtein_distance'] = df['mu_l']
 
     df = mergedDf.drop(columns=['targ_cts','maxTarget'])
 

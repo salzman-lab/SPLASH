@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from pyparsing import nums
 from tqdm import tqdm,tqdm_notebook, tqdm_pandas
 import os
 import glob
@@ -57,7 +58,7 @@ def get_args():
     parser.add_argument( ### flag, whether to save cj or not
         "--save_c_f",
         type=bool,
-        default=False
+        default=True
         ### if save_c_f flag, then can read in optimizing c and f as below:
         #### with open(args.outfile_scores+'/spectral_cj.npy','rb') as f:
         ####     a = np.load(f)
@@ -76,10 +77,6 @@ def main():
 
     if args.output_verbosity not in ['default','metadata','experimental']:
         print('invalid option for output_verbosity')
-        return
-
-    if args.save_c_f:
-        print('save_c_f not supported')
         return
 
     ### read in anchor list file
@@ -104,8 +101,11 @@ def main():
 
     anchLst = set(anchLst)
     nuniqueAnchors = countsDf.anchor.nunique()
+    numSamples = countsDf.shape[1]-2 ## anchor and compactor cols
     anchsUsed = np.ones(nuniqueAnchors,dtype='bool')
     resultsDf = pd.DataFrame()
+    
+    cMat = np.zeros((nuniqueAnchors,numSamples))
 
     print("Starting loop over anchors")
     for anch_idx,(anch,anch_table) in tqdm(enumerate(countsDf.groupby('anchor')), total = nuniqueAnchors):
@@ -141,15 +141,16 @@ def main():
 
         ### compute simple c,f from spectral approach (correspondence analysis style)
         ###   and compute nomad_simpleSVD_pv
-        cOpt,fOpt = get_spectral_cf_svd(Xtrain,anch_contingency_table.shape)
+        cOpt,fOpt = get_spectral_cf_svd(Xtrain)
         newRow['pval_SVD_corrAnalysis'] = testPval(Xtest,cOpt,fOpt)
-        newRow['pval_asymp_SVD_corrAnalysis'] = computeAsympNOMAD(Xtest,cOpt,fOpt)
         newRow['effect_size_cts_SVD'] = effectSize_cts(Xtest,cOpt,fOpt)
 
 
         ### compute pvalsRandOpt
-        cOpt,fOpt,_ = generateRandOptcf(Xtrain,Xtest.shape)
-        newRow['pval_rand_init_EM']=testPval(Xtest,cOpt,fOpt)    
+        cOpt,fOpt = generate_alt_max_cf(Xtrain)
+        newRow['pval_rand_init_alt_max']=testPval(Xtest,cOpt,fOpt)
+        if args.save_c_f:
+            cMat[anch_idx] = cOpt   
 
 
         ### compute nomad's base p-value
@@ -182,16 +183,16 @@ def main():
             newRow['pval_cts_base'] = min(1,args.num_rand_cf*nomadctsArr.min())
 
             ### compute pvalsSpectral
-            cOpt,fOpt,_ = generateSpectralOptcf(Xtrain,Xtest.shape)
-            newRow['pval_spectral_EM']=testPval(Xtest,cOpt,fOpt)
+            cOpt,fOpt = generateSpectralOptcf(Xtrain)
+            newRow['pval_spectral_alt_max']=testPval(Xtest,cOpt,fOpt)
 
 
         ##### hasn't been thoroughly tested, but seems to be working as expected
         if args.output_verbosity == 'metadata' or (useSheetCj and args.output_verbosity=='experimental'): ### not fully tested, use with caution
             sheetCj = samplesheetDf[anch_pivot_table.columns].to_numpy().flatten()
 
-            cOpt,fOpt,_ = generateSignedSheetCjOptcf(Xtrain,sheetCj,Xtest.shape)
-            newRow['pval_metadata_EM']=testPval(Xtest,cOpt,fOpt)
+            cOpt,fOpt = generateSignedSheetCjOptcf(Xtrain,sheetCj)
+            newRow['pval_metadata_alt_max']=testPval(Xtest,cOpt,fOpt)
             
             cOpt,fOpt = generateSheetCjOptcf(Xtrain,sheetCj,Xtest.shape)
             newRow['pval_metadata_optF']=testPval(Xtest,cOpt,fOpt)
@@ -219,7 +220,7 @@ def main():
 
         resultsDf = resultsDf.append(newRow,ignore_index=True)
 
-    outdf = resultsDf
+    outdf = resultsDf.rename(columns={'anch_uniqTargs':'anch_uniqCompactors', 'target_entropy':'compactor_entropy'})
 
     if args.output_verbosity != 'experimental':
         outdf.drop(columns=outdf.columns[outdf.columns.str.contains('asymp')],inplace=True)        
@@ -232,7 +233,11 @@ def main():
     outdf.to_csv(filepath, sep='\t', index=False)
 
 
-
+    if args.save_c_f:
+        cMat = cMat[anchsUsed]
+        with open(args.outfile_scores[:-4]+'_spectral_cj.npy', 'wb') as f:
+            np.save(f,cMat)
+            
     # if args.save_c_f:
     #     if not useSheetCj:
     #         cjArr = cjArr[:,:4]

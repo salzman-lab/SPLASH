@@ -12,7 +12,7 @@ from pathlib import Path
 
 from stats_utils import *
 
-##### Additional details / theory will appear in an upcoming submission
+##### Theoretical analysis and additional details to appear in an upcoming preprint
 
 
 def get_args():
@@ -162,15 +162,15 @@ def main():
 
         ### compute simple c,f from spectral approach (correspondence analysis style)
         ###   and compute nomad_simpleSVD_pv
-        cOpt,fOpt = get_spectral_cf_svd(Xtrain,anch_contingency_table.shape)
+        cOpt,fOpt = get_spectral_cf_svd(Xtrain)
         newRow['pval_SVD_corrAnalysis'] = testPval(Xtest,cOpt,fOpt)
         newRow['pval_asymp_SVD_corrAnalysis'] = computeAsympNOMAD(Xtest,cOpt,fOpt)
         newRow['effect_size_cts_SVD'] = effectSize_cts(Xtest,cOpt,fOpt)
 
 
         ### compute pvalsRandOpt
-        cOpt,fOpt,_ = generateRandOptcf(Xtrain,Xtest.shape)
-        newRow['pval_rand_init_EM']=testPval(Xtest,cOpt,fOpt)    
+        cOpt,fOpt = generate_alt_max_cf(Xtrain)
+        newRow['pval_rand_init_alt_max']=testPval(Xtest,cOpt,fOpt)    
 
 
         ### compute nomad's base p-value
@@ -203,18 +203,18 @@ def main():
             newRow['pval_cts_base'] = min(1,args.num_rand_cf*nomadctsArr.min())
 
             ### compute pvalsSpectral
-            cOpt,fOpt,_ = generateSpectralOptcf(Xtrain,Xtest.shape)
-            newRow['pval_spectral_EM']=testPval(Xtest,cOpt,fOpt)
+            cOpt,fOpt = generateSpectralOptcf(Xtrain) 
+            newRow['pval_spectral_alt_max']=testPval(Xtest,cOpt,fOpt)
 
 
         ##### hasn't been thoroughly tested, but seems to be working as expected
         if args.output_verbosity == 'metadata' or (useSheetCj and args.output_verbosity=='experimental'): ### not fully tested, use with caution
             sheetCj = samplesheetDf[anch_pivot_table.columns].to_numpy().flatten()
 
-            cOpt,fOpt,_ = generateSignedSheetCjOptcf(Xtrain,sheetCj,Xtest.shape)
-            newRow['pval_metadata_EM']=testPval(Xtest,cOpt,fOpt)
+            cOpt,fOpt = generateSignedSheetCjOptcf(Xtrain,sheetCj)
+            newRow['pval_metadata_alt_max']=testPval(Xtest,cOpt,fOpt)
             
-            cOpt,fOpt = generateSheetCjOptcf(Xtrain,sheetCj,Xtest.shape)
+            cOpt,fOpt = generateSheetCjOptcf(Xtrain,sheetCj)
             newRow['pval_metadata_optF']=testPval(Xtest,cOpt,fOpt)
 
             nomadasympArr = np.zeros(args.num_rand_cf)
