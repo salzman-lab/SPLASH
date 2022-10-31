@@ -58,7 +58,7 @@ def get_args():
     parser.add_argument( ### flag, whether to save cj or not
         "--save_c_f",
         type=bool,
-        default=True
+        default=False
         ### if save_c_f flag, then can read in optimizing c and f as below:
         #### with open(args.outfile_scores+'/spectral_cj.npy','rb') as f:
         ####     a = np.load(f)
@@ -74,6 +74,10 @@ def get_args():
 #### main function
 def main():
     args = get_args()
+
+    if os.path.isfile(args.outfile_scores):
+        print('Already generated, terminating')
+        return
 
     if args.output_verbosity not in ['default','metadata','experimental']:
         print('invalid option for output_verbosity')
@@ -105,7 +109,8 @@ def main():
     anchsUsed = np.ones(nuniqueAnchors,dtype='bool')
     resultsDf = pd.DataFrame()
     
-    cMat = np.zeros((nuniqueAnchors,numSamples))
+    if args.save_c_f:
+        cMat = np.zeros((nuniqueAnchors,numSamples))
 
     print("Starting loop over anchors")
     for anch_idx,(anch,anch_table) in tqdm(enumerate(countsDf.groupby('anchor')), total = nuniqueAnchors):

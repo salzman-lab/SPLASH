@@ -323,6 +323,7 @@ def generate_alt_max_cf(X,tblShape=-1, randSeed=0,numRandInits=10):
         if S > Sbase:
             fMax = f
             cMax = c
+            Sbase = S
             
 
     ## extend to targets and samples that didn't occur previously
