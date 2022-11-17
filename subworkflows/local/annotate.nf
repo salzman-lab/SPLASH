@@ -1,3 +1,4 @@
+include { MAKE_FASTA                } from '../../modules/local/make_fasta'
 include { ELEMENT_ALIGNMENT         } from '../../modules/local/element_alignment'
 include { ELEMENT_ANNOTATIONS       } from '../../modules/local/element_annotations'
 include { SUMMARIZE                 } from '../../modules/local/summarize'
@@ -13,18 +14,19 @@ include { ADDITIONAL_SUMMARY        } from '../../modules/local/additional_summa
 workflow ANNOTATE {
 
     take:
-    anchor_scores
-    anchor_target_counts
-    ch_consensus_fastas
-    ch_anchor_target_fastas
 
     main:
 
-    // create samplesheet of bowtie2 indices
-    element_annotations_samplesheet = file(
-        params.element_annotations_samplesheet,
-        checkIfExists: true
+    // Make fasta from anchors file
+    MAKE_FASTA(
+        file(params.anchors)
     )
+
+    // Set anchors channel
+    ch_anchors = MAKE_FASTA.out.fasta
+
+    // Parse samplesheet of bowtie2 indices
+    element_annotations_samplesheet = file(params.element_annotations_samplesheet, checkIfExists: true)
     ch_indices = Channel.fromPath(element_annotations_samplesheet)
         .splitCsv(
             header: false
@@ -34,9 +36,9 @@ workflow ANNOTATE {
         }
 
     /*
-    // Cartesian join of anchor+target fastas and all bowtie2 indices
+    // Cartesian join of anchors and all bowtie2 indices
     */
-    ch_anchor_target_indices = ch_anchor_target_fastas
+    ch_anchor_indices = ch_anchors
         .flatten()
         .combine(ch_indices)
 
@@ -44,7 +46,7 @@ workflow ANNOTATE {
     // Process to align anchors to each bowtie2 index
     */
     ELEMENT_ALIGNMENT(
-        ch_anchor_target_indices
+        ch_anchor_indices
     )
 
     /*
@@ -55,89 +57,29 @@ workflow ANNOTATE {
     )
 
     /*
+    // Process to align targets and anchors to genome
+    */
+    GENOME_ALIGNMENT(
+        ch_anchors,
+        params.genome_index,
+        params.transcriptome_index
+    )
+
+    /*
+    // Process to run gene and exon annotations
+    */
+    GENOME_ANNOTATIONS(
+        GENOME_ALIGNMENT.out.bam_tuple,
+        params.gene_bed
+    )
+
+    /*
     // Process to run postprocessing annotations
     */
     SUMMARIZE(
-        anchor_scores,
-        anchor_target_counts,
-        ELEMENT_ANNOTATIONS.out.annotated_anchors,
-        ELEMENT_ANNOTATIONS.out.annotated_targets
+        file(params.anchors),
+        ELEMENT_ANNOTATIONS.out.anchors,
+        GENOME_ANNOTATIONS.out.anchors
     )
 
-    if (params.run_annotations) {
-        /*
-        // Process to align targets and anchors to genome
-        */
-        GENOME_ALIGNMENT(
-            ch_anchor_target_fastas.flatten(),
-            params.genome_index,
-            params.transcriptome_index
-        )
-
-        /*
-        // Process to run gene and exon annotations
-        */
-        GENOME_ANNOTATIONS(
-            GENOME_ALIGNMENT.out.bam_tuple,
-            params.gene_bed
-        )
-
-        /*
-        // Process to prepare consensus fastas for one STAR alignment
-        */
-        PREPARE_CONSENSUS(
-            ch_consensus_fastas.flatten()
-        )
-
-        /*
-        // Process to concatenate consensus fastas for one STAR alignment
-        */
-        MERGE_CONSENSUS(
-            PREPARE_CONSENSUS.out.fasta.collect()
-        )
-
-        consensus_fasta = MERGE_CONSENSUS.out.fasta
-        /*
-        // Process to get splice junctions with STAR
-        */
-        CONSENSUS_ALIGNMENT(
-            consensus_fasta,
-            params.star_index,
-            params.gtf
-        )
-
-        genome_annotations_anchors = GENOME_ANNOTATIONS.out.annotated_anchors
-
-        /*
-        // Process to get called exons from bam file
-        */
-        SPLICING_ANNOTATIONS(
-            CONSENSUS_ALIGNMENT.out.bam,
-            CONSENSUS_ALIGNMENT.out.unmapped_fasta,
-            params.gene_bed,
-            consensus_fasta,
-            genome_annotations_anchors
-        )
-
-        /*
-        // Process to make additional summary file
-        */
-        ADDITIONAL_SUMMARY(
-            SPLICING_ANNOTATIONS.out.consensus_called_exons,
-            SUMMARIZE.out.tsv
-        )
-
-        additional_summary = ADDITIONAL_SUMMARY.out.tsv
-
-
-    } else {
-        additional_summary          = null
-        genome_annotations_anchors  = null
-
-    }
-
-
-    emit:
-    additional_summary          = additional_summary
-    genome_annotations_anchors  = genome_annotations_anchors
 }

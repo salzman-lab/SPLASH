@@ -1,61 +1,75 @@
-#!/usr/bin/env nextflow
 /*
 ========================================================================================
-    kaitlinchaung/nomad
-========================================================================================
-    Github : https://github.com/kaitlinchaung/nomad
-
-----------------------------------------------------------------------------------------
-*/
-
-nextflow.enable.dsl = 2
-
-/*
-========================================================================================
-    GENOME PARAMETER VALUES
+    VALIDATE INPUTS
 ========================================================================================
 */
+
+def summary_params = NfcoreSchema.paramsSummaryMap(workflow, params)
+
+// Validate input parameters
+WorkflowNomad.initialise(params, log)
 
 
 /*
 ========================================================================================
-    VALIDATE & PRINT PARAMETER SUMMARY
+    CONFIG FILES
 ========================================================================================
 */
 
-WorkflowMain.initialise(workflow, params, log)
 
 /*
 ========================================================================================
-    NAMED WORKFLOW FOR PIPELINE
+    IMPORT LOCAL MODULES/SUBWORKFLOWS
 ========================================================================================
 */
 
-include {ELEMENT_ANNOTATIONS } from './workflows/element_annotations'
+// Don't overwrite global params.modules, create a copy instead and use that within the main script.
+def modules = params.modules.clone()
 
 //
-// WORKFLOW: Run main kaitlinchaung/nomad analysis pipeline
+// MODULE: Local to the pipeline
 //
 
-workflow RUN_NOMAD {
+//
+// SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
+//
+include { ANNOTATE                  } from '../subworkflows/local/annotate'
 
-    // Run pipeline
-    ELEMENT_ANNOTATIONS ()
+
+/*
+========================================================================================
+    IMPORT NF-CORE MODULES/SUBWORKFLOWS
+========================================================================================
+*/
+
+//
+// MODULE: Installed directly from nf-core/modules
+//
+
+/*
+========================================================================================
+    RUN MAIN WORKFLOW
+========================================================================================
+*/
+
+
+workflow ELEMENT_ANNOTATIONS {
+
+    /*
+    // Perform annotations
+    */
+    ANNOTATE()
 
 }
 
 /*
 ========================================================================================
-    RUN ALL WORKFLOWS
+    COMPLETION EMAIL AND SUMMARY
 ========================================================================================
 */
 
-//
-// WORKFLOW: Execute a single named workflow for the pipeline
-// See: https://github.com/nf-core/rnaseq/issues/619
-//
-workflow {
-    RUN_NOMAD ()
+workflow.onComplete {
+    NfcoreTemplate.summary(workflow, params, log)
 }
 
 /*

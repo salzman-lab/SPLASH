@@ -10,13 +10,11 @@ process GENOME_ANNOTATIONS {
     path gene_bed
 
     output:
-    path anchor_hits    , emit: annotated_anchors       , optional: true
-    path target_hits    , emit: annotated_targets       , optional: true
+    path anchor_hits    , emit: anchors
 
     script:
     fasta_name          = fasta.baseName
     anchor_hits         = "genome_annotations_anchor.tsv"
-    target_hits         = "genome_annotations_target.tsv"
     """
     samtools view ${transcriptome_bam} \\
         | cut -f1,3 \\

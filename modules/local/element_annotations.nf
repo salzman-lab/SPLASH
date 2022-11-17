@@ -8,15 +8,12 @@ process ELEMENT_ANNOTATIONS {
     path hits
 
     output:
-    path outfile_ann_anchors, emit: annotated_anchors
-    path outfile_ann_targets, emit: annotated_targets
+    path outfile_ann_anchors, emit: anchors
 
     script:
     outfile_ann_anchors     = "element_annotations_anchors.tsv"
-    outfile_ann_targets     = "element_annotations_targets.tsv"
     """
     element_annotations.py \\
-        --outfile_ann_anchors ${outfile_ann_anchors} \\
-        --outfile_ann_targets ${outfile_ann_targets}
+        --outfile_ann_anchors ${outfile_ann_anchors}
     """
 }
