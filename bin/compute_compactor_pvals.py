@@ -74,7 +74,7 @@ def get_args():
 #### main function
 def main():
     args = get_args()
-
+    
     if os.path.isfile(args.outfile_scores):
         print('Already generated, terminating')
         return

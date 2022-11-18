@@ -79,6 +79,5 @@ def main():
             _, c_corrected, _, _ = sm.stats.multipletests(outdf[c], method='fdr_by')
             newDF.loc[:,c+'_corrected'] = c_corrected #### raises pandas error, but is fine
             
-        newDF.sort_values('pval_SVD_corrAnalysis_corrected').to_csv(args.outfile_scores, sep='\t', index=False)
-
+        newDF.to_csv(args.outfile_scores, sep='\t', index=False)
 main()

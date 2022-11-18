@@ -1,4 +1,3 @@
-from hashlib import new
 import numpy as np
 import pandas as pd
 from tqdm import tqdm,tqdm_notebook, tqdm_pandas
@@ -164,8 +163,13 @@ def get_spectral_cf_svd(X,tblShape=-1):
 
     E = np.outer(X.sum(axis=1),X.sum(axis=0))/X.sum()
     svdmat = (X-E)@np.diag(1.0/X.sum(axis=0))
-    u,s,vh=np.linalg.svd(svdmat,full_matrices=False) ### very important to set full_matrices to false, else memory errors
-
+    
+    try:
+        u,s,vh=np.linalg.svd(svdmat,full_matrices=False) ### very important to set full_matrices to false, else memory errors
+    except: ### catch SVD error
+        print('SVD did not converge, error')
+        return np.zeros(c), np.zeros(r)
+        
     cRaw = vh[0,:]
     fRaw = u[:,0]
 
@@ -273,9 +277,12 @@ def generateSpectralOptcf(X,tblShape=-1):
         ### potentially could merge results from 2 clusterings?
 
         ### compute fiedler vector
-        eigvals,eigvecs =np.linalg.eig(L)
-        c = np.sign(normalizevec(np.real(eigvecs[:,np.argsort(np.abs(eigvals))[1]])))
-        ## maybe more fancy checking needed if graph isn't connected
+        try: 
+            eigvals,eigvecs =np.linalg.eig(L)
+            c = np.sign(normalizevec(np.real(eigvecs[:,np.argsort(np.abs(eigvals))[1]])))
+            ## maybe more fancy checking needed if graph isn't connected
+        except:
+            return np.zeros(tblShape[1]),np.zeros(tblShape[0])
     
     #### if clustering put all samples in same cluster, shouldn't happen
     if np.all(c==c[0]):
@@ -465,18 +472,20 @@ def computeAsympNOMAD(X,cOpt,fOpt):
     ### compute p value
     S = fOpt @ (X-X@np.outer(np.ones(X.shape[1]),nj)/X.sum())@(cOpt*njinvSqrt)
 
-    if S<1E-10: ### prevent edge issues
-        return 1
-
     M=X.sum()
     
     muhat = (fOpt@X).sum()/M
     
     varF = (fOpt-muhat)**2 @ X.sum(axis=1)/X.sum()
     totalVar = varF * (np.linalg.norm(cOpt)**2 - (cOpt@np.sqrt(nj))**2/M)
-    pval = 2*np.exp(-S**2/(2*totalVar ))
+    
+    if totalVar==0:
+        return 1 ## edge case, can't say anything
+    
+    normalizedTestStat = S/np.sqrt(totalVar)
+    pval = 2*scipy.stats.norm.cdf(-np.abs(normalizedTestStat))
                 
-    return min(np.nan_to_num(pval,1),1)
+    return pval
 
 
 ### test p-value for fixed c and f on contingency table
