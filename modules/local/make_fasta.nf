@@ -11,7 +11,7 @@ process MAKE_FASTA {
 
     script:
     """
-    header=\$(cut -f1 ${anchors} | head -1)
+    header=\$(cut -f1 ${anchors} | head -1 || true)
     if [[ \${header} == "anchor" ]]
     then
         cut -f1 ${anchors} \
