@@ -20,11 +20,11 @@ process ELEMENT_ALIGNMENT {
     outfile             = "${fasta_name}_hits_${index_name}.tsv"
     """
     rm -rf ${outfile}
-    echo -e "${fasta_name}\t${fasta_name}_hits_${index_name}\t${fasta_name}_hits_pos_${index_name}" >> ${outfile}
+    echo -e "${fasta_name}\t${fasta_name}_flag_${index_name}\t${fasta_name}_hits_${index_name}\t${fasta_name}_hits_pos_${index_name}" >> ${outfile}
 
     bowtie2 -f -x ${index} -U ${fasta} -p ${task.cpus} --quiet \\
         | sed '/^@/d' \\
-        | cut -f1,3,4 \\
+        | cut -f1,2,3,4 \\
         | sort \\
         | uniq \\
         >> ${outfile}
