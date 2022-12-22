@@ -417,6 +417,74 @@ def generateSignedSheetCjOptcf(X,sheetCj,tblShape = -1):
     return cOpt,fOpt
 
 
+def generateSignedSheetCjOptcf_v2(X,sheetCj):
+    np.random.seed(0) ### for filling in f
+
+    tblShape=X.shape
+
+    relevantTargs = X.sum(axis=1)>0
+    relevantSamples = X.sum(axis=0)>0
+
+    X = X[np.ix_(relevantTargs,relevantSamples)]
+
+    cSign = sheetCj[relevantSamples]
+    c = cSign
+        
+    nj = X.sum(axis=0)
+    njinvSqrt = 1.0/np.maximum(1,np.sqrt(nj)) ### avoid divide by 0 errors
+    njinvSqrt[nj==0]=0
+    
+    Xtild = (X - 1.0/X.sum()*np.outer(X@np.ones(X.shape[1]), X.T@np.ones(X.shape[0]))) @ np.diag(njinvSqrt)
+    
+    Sold = 0
+    i=0
+    while True:
+        ### find optimal f for fixed c
+        fOpt = np.sign(Xtild @ c)
+        f1 = (fOpt+1)/2 ### to rescale f to be [0,1] valued
+        f2 = (1-fOpt)/2
+        fOpt = f1
+        if np.abs(f2@Xtild@c) > np.abs(f1@Xtild@c):
+            fOpt = f2
+        
+        ### find optimal c for fixed f
+        Sj = Xtild.T @ fOpt
+        ### construct plus and minus variants of Sj
+        cplus = Sj * ((Sj*cSign) >0)
+        cplus /= np.maximum(1,np.linalg.norm(cplus,2))
+        Splus = fOpt @ Xtild @ cplus
+        
+        cminus = Sj * ((Sj*cSign) <0)
+        cminus /= np.maximum(1,np.linalg.norm(cminus,2))
+        Sminus = fOpt @ Xtild @ cminus 
+
+        c = cminus
+        if Splus >= -1*Sminus:
+            c = cplus
+        
+        ### compute objective value, if fixed, stop
+        S = fOpt @ Xtild @ c
+        if S==Sold: ### will terminate once fOpt is fixed over 2 iterations
+            break
+        Sold = S
+        i+=1
+        if i>50:
+            c = np.zeros_like(c)
+            fOpt=np.zeros_like(fOpt)
+            S=0
+            break
+
+    ## extend to targets and samples that didn't occur previously
+    fElong = np.random.choice([0,1],size=tblShape[0])
+    fElong[relevantTargs] = fOpt
+    fOpt = fElong
+    
+    cElong = np.zeros(tblShape[1])
+    cElong[np.arange(tblShape[1])[relevantSamples]]=c ### fancy indexing
+    cOpt = cElong
+    return cOpt,fOpt
+
+
 ### find optimal f for given input sheetCj
 def generateSheetCjOptcf(X,sheetCj,tblShape=-1):
     np.random.seed(0) ### for filling in f
@@ -434,10 +502,16 @@ def generateSheetCjOptcf(X,sheetCj,tblShape=-1):
     nj = X.sum(axis=0)
     njinvSqrt = 1.0/np.maximum(1,np.sqrt(nj)) ### avoid divide by 0 errors
     njinvSqrt[nj==0]=0
+
+    Xtild = (X - 1.0/X.sum()*np.outer(X@np.ones(X.shape[1]), X.T@np.ones(X.shape[0]))) @ np.diag(njinvSqrt)
     
     ## compute opt f
-    fOpt = np.sign((X-X@np.outer(np.ones(X.shape[1]),nj)/np.maximum(1,X.sum()))@(c*njinvSqrt))
-    fOpt = (fOpt+1)/2 ### to rescale f to be [0,1] valued
+    fOpt = np.sign(Xtild @ c)
+    f1 = (fOpt+1)/2 ### to rescale f to be [0,1] valued
+    f2 = (1-fOpt)/2
+    fOpt = f1
+    if np.abs(f2@Xtild@c) > np.abs(f1@Xtild@c):
+        fOpt = f2
     
     ## extend to targets and samples that didn't occur previously
     fElong = np.random.choice([0,1],size=tblShape[0])
@@ -479,8 +553,8 @@ def computeAsympNOMAD(X,cOpt,fOpt):
     varF = (fOpt-muhat)**2 @ X.sum(axis=1)/X.sum()
     totalVar = varF * (np.linalg.norm(cOpt)**2 - (cOpt@np.sqrt(nj))**2/M)
     
-    if totalVar==0:
-        return 1 ## edge case, can't say anything
+    if totalVar<=0:
+        return 1 ## numerical error / issue
     
     normalizedTestStat = S/np.sqrt(totalVar)
     pval = 2*scipy.stats.norm.cdf(-np.abs(normalizedTestStat))

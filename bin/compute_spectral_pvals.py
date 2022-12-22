@@ -1,11 +1,7 @@
 import numpy as np
 import pandas as pd
-from tqdm import tqdm,tqdm_notebook, tqdm_pandas
-import os
-import glob
-import pickle
+from tqdm import tqdm
 import argparse
-import scipy
 import scipy.stats
 import statsmodels.api as sm
 from pathlib import Path 
@@ -155,22 +151,42 @@ def main():
 
         #### split data into train and test portions
         np.random.seed(0) #### to make it deterministic 
-        X = splitCountsColwise(anch_contingency_table,args.train_fraction)
-        Xtrain = X
-        Xtest = anch_contingency_table-Xtrain
+        numSplits=5
+        Xtrain_splits = np.zeros((numSplits,anch_contingency_table.shape[0],anch_contingency_table.shape[1]))
+        Xtest_splits = np.zeros_like(Xtrain_splits)
+        for i in range(numSplits):
+            Xtrain_splits[i] = splitCountsColwise(anch_contingency_table,args.train_fraction)
+            Xtest_splits[i] = anch_contingency_table-Xtrain_splits[i]
+        Xtrain = Xtrain_splits[0]
+        Xtest = Xtest_splits[0]
+        # X = splitCountsColwise(anch_contingency_table,args.train_fraction)
+        # Xtrain = X
+        # Xtest = anch_contingency_table-Xtrain
 
 
         ### compute simple c,f from spectral approach (correspondence analysis style)
         ###   and compute nomad_simpleSVD_pv
-        cOpt,fOpt = get_spectral_cf_svd(Xtrain)
-        newRow['pval_SVD_corrAnalysis'] = testPval(Xtest,cOpt,fOpt)
-        newRow['pval_asymp_SVD_corrAnalysis'] = computeAsympNOMAD(Xtest,cOpt,fOpt)
-        newRow['effect_size_cts_SVD'] = effectSize_cts(Xtest,cOpt,fOpt)
+#         arr = np.zeros((numSplits,2))
+#         for i in range(numSplits):
+#             cOpt,fOpt = get_spectral_cf_svd(Xtrain_splits[i])
+#             Xtest = Xtest_splits[i]
+#             arr[i]= [testPval(Xtest,cOpt,fOpt), computeAsympNOMAD(Xtest,cOpt,fOpt)]
+#         newRow['pval_SVD_corrAnalysis'] = min(numSplits*arr[:,0].min(),1)
+#         newRow['pval_asymp_SVD_corrAnalysis'] = min(numSplits*arr[:,1].min(),1)
 
 
-        ### compute pvalsRandOpt
-        cOpt,fOpt = generate_alt_max_cf(Xtrain)
-        newRow['pval_rand_init_alt_max']=testPval(Xtest,cOpt,fOpt)    
+        ### compute alt_max pvals
+        arr = np.zeros((numSplits,4))
+        for i in range(numSplits):
+            cOpt,fOpt = generate_alt_max_cf(Xtrain_splits[i])
+            Xtest = Xtest_splits[i]
+            arr[i]= [testPval(Xtest,cOpt,fOpt), computeAsympNOMAD(Xtest,cOpt,fOpt), effectSize_bin(Xtest,cOpt,fOpt), effectSize_cts(Xtest,cOpt,fOpt)]
+        newRow['pval_alt_max'] = min(numSplits*arr[:,0].min(),1)
+        newRow['pval_asymp_alt_max'] = min(numSplits*arr[:,1].min(),1)
+        optIdx = np.argmin(arr[:,0])
+        newRow['effect_size_bin_alt_max']=arr[optIdx,2]
+        newRow['effect_size_cts_alt_max']=arr[optIdx,3]
+
 
 
         ### compute nomad's base p-value
@@ -203,8 +219,8 @@ def main():
             newRow['pval_cts_base'] = min(1,args.num_rand_cf*nomadctsArr.min())
 
             ### compute pvalsSpectral
-            cOpt,fOpt = generateSpectralOptcf(Xtrain) 
-            newRow['pval_spectral_alt_max']=testPval(Xtest,cOpt,fOpt)
+            # cOpt,fOpt = generateSpectralOptcf(Xtrain) 
+            # newRow['pval_spectral_alt_max']=testPval(Xtest,cOpt,fOpt)
 
 
         ##### hasn't been thoroughly tested, but seems to be working as expected
@@ -245,30 +261,13 @@ def main():
     if args.output_verbosity != 'experimental':
         outdf.drop(columns=outdf.columns[outdf.columns.str.contains('asymp')],inplace=True)        
 
-    outdf = outdf.sort_values('pval_SVD_corrAnalysis')
 
     filepath = Path(args.outfile_scores)  
     filepath.parent.mkdir(parents=True, exist_ok=True)
 
     outdf.to_csv(filepath, sep='\t', index=False)
-
-
-
-    # if args.save_c_f:
-    #     if not useSheetCj:
-    #         cjArr = cjArr[:,:4]
-    #     cjArr = cjArr[anchsUsed]
-    #     with open(args.outfile_scores[:-4]+'_spectral_cj.npy', 'wb') as f:
-    #         np.save(f,cjArr)
-
-    #     with open(args.outfile_scores[:-4]+'_spectral_f.pkl', 'wb') as handle:
-    #         pickle.dump(fArr, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-        #### to be read in as below
-        # with open(args.outfile_scores[:-4]+'_spectral_cj.npy','rb') as f:
-        #     a = np.load(f)
-        # with open(args.outfile_scores[:-4]+'_spectral_f.pkl', 'rb') as handle:
-        #     b = pickle.load(handle)
+    outdf = outdf.sort_values('pval_alt_max')
+    outdf.to_csv(filepath, sep='\t', index=False)
 
 
 print('starting spectral p value computation')
