@@ -1,16 +1,6 @@
 # Updated software package [here](https://github.com/refresh-bio/SPLASH)
 
-Since the initial release of this software package, we have worked with collaborators to develop an improved codebase for this project which is publicly available on github [here](https://github.com/refresh-bio/SPLASH). This builds on the following works:
-
-Marek Kokot, Roozbeh Dehghannasiri, Tavor Baharav, Julia Salzman, and Sebastian Deorowicz.
-[SPLASH2 provides ultra-efficient, scalable, and unsupervised discovery on raw sequencing reads](https://www.biorxiv.org/content/10.1101/2023.03.17.533189) 
-bioRxiv (2023)
- 
-Kaitlin Chaung, Tavor Baharav, George Henderson, Ivan Zheludev, Peter Wang, Julia Salzman. [SPLASH: a statistical, reference-free genomic algorithm unifies biological discovery
-](https://doi.org/10.1016/j.cell.2023.10.028), Cell (2023)
- 
-Tavor Baharav, David Tse, and Julia Salzman. 
-[An Interpretable, Finite Sample Valid Alternative to Pearson’s X2 for Scientific Discovery](https://www.biorxiv.org/content/10.1101/2023.03.16.533008), bioRxiv (2023)
+Since the initial release of this software package, we have worked with collaborators to develop an improved codebase for this project which is publicly available on github [here](https://github.com/refresh-bio/SPLASH).
 
 # Introduction
 
@@ -62,6 +52,15 @@ Please see this [document](https://github.com/salzmanlab/nomad/blob/main/docs/ou
 
 
 # Citations
+Marek Kokot*, Roozbeh Dehghannasiri*, Tavor Baharav, Julia Salzman, and Sebastian Deorowicz.
+[SPLASH2 provides ultra-efficient, scalable, and unsupervised discovery on raw sequencing reads](https://www.biorxiv.org/content/10.1101/2023.03.17.533189) 
+bioRxiv (2023)
+ 
+Kaitlin Chaung*, Tavor Baharav*, George Henderson, Ivan Zheludev, Peter Wang, Julia Salzman. [SPLASH: a statistical, reference-free genomic algorithm unifies biological discovery
+](https://doi.org/10.1016/j.cell.2023.10.028), Cell (2023)
+ 
+Tavor Baharav, David Tse, and Julia Salzman. 
+[An Interpretable, Finite Sample Valid Alternative to Pearson’s X2 for Scientific Discovery](https://www.biorxiv.org/content/10.1101/2023.03.16.533008), bioRxiv (2023)
 
 This pipeline uses code and infrastructure developed and maintained by the [nf-core](https://nf-co.re) initiative, and reused here under the [MIT license](https://github.com/nf-core/tools/blob/master/LICENSE).
 
