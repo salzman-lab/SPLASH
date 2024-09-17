@@ -52,9 +52,6 @@ Please see this [document](https://github.com/salzmanlab/nomad/blob/main/docs/ou
 
 
 # Citations
-Marek Kokot*, Roozbeh Dehghannasiri*, Tavor Baharav, Julia Salzman, and Sebastian Deorowicz.
-[SPLASH2 provides ultra-efficient, scalable, and unsupervised discovery on raw sequencing reads](https://www.biorxiv.org/content/10.1101/2023.03.17.533189) 
-bioRxiv (2023)
  
 Kaitlin Chaung*, Tavor Baharav*, George Henderson, Ivan Zheludev, Peter Wang, Julia Salzman. [SPLASH: a statistical, reference-free genomic algorithm unifies biological discovery
 ](https://doi.org/10.1016/j.cell.2023.10.028), Cell (2023)
